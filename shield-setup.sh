@@ -8,6 +8,9 @@
 LOGFILE="install.log"
 CMDFILE="command.txt"
 BRANCH="Rel"
+if [ -f .es_branch ]; then
+    BRANCH=$(cat .es_branch)
+fi
 ERICOMPASS="Ericom123$"
 
 function usage() {
@@ -226,7 +229,7 @@ function select_version() {
         done
     fi
 
-    if [ "$BRANCH" == "Rel" ]; then
+    if [ "$BRANCH" != "Staging" ] || [ "$BRANCH" != "Dev"  ]; then
         BRANCH="Rel-$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
@@ -324,6 +327,34 @@ function add_repo() {
     log_message "[end] add shield repo"
 }
 
+function check_ha() {
+    NUM_MNG=$(kubectl get nodes --show-labels |grep -c management)
+    NUM_FARM=$(kubectl get nodes --show-labels |grep -c farm-services)
+
+    if [[ $NUM_MNG -eq 3 ]];then
+        if [ -f custom-management.yaml ]; then
+             if [ grep -c antiAffinity custom-management.yaml ];then
+                 sed -i -e '/#.*antiAffinity/s/#//g' custom-management.yaml
+             else
+                 sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-management.yaml
+             fi
+        fi
+    elif [[ $NUM_MNG -eq 1 ]];then
+             sed -i -e '/^\s.*antiAffinity/s/^/#/g' custom-management.yaml
+    fi
+    if [[ $NUM_FARM -eq 3 ]];then
+        if [ -f custom-farm.yaml ]; then
+             if [ grep -c antiAffinity custom-farm.yaml ];then
+                 sed -i -e '/#.*antiAffinity/s/#//g' custom-farm.yaml
+             else
+                 sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-farm.yaml
+             fi
+        fi
+    elif [[ $NUM_MNG -eq 1 ]];then
+             sed -i -e '/^\s.*antiAffinity/s/^/#/g' custom-farm.yaml
+    fi
+}
+
 function deploy_shield() {
     log_message "[start] deploy shield"
 
@@ -368,6 +399,9 @@ function deploy_shield() {
 
     VERSION_REPO=$S_APP_VERSION
     export VERSION_REPO
+
+    # check number of management and farm
+    check_ha
 
     log_message "[start] deploieng shield"
     ./deploy-shield.sh | tee -a $LOGFILE
@@ -474,7 +508,7 @@ function move_to_project() {
     # move namespases to Default project
     log_message "[start] Move namespases to Default project"
 
-    if [ "$BRANCH" == "Rel-19.07" ];then
+    if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
     else
         NAMESPACES="management proxy elk farm-services common"
