@@ -10,7 +10,6 @@ CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 
-
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--no-get-custom] [--uninstall] [--delete-all]"
     echo "    --update         : Shield のバージョンを変更できます。"
@@ -18,12 +17,11 @@ function usage() {
     echo "    --spell-check-on : ブラウザのスペルチェック機能をONの状態でセットアップします。"
     echo "                        ※日本語環境ではメモリリークの原因になるためデフォルトOFFです。"
     echo "    --ses-chek-off   : 認証を行わない場合のセッション数チェックを行う機能をOFFでセットアップします。"
-　　echo "　　　　　　　　　　　　デフォルト ONの状態でセットアップされます。"
-　　echo "　　　　　　　　　　　　認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
+    echo "　　　　　　　　　　　　デフォルト ONの状態でセットアップされます。"
+    echo "　　　　　　　　　　　　認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
     echo "    --get-custom-yaml : helm展開時のcustom yamlファイルを新規に取得して上書きします。"
     echo "    --uninstall      : Shield のみをアンインストールします。 --deploy により再展開できます。"
     echo "    --delete-all     : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
-
     exit 0
     ### for Develop only
     # [--staging | --dev] [--version <Chart version>] [--pre-use]
@@ -89,20 +87,21 @@ function check_args(){
         log_message "${args} は不正な引数です。"
         fin 1
     fi
-echo "///// args /////////////////////" >> $LOGFILE
-echo "pre_flg: $pre_flg" >> $LOGFILE
-echo "args: $args" >> $LOGFILE
-echo "dev_flg: $dev_flg" >> $LOGFILE
-echo "stg_flg: $stg_flg" >> $LOGFILE
-echo "ver_flg: $ver_flg" >> $LOGFILE
-echo "update_flg: $update_flg" >> $LOGFILE
-echo "deploy_flg: $deploy_flg" >> $LOGFILE
-echo "noget_flg: $noget_flg" >> $LOGFILE
-echo "spell_flg: $spell_flg" >> $LOGFILE
-echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
-echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
-echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
-echo "////////////////////////////////" >> $LOGFILE
+
+    echo "///// args /////////////////////" >> $LOGFILE
+    echo "pre_flg: $pre_flg" >> $LOGFILE
+    echo "args: $args" >> $LOGFILE
+    echo "dev_flg: $dev_flg" >> $LOGFILE
+    echo "stg_flg: $stg_flg" >> $LOGFILE
+    echo "ver_flg: $ver_flg" >> $LOGFILE
+    echo "update_flg: $update_flg" >> $LOGFILE
+    echo "deploy_flg: $deploy_flg" >> $LOGFILE
+    echo "noget_flg: $noget_flg" >> $LOGFILE
+    echo "spell_flg: $spell_flg" >> $LOGFILE
+    echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
+    echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
+    echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
+    echo "////////////////////////////////" >> $LOGFILE
 
     if [ $dev_flg -eq 1 ] ; then
         if [ $BRANCH != "Dev" ] ; then
@@ -137,7 +136,6 @@ echo "////////////////////////////////" >> $LOGFILE
     export BRANCH
     echo $BRANCH > .es_branch
     log_message "BRANCH: $BRANCH"
-
 }
 
 function select_version() {
@@ -236,7 +234,6 @@ function select_version() {
     echo ${S_APP_VERSION} > .es_version
 }
 
-
 function check_group() {
     log_message "[start] check group"
     docker_flg=0
@@ -273,7 +270,6 @@ function check_group() {
 
     log_message "[end] check group"
 }
-
 
 function delete_ver() {
     log_message "[start] delete version file"
@@ -313,7 +309,6 @@ function delete_all() {
     echo '------------------------------------------------------------'
 }
 
-
 function add_repo() {
     if [ $stg_flg -eq 1 ] ; then
          BRANCHFLG="-s"
@@ -328,7 +323,6 @@ function add_repo() {
     ./add-shield-repo.sh ${BRANCHFLG} -p ${ERICOMPASS} >> $LOGFILE 2>&1
     log_message "[end] add shield repo"
 }
-
 
 function deploy_shield() {
     log_message "[start] deploy shield"
@@ -452,7 +446,6 @@ function choose_network_interface() {
     failed_to_install "choose_network_interface" "ver"
 }
 
-
 function fin() {
     log_message "###### DONE ############################################################"
     exit $1
@@ -496,7 +489,7 @@ function move_to_project() {
     log_message "[end] Move namespases to Default project"
 }
 
-check_docker() {
+function check_docker() {
 
     if [ ! -z $DOCKER_VER ]; then
         export VERSION=$DOCKER_VER
@@ -543,7 +536,27 @@ check_docker() {
     fi
 }
 
+function get_scripts() {
+    log_message "[start] get operation scripts"
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh
+    chmod +x clean-rancher-agent.sh
 
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh
+    chmod +x delete-all.sh
+
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-nodes.sh
+    chmod +x shield-nodes.sh
+
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-start.sh
+    chmod +x shield-start.sh
+
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-stop.sh
+    chmod +x shield-stop.sh
+    log_message "[end] get operation scripts"
+}
+
+
+######START#####
 log_message "###### START ###########################################################"
 
 #OS Check
@@ -576,7 +589,7 @@ check_args $@
 if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
     #if [ $update_flg -eq 1 ];then
     #log_message "[start] stopping shield"
-    # 	    bash ./shield-stop.sh
+    #       bash ./shield-stop.sh
     #log_message "[end] stopping shield"
     #fi
     add_repo
@@ -587,6 +600,8 @@ if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
     fin 0
 fi
 
+# get operation scripts
+get_scripts
 
 # set MY_IP
 choose_network_interface
@@ -750,74 +765,6 @@ else
     echo "SERVICE_CLUSTER_IP_RANGE: $SERVICE_CLUSTER_IP_RANGE" >> $LOGFILE
     echo "CLUSTER_DNS_SERVER: $CLUSTER_DNS_SERVER" >> $LOGFILE
     echo "MAX_PODS: $MAX_PODS" >> $LOGFILE
-
-    echo curl -s -k "${RANCHERURL}/v3/cluster" \
-        -H 'content-type: application/json' \
-        -H "Authorization: Bearer $APITOKEN" \
-        --data-binary '{
-            "dockerRootDir": "/var/lib/docker",
-            "enableNetworkPolicy": false,
-            "type": "cluster",
-            "localClusterAuthEndpoint": {
-            "type":"localClusterAuthEndpoint",
-            "enabled":true
-            },
-            "rancherKubernetesEngineConfig": {
-              "addonJobTimeout": 30,
-              "ignoreDockerVersion": true,
-              "sshAgentAuth": false,
-              "type": "rancherKubernetesEngineConfig",
-              "authentication": {
-                "type": "authnConfig",
-                "strategy": "x509"
-              },
-              "network": {
-                "options": {
-                  "flannel_backend_type": "vxlan"
-                 },
-                "type": "networkConfig",
-                "plugin": "flannel"
-              },
-              "ingress": {
-                "type": "ingressConfig",
-                "provider": "nginx"
-              },
-              "monitoring": {
-                "type": "monitoringConfig",
-                "provider": "metrics-server"
-              },
-              "services": {
-                "type": "rkeConfigServices",
-                "kubeApi": {
-                  "serviceClusterIpRange": "'$SERVICE_CLUSTER_IP_RANGE'",
-                  "podSecurityPolicy": false,
-                  "type": "kubeAPIService"
-                },
-                "kubeController": {
-                  "clusterCidr": "'$CLUSTER_CIDR'",
-                  "serviceClusterIpRange": "'$SERVICE_CLUSTER_IP_RANGE'",
-                  "type": "kubeControllerService"
-                },
-                "kubelet": {
-                  "type": "kubeletService",
-                  "clusterDnsServer": "'$CLUSTER_DNS_SERVER'",
-                  "extraArgs": {
-                     "max-pods": "'$MAX_PODS'",
-		     "authentication-token-webhook": true
-                  }
-                },
-                "etcd": {
-                  "snapshot": false,
-                  "type": "etcdService",
-                  "extraArgs": {
-                    "heartbeat-interval": 500,
-                    "election-timeout": 5000
-                  }
-                }
-              }
-            },
-            "name": "'${CLUSTERNAME}'"
-          }' >> $LOGFILE
 
     CLUSTERRESPONSE=$(curl -s -k "${RANCHERURL}/v3/cluster" \
         -H 'content-type: application/json' \
@@ -1276,7 +1223,6 @@ else
 fi
 
 
-
 # Get kubectl config
 log_message "[start] Get kubectl config"
 touch  ~/.kube/config
@@ -1624,21 +1570,9 @@ deploy_shield
 # get Default project id
 move_to_project
 
-curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh
-chmod +x clean-rancher-agent.sh
-
-curl -s -O https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh
-chmod +x delete-all.sh
-
-curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-nodes.sh
-chmod +x shield-nodes.sh
-
-curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-start.sh
-chmod +x shield-start.sh
-
-curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-stop.sh
-chmod +x shield-stop.sh
-
+echo ""
+echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
+echo ""
 fin 0
 
 
