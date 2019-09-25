@@ -12,16 +12,16 @@ ERICOMPASS="Ericom123$"
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
-    echo "    --update         : Shield のバージョンを変更できます。"
-    echo "    --deploy         : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
-    echo "    --spell-check-on : ブラウザのスペルチェック機能をONの状態でセットアップします。"
+    echo "    --update          : Shield のバージョンを変更できます。"
+    echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
+    echo "    --spell-check-on  : ブラウザのスペルチェック機能をONの状態でセットアップします。"
     echo "                        ※日本語環境ではメモリリークの原因になるためデフォルトOFFです。"
-    echo "    --ses-chek-off   : 認証を行わない場合のセッション数チェックを行う機能をOFFでセットアップします。"
-    echo "　　　　　　　　　　　　デフォルト ONの状態でセットアップされます。"
-    echo "　　　　　　　　　　　　認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
+    echo "    --ses-chek-off    : 認証を行わない場合のセッション数チェックを行う機能をOFFでセットアップします。"
+    echo "                        デフォルト ONの状態でセットアップされます。"
+    echo "                        認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
     echo "    --get-custom-yaml : helm展開時のcustom yamlファイルを新規に取得して上書きします。"
-    echo "    --uninstall      : Shield のみをアンインストールします。 --deploy により再展開できます。"
-    echo "    --delete-all     : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
+    echo "    --uninstall       : Shield のみをアンインストールします。 --deploy により再展開できます。"
+    echo "    --delete-all      : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
     exit 0
     ### for Develop only
     # [--staging | --dev] [--version <Chart version>] [--pre-use]
@@ -407,9 +407,16 @@ function choose_network_interface() {
     local INTERFACE_ADDRESSES=()
     local OPTIONS=()
 
+    if [ -f "/sys/class/net/bonding_masters" ]; then
+        INTERFACES+=($(cat /sys/class/net/bonding_masters))
+    fi
+
     for IFACE in "${INTERFACES[@]}"; do
-        OPTIONS+=("Name: \"$IFACE\", IP address: $(/sbin/ip address show scope global dev $IFACE | grep -oP '(?<=inet )\d+\.\d+\.\d+\.\d+')")
-        INTERFACE_ADDRESSES+=("$(/sbin/ip address show scope global dev $IFACE | grep -oP '(?<=inet )\d+\.\d+\.\d+\.\d+')")
+        local IF_ADDR="$(/sbin/ip address show scope global dev $IFACE | grep -oP '(?<=inet )\d+\.\d+\.\d+\.\d+')"
+        if [ ! -z "$IF_ADDR" ]; then
+            OPTIONS+=("Name: \"$IFACE\", IP address: $IF_ADDR")
+            INTERFACE_ADDRESSES+=("$IF_ADDR")
+        fi
     done
 
     if ((${#OPTIONS[@]} == 0)); then
@@ -417,7 +424,7 @@ function choose_network_interface() {
         exit 1
     elif ((${#OPTIONS[@]} == 1)); then
         local REPLY=1
-        log_message "Using ${INTERFACES[$((REPLY - 1))]} with address ${INTERFACE_ADDRESSES[$((REPLY - 1))]} as an interface"
+        log_message "Using ${INTERFACES[$((REPLY - 1))]} with address ${INTERFACE_ADDRESSES[$((REPLY - 1))]} as an interface for Shield"
         MY_IP="${INTERFACE_ADDRESSES[$((REPLY - 1))]}"
         return
     fi
@@ -429,7 +436,7 @@ function choose_network_interface() {
         case "$REPLY" in
 
         [1-$((${#OPTIONS[@]}))]*)
-            log_message "Using ${INTERFACES[$((REPLY - 1))]} with address ${INTERFACE_ADDRESSES[$((REPLY - 1))]} as an interface"
+            log_message "Using ${INTERFACES[$((REPLY - 1))]} with address ${INTERFACE_ADDRESSES[$((REPLY - 1))]} as an interface for Shield"
             MY_IP="${INTERFACE_ADDRESSES[$((REPLY - 1))]}"
             return
             ;;
