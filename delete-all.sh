@@ -1,5 +1,10 @@
 #!/bin/bash
 
+####################
+### K.K. Ashisuto
+### VER=20190925a-dev
+####################
+
 if which helm ; then
     kubectl -n kube-system delete deployment tiller-deploy
     kubectl delete clusterrolebinding tiller
@@ -13,19 +18,21 @@ do
 done
 docker system prune -a -f
 docker volume prune -f
-#docker image prune
-#docker network prune
 sudo rm -rf /var/lib/docker
 sudo systemctl restart docker
 
-cleanupdirs="/tmp/shield /var/lib/etcd /etc/kubernetes /etc/cni /opt/cni /var/lib/cni /var/run/calico /var/run/flannel /opt/rke"
+cleanupdirs="/var/lib/etcd /etc/kubernetes /etc/cni /opt/cni /var/lib/cni /var/run/calico /var/run/flannel /opt/rke"
 for dir in $cleanupdirs; do
     sudo rm -rf $dir
 done
-sudo rm -rf ~/rancher-store
+
+sudo rm -rf /home/${SUDO_USER}/rancher-store
 rm -f .ra_*
 rm -f .es_version
 rm -f .es_branch
 rm -f *.yaml
 rm -f command.txt
-
+rm -f shield-stop.sh
+rm -f shield-start.sh
+rm -f shield-nodes.sh
+rm -f shield-update.sh
