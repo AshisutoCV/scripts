@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20190919a
+### VER=20190925a-dev
 ####################
 
 LOGFILE="install.log"
@@ -11,7 +11,7 @@ BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 
 function usage() {
-    echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--no-get-custom] [--uninstall] [--delete-all]"
+    echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
     echo "    --update         : Shield のバージョンを変更できます。"
     echo "    --deploy         : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
     echo "    --spell-check-on : ブラウザのスペルチェック機能をONの状態でセットアップします。"
@@ -183,9 +183,9 @@ function select_version() {
         m=0
 
         if [ "$BRANCH" == "Dev" ]; then
-            VER=$( curl -s 'https://ericom:Ericom123$@helmrepo.shield-service.net/dev/index.yaml' | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
+            VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/dev/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         elif [ "$BRANCH" == "Staging" ]; then
-            VER=$( curl -s 'https://ericom:Ericom123$@helmrepo.shield-service.net/staging/index.yaml' | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
+            VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         else
             VER=$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
         fi
@@ -552,6 +552,9 @@ function get_scripts() {
 
     curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-stop.sh
     chmod +x shield-stop.sh
+
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-update.sh
+    chmod +x shield-update.sh
     log_message "[end] get operation scripts"
 }
 
