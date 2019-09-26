@@ -7,6 +7,9 @@
 
 LOGFILE="update.log"
 BRANCH="Rel"
+if [ -f .es_branch ]; then
+    BRANCH=$(cat .es_branch)
+fi
 
 function usage() {
     echo "USAGE: $0 [--pre-use]"
@@ -66,12 +69,6 @@ function check_args(){
             BRANCH="Staging"
         fi
     fi
-
-    select_version
-
-    export BRANCH
-    echo $BRANCH > .es_branch
-    log_message "BRANCH: $BRANCH"
 }
 
 function select_version() {
@@ -189,6 +186,26 @@ function get_scripts() {
     log_message "[end] get install scripts"
 }
 
+function get_yaml() {
+    log_message "[start] get yaml files"
+    for yamlfile in ( "farm management proxy common value-elk" ); do
+        cp -ip custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup
+        curl -s -O https://ericom-tec.ashisuto.co.jp/shield/custom-${yamlfile}.yaml
+        chmod +x custom-${yamlfile}.yaml
+        if [ $(diff -c custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup | wc -l) -gt 0 ]; then
+               diff -c custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup > diff_custom-${yamlfile}.yaml
+        fi
+    done
+    log_message "[end] get yaml files"
+
+    echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、shield-update.shを再実行してください。"
+    for difffile in $(ls diff_*.yaml) ; do
+        echo ${difffile}
+        echo ${S_APP_VERSION} > .es_update
+    done
+    fin 0
+}
+
 function exec_update(){
     if [ $dev_flg -eq 1 ]; then
         /bin/bash ./shield-setup.sh --update --version ${S_APP_VERSION} --Dev
@@ -204,10 +221,21 @@ log_message "###### START ######################################################
 
 # check args and set flags
 check_args $@
+export BRANCH
 
-# get install scripts
-get_scripts
+if [ ! -f .es_update ]; then
+    select_version
+    export BRANCH
+    echo $BRANCH > .es_branch
+    log_message "BRANCH: $BRANCH"
 
+    # get install scripts
+    get_scripts
+
+    get_yaml
+fi
+S_APP_VERSION=$(cat .es_update)
+rm -f .es_update
 exec_update
 
 fin 0

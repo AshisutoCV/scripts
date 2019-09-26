@@ -15,6 +15,8 @@ ERICOMPASS="Ericom123$"
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
+    echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
+    echo "                        ※ただし、先行利用バージョンについては、一切のサポートがございません。"
     echo "    --update          : Shield のバージョンを変更できます。"
     echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
     echo "    --spell-check-on  : ブラウザのスペルチェック機能をONの状態でセットアップします。"
@@ -27,7 +29,7 @@ function usage() {
     echo "    --delete-all      : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
     exit 0
     ### for Develop only
-    # [--staging | --dev] [--version <Chart version>] [--pre-use]
+    # [--staging | --dev] [--version <Chart version>]
     ##
 }
 
