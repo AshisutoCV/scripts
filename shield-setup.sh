@@ -25,6 +25,7 @@ function usage() {
     echo "                        デフォルト ONの状態でセットアップされます。"
     echo "                        認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
     echo "    --get-custom-yaml : helm展開時のcustom yamlファイルを新規に取得して上書きします。"
+    echo "                        独自に加えた変更が保持されませんのでご注意ください。"
     echo "    --uninstall       : Shield のみをアンインストールします。 --deploy により再展開できます。"
     echo "    --delete-all      : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
     exit 0
@@ -136,11 +137,6 @@ function check_args(){
         delete_all
         fin 0
     fi
-    select_version
-
-    export BRANCH
-    echo $BRANCH > .es_branch
-    log_message "BRANCH: $BRANCH"
 }
 
 function select_version() {
@@ -630,6 +626,12 @@ fi
 
 # check args and set flags
 check_args $@
+
+select_version
+
+export BRANCH
+echo $BRANCH > .es_branch
+log_message "BRANCH: $BRANCH"
 
 #update or deploy
 if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
