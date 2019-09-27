@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20190919b
+### VER=20190925a-dev
 ####################
 
 LOGFILE="stop-start.log"
@@ -37,17 +37,27 @@ function stop_shield() {
     sed -i -e '/no/d' delete-shield.sh
     sed -i -e '/Ok!/d' delete-shield.sh
     sed -i -e '/esac/d' delete-shield.sh
-    sed -i -e 's/shield-common/common/g' delete-shield.sh
+    sed -i -e '/helm delete --purge "common"/d' delete-shield.sh
+    sed -i -e '/kubectl delete namespace "common"/d' delete-shield.sh
     sed -i -e '/helm delete --purge "shield-common"/d' delete-shield.sh
     sed -i -e '/kubectl delete namespace "shield-common"/d' delete-shield.sh
-    sed -i -e '/helm delete --purge "common"/a \    helm delete --purge "shield-common"' delete-shield.sh
-    sed -i -e '/kubectl delete namespace "common"/a \    kubectl delete namespace "shield-common"' delete-shield.sh
 
     ./delete-shield.sh | tee -a $LOGFILE
 
     curl -s -o delete-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
 
+    stop_abnormal_common
+
     log_message "[end] Stope shield"
+}
+
+function stop_abnormal_common() {
+    if [ $(helm list | grep -c common) -ge 1 ];then
+        RELEASE=$(helm list |grep common | awk '{print $1}')
+        NAMESPRACE=$(helm list |grep common | awk '{print $11}')
+        helm delete --purge "${RELEASE}"
+        kubectl delete namespace "${NAMESPRACE}"
+    fi
 }
 
 function log_message() {
@@ -69,6 +79,7 @@ function fin() {
 log_message "###### START ###########################################################"
 
 stop_shield
+
 fin 0
 
 

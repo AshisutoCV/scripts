@@ -2,31 +2,35 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20190919a
+### VER=20190925a-dev
 ####################
 
 LOGFILE="install.log"
-CMDFILE="command.txt"
+#CMDFILE="command.txt"
 BRANCH="Rel"
+if [ -f .es_branch ]; then
+    BRANCH=$(cat .es_branch)
+fi
 ERICOMPASS="Ericom123$"
 
-
 function usage() {
-    echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--no-get-custom] [--uninstall] [--delete-all]"
-    echo "    --update         : Shield のバージョンを変更できます。"
-    echo "    --deploy         : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
-    echo "    --spell-check-on : ブラウザのスペルチェック機能をONの状態でセットアップします。"
+    echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
+    echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
+    echo "                        ※ただし、先行利用バージョンについては、一切のサポートがございません。"
+    echo "    --update          : Shield のバージョンを変更できます。"
+    echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
+    echo "    --spell-check-on  : ブラウザのスペルチェック機能をONの状態でセットアップします。"
     echo "                        ※日本語環境ではメモリリークの原因になるためデフォルトOFFです。"
-    echo "    --ses-chek-off   : 認証を行わない場合のセッション数チェックを行う機能をOFFでセットアップします。"
-　　echo "　　　　　　　　　　　　デフォルト ONの状態でセットアップされます。"
-　　echo "　　　　　　　　　　　　認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
+    echo "    --ses-chek-off    : 認証を行わない場合のセッション数チェックを行う機能をOFFでセットアップします。"
+    echo "                        デフォルト ONの状態でセットアップされます。"
+    echo "                        認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
     echo "    --get-custom-yaml : helm展開時のcustom yamlファイルを新規に取得して上書きします。"
-    echo "    --uninstall      : Shield のみをアンインストールします。 --deploy により再展開できます。"
-    echo "    --delete-all     : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
-
+    echo "                        独自に加えた変更が保持されませんのでご注意ください。"
+    echo "    --uninstall       : Shield のみをアンインストールします。 --deploy により再展開できます。"
+    echo "    --delete-all      : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
     exit 0
     ### for Develop only
-    # [--staging | --dev] [--version <Chart version>] [--pre-use]
+    # [--staging | --dev] [--version <Chart version>]
     ##
 }
 
@@ -89,20 +93,21 @@ function check_args(){
         log_message "${args} は不正な引数です。"
         fin 1
     fi
-echo "///// args /////////////////////" >> $LOGFILE
-echo "pre_flg: $pre_flg" >> $LOGFILE
-echo "args: $args" >> $LOGFILE
-echo "dev_flg: $dev_flg" >> $LOGFILE
-echo "stg_flg: $stg_flg" >> $LOGFILE
-echo "ver_flg: $ver_flg" >> $LOGFILE
-echo "update_flg: $update_flg" >> $LOGFILE
-echo "deploy_flg: $deploy_flg" >> $LOGFILE
-echo "noget_flg: $noget_flg" >> $LOGFILE
-echo "spell_flg: $spell_flg" >> $LOGFILE
-echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
-echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
-echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
-echo "////////////////////////////////" >> $LOGFILE
+
+    echo "///// args /////////////////////" >> $LOGFILE
+    echo "pre_flg: $pre_flg" >> $LOGFILE
+    echo "args: $args" >> $LOGFILE
+    echo "dev_flg: $dev_flg" >> $LOGFILE
+    echo "stg_flg: $stg_flg" >> $LOGFILE
+    echo "ver_flg: $ver_flg" >> $LOGFILE
+    echo "update_flg: $update_flg" >> $LOGFILE
+    echo "deploy_flg: $deploy_flg" >> $LOGFILE
+    echo "noget_flg: $noget_flg" >> $LOGFILE
+    echo "spell_flg: $spell_flg" >> $LOGFILE
+    echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
+    echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
+    echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
+    echo "////////////////////////////////" >> $LOGFILE
 
     if [ $dev_flg -eq 1 ] ; then
         if [ $BRANCH != "Dev" ] ; then
@@ -132,12 +137,6 @@ echo "////////////////////////////////" >> $LOGFILE
         delete_all
         fin 0
     fi
-    select_version
-
-    export BRANCH
-    echo $BRANCH > .es_branch
-    log_message "BRANCH: $BRANCH"
-
 }
 
 function select_version() {
@@ -185,9 +184,9 @@ function select_version() {
         m=0
 
         if [ "$BRANCH" == "Dev" ]; then
-            VER=$( curl -s 'https://ericom:Ericom123$@helmrepo.shield-service.net/dev/index.yaml' | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
+            VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/dev/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         elif [ "$BRANCH" == "Staging" ]; then
-            VER=$( curl -s 'https://ericom:Ericom123$@helmrepo.shield-service.net/staging/index.yaml' | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
+            VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         else
             VER=$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
         fi
@@ -228,14 +227,13 @@ function select_version() {
         done
     fi
 
-    if [ "$BRANCH" == "Rel" ]; then
+    if [ "$BRANCH" != "Staging" ] || [ "$BRANCH" != "Dev"  ]; then
         BRANCH="Rel-$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
     log_message "Rel-${S_APP_VERSION} をセットアップします。"
     echo ${S_APP_VERSION} > .es_version
 }
-
 
 function check_group() {
     log_message "[start] check group"
@@ -274,7 +272,6 @@ function check_group() {
     log_message "[end] check group"
 }
 
-
 function delete_ver() {
     log_message "[start] delete version file"
     rm -f .es_version
@@ -299,7 +296,7 @@ function delete_all() {
 
     curl -s -o delete-all.sh https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh
     chmod +x delete-all.sh
-    sudo ./delete-all.sh | tee -a $LOGFILE
+    ./delete-all.sh | tee -a $LOGFILE
 
     log_message "[end] deletel all object"
 
@@ -308,11 +305,10 @@ function delete_all() {
     echo ""
     echo "curl -s -o delete-all.sh https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh"
     echo 'chmod +x delete-all.sh'
-    echo 'sudo ./delete-all.sh'
+    echo './delete-all.sh'
     echo ""
     echo '------------------------------------------------------------'
 }
-
 
 function add_repo() {
     if [ $stg_flg -eq 1 ] ; then
@@ -329,6 +325,33 @@ function add_repo() {
     log_message "[end] add shield repo"
 }
 
+function check_ha() {
+    NUM_MNG=$(kubectl get nodes --show-labels |grep -c management)
+    NUM_FARM=$(kubectl get nodes --show-labels |grep -c farm-services)
+
+    if [[ $NUM_MNG -eq 3 ]];then
+        if [ -f custom-management.yaml ]; then
+             if [ grep -c antiAffinity custom-management.yaml ];then
+                 sed -i -e '/#.*antiAffinity/s/#//g' custom-management.yaml
+             else
+                 sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-management.yaml
+             fi
+        fi
+    elif [[ $NUM_MNG -eq 1 ]];then
+             sed -i -e '/^\s.*antiAffinity/s/^/#/g' custom-management.yaml
+    fi
+    if [[ $NUM_FARM -eq 3 ]];then
+        if [ -f custom-farm.yaml ]; then
+             if [ grep -c antiAffinity custom-farm.yaml ];then
+                 sed -i -e '/#.*antiAffinity/s/#//g' custom-farm.yaml
+             else
+                 sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-farm.yaml
+             fi
+        fi
+    elif [[ $NUM_MNG -eq 1 ]];then
+             sed -i -e '/^\s.*antiAffinity/s/^/#/g' custom-farm.yaml
+    fi
+}
 
 function deploy_shield() {
     log_message "[start] deploy shield"
@@ -375,6 +398,9 @@ function deploy_shield() {
     VERSION_REPO=$S_APP_VERSION
     export VERSION_REPO
 
+    # check number of management and farm
+    check_ha
+
     log_message "[start] deploieng shield"
     ./deploy-shield.sh | tee -a $LOGFILE
     log_message "[end] deploieng shield"
@@ -413,9 +439,16 @@ function choose_network_interface() {
     local INTERFACE_ADDRESSES=()
     local OPTIONS=()
 
+    if [ -f "/sys/class/net/bonding_masters" ]; then
+        INTERFACES+=($(cat /sys/class/net/bonding_masters))
+    fi
+
     for IFACE in "${INTERFACES[@]}"; do
-        OPTIONS+=("Name: \"$IFACE\", IP address: $(/sbin/ip address show scope global dev $IFACE | grep -oP '(?<=inet )\d+\.\d+\.\d+\.\d+')")
-        INTERFACE_ADDRESSES+=("$(/sbin/ip address show scope global dev $IFACE | grep -oP '(?<=inet )\d+\.\d+\.\d+\.\d+')")
+        local IF_ADDR="$(/sbin/ip address show scope global dev $IFACE | grep -oP '(?<=inet )\d+\.\d+\.\d+\.\d+')"
+        if [ ! -z "$IF_ADDR" ]; then
+            OPTIONS+=("Name: \"$IFACE\", IP address: $IF_ADDR")
+            INTERFACE_ADDRESSES+=("$IF_ADDR")
+        fi
     done
 
     if ((${#OPTIONS[@]} == 0)); then
@@ -423,7 +456,7 @@ function choose_network_interface() {
         exit 1
     elif ((${#OPTIONS[@]} == 1)); then
         local REPLY=1
-        log_message "Using ${INTERFACES[$((REPLY - 1))]} with address ${INTERFACE_ADDRESSES[$((REPLY - 1))]} as an interface"
+        log_message "Using ${INTERFACES[$((REPLY - 1))]} with address ${INTERFACE_ADDRESSES[$((REPLY - 1))]} as an interface for Shield"
         MY_IP="${INTERFACE_ADDRESSES[$((REPLY - 1))]}"
         return
     fi
@@ -435,7 +468,7 @@ function choose_network_interface() {
         case "$REPLY" in
 
         [1-$((${#OPTIONS[@]}))]*)
-            log_message "Using ${INTERFACES[$((REPLY - 1))]} with address ${INTERFACE_ADDRESSES[$((REPLY - 1))]} as an interface"
+            log_message "Using ${INTERFACES[$((REPLY - 1))]} with address ${INTERFACE_ADDRESSES[$((REPLY - 1))]} as an interface for Shield"
             MY_IP="${INTERFACE_ADDRESSES[$((REPLY - 1))]}"
             return
             ;;
@@ -451,7 +484,6 @@ function choose_network_interface() {
 
     failed_to_install "choose_network_interface" "ver"
 }
-
 
 function fin() {
     log_message "###### DONE ############################################################"
@@ -474,7 +506,7 @@ function move_to_project() {
     # move namespases to Default project
     log_message "[start] Move namespases to Default project"
 
-    if [ "$BRANCH" == "Rel-19.07" ];then
+    if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
     else
         NAMESPACES="management proxy elk farm-services common"
@@ -496,10 +528,10 @@ function move_to_project() {
     log_message "[end] Move namespases to Default project"
 }
 
-check_docker() {
+function check_docker() {
 
     if [ ! -z $DOCKER_VER ]; then
-        export VERSION=$DOCKER_VER
+        sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"${DOCKER_VER}\"/" install-docker.sh
     fi
 
     APP_VERSION=$(cat ./install-docker.sh | grep APP_VERSION= |cut -d= -f2)
@@ -516,34 +548,51 @@ check_docker() {
         log_message "$INSTALLED_VERSION > $APP_VERSION"
     elif  [[ ${INSTALLED_VER[0]#0} -lt ${APP_VER[0]#0} ]]; then
         log_message "$INSTALLED_VERSION < $APP_VERSION"
-        if [ ! -z $DOCKER_VER ]; then
-            log_message "Install target is $VERSION"
-        fi
+        log_message "Install target is $APP_VERSION"
         ./install-docker.sh >>"$LOGFILE" 2>&1
     else
         if [[ ${INSTALLED_VER[1]#0}  -gt ${APP_VER[1]#0} ]]; then
             log_message "$INSTALLED_VERSION > $APP_VERSION"
         elif  [[ ${INSTALLED_VER[1]#0}  -lt ${APP_VER[1]#0} ]]; then
             log_message "$INSTALLED_VERSION < $APP_VERSION"
-            if [ ! -z $DOCKER_VER ]; then
-                log_message "Install target is $VERSION"
-            fi
+            log_message "Install target is $APP_VERSION"
             ./install-docker.sh >>"$LOGFILE" 2>&1
         elif [[ ${INSTALLED_VER[1]#0}  -eq ${APP_VER[1]#0} ]]; then
             log_message "$INSTALLED_VERSION = $APP_VERSION"
         fi
     fi
 
-    if [ ! -z $DOCKER_VER ]; then
-        unset VERSION
-    fi
+    curl -s -O  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh
 
     if ! which docker > /dev/null 2>&1 ; then
         failed_to_install "install_docker" "ver"
     fi
 }
 
+function get_scripts() {
+    log_message "[start] get operation scripts"
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh
+    chmod +x clean-rancher-agent.sh
 
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh
+    chmod +x delete-all.sh
+
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-nodes.sh
+    chmod +x shield-nodes.sh
+
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-start.sh
+    chmod +x shield-start.sh
+
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-stop.sh
+    chmod +x shield-stop.sh
+
+    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-update.sh
+    chmod +x shield-update.sh
+    log_message "[end] get operation scripts"
+}
+
+
+######START#####
 log_message "###### START ###########################################################"
 
 #OS Check
@@ -572,11 +621,17 @@ fi
 # check args and set flags
 check_args $@
 
+select_version
+
+export BRANCH
+echo $BRANCH > .es_branch
+log_message "BRANCH: $BRANCH"
+
 #update or deploy
 if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
     #if [ $update_flg -eq 1 ];then
     #log_message "[start] stopping shield"
-    # 	    bash ./shield-stop.sh
+    #       bash ./shield-stop.sh
     #log_message "[end] stopping shield"
     #fi
     add_repo
@@ -587,6 +642,8 @@ if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
     fin 0
 fi
 
+# get operation scripts
+get_scripts
 
 # set MY_IP
 choose_network_interface
@@ -751,74 +808,6 @@ else
     echo "CLUSTER_DNS_SERVER: $CLUSTER_DNS_SERVER" >> $LOGFILE
     echo "MAX_PODS: $MAX_PODS" >> $LOGFILE
 
-    echo curl -s -k "${RANCHERURL}/v3/cluster" \
-        -H 'content-type: application/json' \
-        -H "Authorization: Bearer $APITOKEN" \
-        --data-binary '{
-            "dockerRootDir": "/var/lib/docker",
-            "enableNetworkPolicy": false,
-            "type": "cluster",
-            "localClusterAuthEndpoint": {
-            "type":"localClusterAuthEndpoint",
-            "enabled":true
-            },
-            "rancherKubernetesEngineConfig": {
-              "addonJobTimeout": 30,
-              "ignoreDockerVersion": true,
-              "sshAgentAuth": false,
-              "type": "rancherKubernetesEngineConfig",
-              "authentication": {
-                "type": "authnConfig",
-                "strategy": "x509"
-              },
-              "network": {
-                "options": {
-                  "flannel_backend_type": "vxlan"
-                 },
-                "type": "networkConfig",
-                "plugin": "flannel"
-              },
-              "ingress": {
-                "type": "ingressConfig",
-                "provider": "nginx"
-              },
-              "monitoring": {
-                "type": "monitoringConfig",
-                "provider": "metrics-server"
-              },
-              "services": {
-                "type": "rkeConfigServices",
-                "kubeApi": {
-                  "serviceClusterIpRange": "'$SERVICE_CLUSTER_IP_RANGE'",
-                  "podSecurityPolicy": false,
-                  "type": "kubeAPIService"
-                },
-                "kubeController": {
-                  "clusterCidr": "'$CLUSTER_CIDR'",
-                  "serviceClusterIpRange": "'$SERVICE_CLUSTER_IP_RANGE'",
-                  "type": "kubeControllerService"
-                },
-                "kubelet": {
-                  "type": "kubeletService",
-                  "clusterDnsServer": "'$CLUSTER_DNS_SERVER'",
-                  "extraArgs": {
-                     "max-pods": "'$MAX_PODS'",
-		     "authentication-token-webhook": true
-                  }
-                },
-                "etcd": {
-                  "snapshot": false,
-                  "type": "etcdService",
-                  "extraArgs": {
-                    "heartbeat-interval": 500,
-                    "election-timeout": 5000
-                  }
-                }
-              }
-            },
-            "name": "'${CLUSTERNAME}'"
-          }' >> $LOGFILE
-
     CLUSTERRESPONSE=$(curl -s -k "${RANCHERURL}/v3/cluster" \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
@@ -971,29 +960,34 @@ else
     echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★" | tee $CMDFILE
     case $ANSWERNO in
         "1") DOCKERRUNCMD=$DOCKERRUNCMD1
-             echo '下記のコマンドがこのノードで実行されます。(確認用。実行の必要はありません。)'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
+             echo '下記のコマンドがこのノードで実行されます。(確認用。実行の必要はありません。)' 
+             echo ""
+             echo "$DOCKERRUNCMD1"
+             echo "" 
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
-             echo 'そして、'  | tee -a $CMDFILE
+             echo 'そして、'
              echo '(【必要に応じて】 下記コマンドを他のオールインワンノード(Cluster Management + Worker)で実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1007,21 +1001,26 @@ else
              echo 'または、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Cluster Management ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1035,21 +1034,19 @@ else
              echo 'または、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Worker ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1069,21 +1066,26 @@ else
              echo 'そして、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Cluster Management ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1097,21 +1099,19 @@ else
              echo 'そして、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Worker ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1125,21 +1125,26 @@ else
         "3") DOCKERRUNCMD=""
              echo '下記コマンドをオールインワンノード(Cluster Management + Worker)で実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1153,26 +1158,31 @@ else
              echo 'または、'  | tee -a $CMDFILE
              echo '下記コマンドを Cluster Management ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
@@ -1181,21 +1191,19 @@ else
              echo 'そして'  | tee -a $CMDFILE
              echo '下記コマンドを WORKER ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1274,7 +1282,6 @@ else
     fi
     log_message "[end] install kubectl "
 fi
-
 
 
 # Get kubectl config
@@ -1478,6 +1485,8 @@ do
             echo '38) ELK のみ (elk)'
             echo '39) Proxyのみ(proxy)'
             echo ""
+            echo "*** {$NODENAME} ***"
+            echo ""
             echo -n "番号で選択してください："
             read LABELNO
             echo "NODENAME: $NODENAME / LABELNO: $LABELNO" >> $LOGFILE
@@ -1624,21 +1633,9 @@ deploy_shield
 # get Default project id
 move_to_project
 
-curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh
-chmod +x clean-rancher-agent.sh
-
-curl -s -O https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh
-chmod +x delete-all.sh
-
-curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-nodes.sh
-chmod +x shield-nodes.sh
-
-curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-start.sh
-chmod +x shield-start.sh
-
-curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-stop.sh
-chmod +x shield-stop.sh
-
+echo ""
+echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
+echo ""
 fin 0
 
 

@@ -2,12 +2,17 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20190910a
+### VER=20190926-dev
 ####################
 
 LOGFILE="nodes.log"
 CMDFILE="command.txt"
+BRANCH="Rel"
+if [ -f .es_branch ]; then
+    BRANCH=$(cat .es_branch)
+fi
 
+export BRANCH
 
 function usage() {
     echo "USAGE: $0 [--addnodes] [--setlabels] "
@@ -20,6 +25,11 @@ function usage() {
 if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
     usage
 fi
+
+function failed_to_start() {
+    log_message "An error occurred during the nodes script.: $1, exiting"
+    fin 1
+}
 
 function fin() {
     log_message "###### DONE ############################################################"
@@ -74,6 +84,44 @@ function log_message() {
         return 1
     fi
     return 0
+}
+
+function get_docker_cmd() {
+    log_message "[Start] Generate commands"
+    # Generate nodecommand
+    AGENTCMD=$(curl -s -k "${RANCHERURL}/v3/clusterregistrationtoken?id=${CLUSTERID}" \
+        -H 'content-type: application/json' \
+        -H "Authorization: Bearer $APITOKEN" \
+        | jq -r '.data[].nodeCommand' | head -1)
+    if [ -z "$AGENTCMD" ]; then
+        failed_to_start "Extract AGENTCMD "
+    fi
+
+    declare -A roles
+    roles[1]='--etcd --controlplane --worker'
+    roles[2]='--etcd --controlplane'
+    roles[3]='--worker'
+ 
+    # Concat commands
+    DOCKERRUNCMD1="$AGENTCMD ${roles[1]}"
+    DOCKERRUNCMD2="$AGENTCMD ${roles[2]}"
+    DOCKERRUNCMD3="$AGENTCMD ${roles[3]}"
+
+    echo "" >>"$LOGFILE"
+    echo "=================================================================================" >>"$LOGFILE"
+    echo "DOCKERRUNCMD1: $DOCKERRUNCMD1" >>"$LOGFILE"
+    echo "" >>"$LOGFILE"
+    echo "DOCKERRUNCMD2: $DOCKERRUNCMD2" >>"$LOGFILE"
+    echo "" >>"$LOGFILE"
+    echo "DOCKERRUNCMD3: $DOCKERRUNCMD3" >>"$LOGFILE"
+    echo "=================================================================================" >>"$LOGFILE"
+    echo "" >>"$LOGFILE"
+
+    sed -e '/[1-9]\s--etcd --controlplane --worker$/s/.*/'${DOCKERRUNCMD1}'/' $CMDFILE
+    sed -e '/[1-9]\s--etcd --controlplane$/s/.*/'${DOCKERRUNCMD2}'/' $CMDFILE
+    sed -e '/[1-9]\s--worker$/s/worker/'${DOCKERRUNCMD3}'/' $CMDFILE
+
+    log_message "[end] Generate commands"
 }
 
 
@@ -291,6 +339,8 @@ function set_label(){
                             echo '38) ELK のみ (elk)'
                             echo '39) Proxyのみ(proxy)'
                             echo ""
+                            echo "*** {$NODENAME} ***"
+                            echo ""
                             echo -n "番号で選択してください："
                             read LABELNO
                             echo "NODENAME: $NODENAME / LABELNO: $LABELNO" >> $LOGFILE
@@ -470,6 +520,16 @@ function set_label(){
 
 
 log_message "###### START ###########################################################"
+
+#read ra files
+if [ -f .ra_rancherurl ] && [ -f .ra_clusterid ] && [ -f .ra_apitoken ];then
+    RANCHERURL=$(cat .ra_rancherurl)
+    CLUSTERID=$(cat .ra_clusterid)
+    APITOKEN=$(cat .ra_apitoken)
+else
+    failed_to_start "read ra files"
+fi
+
 
 # check args and set flags
 check_args $@
