@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 ES_PATH=/usr/local/ericomshield
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 if ((EUID != 0)); then
     #    sudo su
@@ -20,8 +21,7 @@ if [ ${#all[@]} -eq 0 ]; then
 fi
 
 rm -f showlic.py
-#wget https://ericom-tec.ashisuto.co.jp/shield/showlic.py
-curl -JOLsS https://ericom-tec.ashisuto.co.jp/shield/showlic.py
+curl -JOLsS ${SCRIPTS_URL}/sup/showlic.py
 
 for container in ${all[@]}; do
     docker cp showlic.py  ${container}:/scripts/showlic.py

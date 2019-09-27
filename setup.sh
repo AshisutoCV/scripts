@@ -4,6 +4,8 @@
 #######################################BH###
 ################  K.K.Ashisuto #############
 
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 #Check if we are root
 if ((EUID != 0)); then
     #    sudo su
@@ -39,7 +41,7 @@ do
 done
 
 if [ $pre_flg -eq 1 ] ; then
-    BRANCH=$( curl -s https://ericom-tec.ashisuto.co.jp/shield/pre-rel-ver.txt )
+    BRANCH=$( curl -sL ${SCRIPTS_URL}/pre-rel-ver.txt )
     if [ "$BRANCH" == "NA" ]; then
         echo "現在ご利用可能なリリース前先行利用バージョンはありません。"
         exit 1
@@ -70,7 +72,7 @@ else
     declare -A vers
     n=0
     echo "どのバージョンをセットアップしますか？"
-    for i in $( curl -s https://ericom-tec.ashisuto.co.jp/shield/rel-ver.txt )
+    for i in $( curl -sL ${SCRIPTS_URL}/rel-ver.txt )
     do
         n=$(( $n + 1 ))
         vers[$n]=$i
@@ -92,7 +94,6 @@ else
 fi
 
 rm -f ericomshield-setup.sh
-#wget https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Setup/ericomshield-setup.sh
 curl -JOLsS https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Setup/ericomshield-setup.sh
 
 

@@ -28,7 +28,6 @@ if [ -f "$ES_BRANCH_FILE" ]; then
 fi
 
 rm -f update.sh
-#wget https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/$BRANCH/Setup/update.sh
 curl -JOLsS https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/$BRANCH/Setup/update.sh
 chmod +x update.sh
 bash ./update.sh $@

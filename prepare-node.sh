@@ -8,7 +8,6 @@ if ((EUID !=0)); then
 fi
 
 rm -f shield-prepare-node.sh
-#wget -O shield-prepare-node.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Setup/prepare-node.sh
 curl -JLsS -o shield-prepare-node.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Setup/prepare-node.sh
 
 

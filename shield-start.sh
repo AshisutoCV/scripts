@@ -2,10 +2,10 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20190911a
+### VER=20190926-dev
 ####################
 
-LOGFILE="stop-start.log"
+LOGFILE="./logs/stop-start.log"
 BRANCH="Staging"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -25,7 +25,7 @@ fi
 function deploy_shield() {
     log_message "[start] deploy shield"
 
-    curl -s -o deploy-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
     chmod +x deploy-shield.sh
 
     sed -i -e '/^VERSION_REPO/d' deploy-shield.sh
@@ -36,7 +36,6 @@ function deploy_shield() {
     sed -i -e '/helm upgrade --install/s/shield-repo\/shield/shield-repo\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
-    #sed -i -e '/curl.*yaml/d' deploy-shield.sh
 
     VERSION_REPO=$S_APP_VERSION
     export VERSION_REPO
@@ -45,7 +44,7 @@ function deploy_shield() {
     ./deploy-shield.sh | tee -a $LOGFILE
     log_message "[end] deploieng shield"
 
-    curl -s -o deploy-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
 
     log_message "[end] deploy shield"
 }
@@ -60,17 +59,8 @@ function log_message() {
     return 0
 }
 
-function failed_to_install() {
-    log_message "An error occurred during the installation: $1, exiting"
-    log_message "[start] rollback"
-    if [ "$2" == "es" ]; then
-        uninstall_shield
-    elif [ "$2" == "all" ]; then
-        delete_all
-    elif [ "$2" == "ver" ]; then
-        delete_ver
-    fi
-    log_message "[end] rollback"
+function failed_to_start() {
+    log_message "An error occurred during the shield starting: $1, exiting"
     fin 1
 }
 
@@ -97,7 +87,7 @@ function move_to_project() {
     log_message "[start] Move namespases to Default project"
 
 
-    if [ "$BRANCH" == "Rel-19.07" ];then
+    if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
     else
         NAMESPACES="management proxy elk farm-services common"
@@ -125,10 +115,12 @@ function move_to_project() {
 log_message "###### START ###########################################################"
 
 #read ra files
-if [ -f .ra_rancherurl ] || [ -f .ra_clusterid ] || [ -f .ra_apitoken ];then
+if [ -f .ra_rancherurl ] && [ -f .ra_clusterid ] && [ -f .ra_apitoken ];then
     RANCHERURL=$(cat .ra_rancherurl)
     CLUSTERID=$(cat .ra_clusterid)
     APITOKEN=$(cat .ra_apitoken)
+else
+    failed_to_start "read ra files"
 fi
 
 
