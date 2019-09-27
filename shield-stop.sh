@@ -25,7 +25,7 @@ fi
 function stop_shield() {
     log_message "[start] Stop shield"
 
-    curl -s -o delete-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
 
     chmod +x delete-shield.sh
     sed -i -e '/Are you sure you want to delete the deployment/d' delete-shield.sh
@@ -44,7 +44,7 @@ function stop_shield() {
 
     ./delete-shield.sh | tee -a $LOGFILE
 
-    curl -s -o delete-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
 
     stop_abnormal_common
 

@@ -10,6 +10,7 @@ BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 function usage() {
     echo "USAGE: $0 [--pre-use]"
@@ -88,8 +89,8 @@ function select_version() {
     echo "=================================================================="
 
     if [ $pre_flg -eq 1 ] ; then
-        CHART_VERSION=$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-pre-rel-ver.txt | awk '{ print $1 }')
-        S_APP_VERSION=$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-pre-rel-ver.txt | awk '{ print $2 }')
+        CHART_VERSION=$(curl -s ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
+        S_APP_VERSION=$(curl -s ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $2 }')
         if [ "$CHART_VERSION" == "NA" ]; then
             log_message "現在ご利用可能なリリース前先行利用バージョンはありません。"
             fin 1
@@ -117,7 +118,7 @@ function select_version() {
         elif [ "$BRANCH" == "Staging" ]; then
             VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         else
-            VER=$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
+            VER=$(curl -s ${SCRIPTS_URL}/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
         fi
 
         echo "どのバージョンをセットアップしますか？"
@@ -157,7 +158,7 @@ function select_version() {
     fi
 
     if [ "$BRANCH" == "Rel" ]; then
-        BRANCH="Rel-$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
+        BRANCH="Rel-$(curl -s ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
     log_message "Rel-${S_APP_VERSION} をセットアップします。"
@@ -181,7 +182,7 @@ function fin() {
 
 function get_scripts() {
     log_message "[start] get install scripts"
-    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-install.sh
+    curl -s -O ${SCRIPTS_URL}/shield-install.sh
     chmod +x shield-install.sh
     log_message "[end] get install scripts"
 }
@@ -189,9 +190,8 @@ function get_scripts() {
 function get_yaml() {
     log_message "[start] get yaml files"
     for yamlfile in ( "farm management proxy common value-elk" ); do
-        cp -ip custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup
-        curl -s -O https://ericom-tec.ashisuto.co.jp/shield/custom-${yamlfile}.yaml
-        chmod +x custom-${yamlfile}.yaml
+        cp -fp custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup
+        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-${yamlfile}.yaml
         if [ $(diff -c custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup | wc -l) -gt 0 ]; then
                diff -c custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup > diff_custom-${yamlfile}.yaml
         fi
