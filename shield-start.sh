@@ -25,7 +25,7 @@ fi
 function deploy_shield() {
     log_message "[start] deploy shield"
 
-    curl -s -o deploy-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
     chmod +x deploy-shield.sh
 
     sed -i -e '/^VERSION_REPO/d' deploy-shield.sh
@@ -45,7 +45,7 @@ function deploy_shield() {
     ./deploy-shield.sh | tee -a $LOGFILE
     log_message "[end] deploieng shield"
 
-    curl -s -o deploy-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
 
     log_message "[end] deploy shield"
 }
