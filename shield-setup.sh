@@ -5,7 +5,7 @@
 ### VER=20190925a-dev
 ####################
 
-LOGFILE="install.log"
+LOGFILE="./logs/install.log"
 CMDFILE="command.txt"
 BRANCH="Rel"
 if [ -f .es_branch ]; then

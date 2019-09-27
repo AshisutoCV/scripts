@@ -5,7 +5,7 @@
 ### VER=20190926-dev
 ####################
 
-LOGFILE="nodes.log"
+LOGFILE="./logs/nodes.log"
 CMDFILE="command.txt"
 BRANCH="Rel"
 if [ -f .es_branch ]; then

@@ -5,7 +5,7 @@
 ### VER=20190926-dev
 ####################
 
-LOGFILE="stop-start.log"
+LOGFILE="./logs/stop-start.log"
 BRANCH="Staging"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)

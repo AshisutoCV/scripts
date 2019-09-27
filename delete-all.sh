@@ -48,3 +48,4 @@ rm -f deploy-shield.sh
 rm -f install-docker.sh
 rm -f install-helm.sh
 rm -f install-kubectl.sh
+rm -f run-rancher.sh

@@ -5,7 +5,7 @@
 ### VER=20190925a-dev
 ####################
 
-LOGFILE="update.log"
+LOGFILE="./logs/update.log"
 BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
