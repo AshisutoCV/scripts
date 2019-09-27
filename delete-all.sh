@@ -36,3 +36,5 @@ rm -f shield-stop.sh
 rm -f shield-start.sh
 rm -f shield-nodes.sh
 rm -f shield-update.sh
+rm -f node-setup.sh
+

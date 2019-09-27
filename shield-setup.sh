@@ -6,7 +6,7 @@
 ####################
 
 LOGFILE="install.log"
-CMDFILE="command.txt"
+#CMDFILE="command.txt"
 BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -531,7 +531,7 @@ function move_to_project() {
 function check_docker() {
 
     if [ ! -z $DOCKER_VER ]; then
-        export VERSION=$DOCKER_VER
+        sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"${DOCKER_VER}\"/" install-docker.sh
     fi
 
     APP_VERSION=$(cat ./install-docker.sh | grep APP_VERSION= |cut -d= -f2)
@@ -548,27 +548,21 @@ function check_docker() {
         log_message "$INSTALLED_VERSION > $APP_VERSION"
     elif  [[ ${INSTALLED_VER[0]#0} -lt ${APP_VER[0]#0} ]]; then
         log_message "$INSTALLED_VERSION < $APP_VERSION"
-        if [ ! -z $DOCKER_VER ]; then
-            log_message "Install target is $VERSION"
-        fi
+        log_message "Install target is $APP_VERSION"
         ./install-docker.sh >>"$LOGFILE" 2>&1
     else
         if [[ ${INSTALLED_VER[1]#0}  -gt ${APP_VER[1]#0} ]]; then
             log_message "$INSTALLED_VERSION > $APP_VERSION"
         elif  [[ ${INSTALLED_VER[1]#0}  -lt ${APP_VER[1]#0} ]]; then
             log_message "$INSTALLED_VERSION < $APP_VERSION"
-            if [ ! -z $DOCKER_VER ]; then
-                log_message "Install target is $VERSION"
-            fi
+            log_message "Install target is $APP_VERSION"
             ./install-docker.sh >>"$LOGFILE" 2>&1
         elif [[ ${INSTALLED_VER[1]#0}  -eq ${APP_VER[1]#0} ]]; then
             log_message "$INSTALLED_VERSION = $APP_VERSION"
         fi
     fi
 
-    if [ ! -z $DOCKER_VER ]; then
-        unset VERSION
-    fi
+    curl -s -O  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh
 
     if ! which docker > /dev/null 2>&1 ; then
         failed_to_install "install_docker" "ver"
@@ -966,29 +960,34 @@ else
     echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★" | tee $CMDFILE
     case $ANSWERNO in
         "1") DOCKERRUNCMD=$DOCKERRUNCMD1
-             echo '下記のコマンドがこのノードで実行されます。(確認用。実行の必要はありません。)'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
+             echo '下記のコマンドがこのノードで実行されます。(確認用。実行の必要はありません。)' 
+             echo ""
+             echo "$DOCKERRUNCMD1"
+             echo "" 
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
-             echo 'そして、'  | tee -a $CMDFILE
+             echo 'そして、'
              echo '(【必要に応じて】 下記コマンドを他のオールインワンノード(Cluster Management + Worker)で実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1002,21 +1001,26 @@ else
              echo 'または、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Cluster Management ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1030,21 +1034,19 @@ else
              echo 'または、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Worker ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1064,21 +1066,26 @@ else
              echo 'そして、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Cluster Management ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1092,21 +1099,19 @@ else
              echo 'そして、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Worker ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1120,21 +1125,26 @@ else
         "3") DOCKERRUNCMD=""
              echo '下記コマンドをオールインワンノード(Cluster Management + Worker)で実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1148,26 +1158,31 @@ else
              echo 'または、'  | tee -a $CMDFILE
              echo '下記コマンドを Cluster Management ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo './node-setup.sh'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
@@ -1176,21 +1191,19 @@ else
              echo 'そして'  | tee -a $CMDFILE
              echo '下記コマンドを WORKER ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo "sed -i -e 's/sudo/sudo -E/g' install-docker.sh"  | tee -a $CMDFILE
-                 echo ""  | tee -a $CMDFILE
-                 echo "export VERSION=${DOCKER_VER}"  | tee -a $CMDFILE
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1471,6 +1484,8 @@ do
             echo '35) Browser のみ (remort-browsers)'
             echo '38) ELK のみ (elk)'
             echo '39) Proxyのみ(proxy)'
+            echo ""
+            echo "*** {$NODENAME} ***"
             echo ""
             echo -n "番号で選択してください："
             read LABELNO

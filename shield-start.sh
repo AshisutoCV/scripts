@@ -60,17 +60,8 @@ function log_message() {
     return 0
 }
 
-function failed_to_install() {
-    log_message "An error occurred during the installation: $1, exiting"
-    log_message "[start] rollback"
-    if [ "$2" == "es" ]; then
-        uninstall_shield
-    elif [ "$2" == "all" ]; then
-        delete_all
-    elif [ "$2" == "ver" ]; then
-        delete_ver
-    fi
-    log_message "[end] rollback"
+function failed_to_start() {
+    log_message "An error occurred during the shield starting: $1, exiting"
     fin 1
 }
 
@@ -97,7 +88,7 @@ function move_to_project() {
     log_message "[start] Move namespases to Default project"
 
 
-    if [ "$BRANCH" == "Rel-19.07" ];then
+    if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
     else
         NAMESPACES="management proxy elk farm-services common"
@@ -125,10 +116,12 @@ function move_to_project() {
 log_message "###### START ###########################################################"
 
 #read ra files
-if [ -f .ra_rancherurl ] || [ -f .ra_clusterid ] || [ -f .ra_apitoken ];then
+if [ -f .ra_rancherurl ] && [ -f .ra_clusterid ] && [ -f .ra_apitoken ];then
     RANCHERURL=$(cat .ra_rancherurl)
     CLUSTERID=$(cat .ra_clusterid)
     APITOKEN=$(cat .ra_apitoken)
+else
+    failed_to_start "read ra files"
 fi
 
 
