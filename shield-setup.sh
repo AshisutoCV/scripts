@@ -296,7 +296,7 @@ function delete_all() {
 
     curl -s -o delete-all.sh https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh
     chmod +x delete-all.sh
-    sudo ./delete-all.sh | tee -a $LOGFILE
+    ./delete-all.sh | tee -a $LOGFILE
 
     log_message "[end] deletel all object"
 
@@ -305,7 +305,7 @@ function delete_all() {
     echo ""
     echo "curl -s -o delete-all.sh https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh"
     echo 'chmod +x delete-all.sh'
-    echo 'sudo ./delete-all.sh'
+    echo './delete-all.sh'
     echo ""
     echo '------------------------------------------------------------'
 }
