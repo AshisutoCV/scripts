@@ -1265,6 +1265,8 @@ else
 fi
 
 # install kubectl
+curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-kubectl.sh
+chmod +x install-kubectl.sh
 if which kubectl > /dev/null 2>&1 ; then
     log_message "[info] already installed kubectl"
 else
@@ -1274,8 +1276,6 @@ else
     elif  [[ $OS == "RHEL" ]]; then
         sudo rm -f "/etc/yum.repos.d/kubernetes.repo"
     fi
-    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-kubectl.sh
-    chmod +x install-kubectl.sh
     ./install-kubectl.sh  >> $LOGFILE 2>&1
     if ! which kubectl > /dev/null 2>&1 ; then
         failed_to_install "install kubectl"
@@ -1304,6 +1304,9 @@ log_message "$(kubectl version)"
 
 
 # install helm
+curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-helm.sh
+chmod +x install-helm.sh
+sed -i -e 's/sudo/sudo env PATH=$PATH/' install-helm.sh
 if which helm > /dev/null 2>&1 ; then
     log_message "[info] already installed helm"
     log_message "[start] install helm "
@@ -1311,8 +1314,6 @@ if which helm > /dev/null 2>&1 ; then
     log_message "[end] install helm "
 else
     log_message "[start] install helm "
-    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-helm.sh
-    chmod +x install-helm.sh
     ./install-helm.sh >> $LOGFILE 2>&1
     if ! which helm > /dev/null 2>&1 ; then
         failed_to_install "install helm"

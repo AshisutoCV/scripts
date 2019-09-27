@@ -30,6 +30,7 @@ sudo rm -rf rancher-store
 rm -f .ra_*
 rm -f .es_version
 rm -f .es_branch
+rm -f .es_update
 rm -f *.yaml
 rm -f command.txt
 rm -f shield-stop.sh
@@ -37,4 +38,13 @@ rm -f shield-start.sh
 rm -f shield-nodes.sh
 rm -f shield-update.sh
 rm -f node-setup.sh
-
+rm -f *_backup
+rm -f add-shield-repo.sh
+rm -f clean-rancher-agent.sh
+rm -f configure-sysctl-values.sh
+rm -f delete-all.sh
+rm -f delete-shield.sh
+rm -f deploy-shield.sh
+rm -f install-docker.sh
+rm -f install-helm.sh
+rm -f install-kubectl.sh
