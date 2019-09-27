@@ -2,7 +2,7 @@
 
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
-curl -JOLsS ${SCRIPTS_URL}/licset3.sh
+curl -JOLsS ${SCRIPTS_URL}/lic/licset3.sh
 
 kubectl cp --namespace=management licset3.sh shield-management-consul-0:/var/tmp/licset3.sh
 

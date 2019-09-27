@@ -30,7 +30,7 @@ if [ ${#all[@]} -eq 0 ]; then
 fi
 
 rm -f fpschange.py
-curl -JOLsS ${SCRIPTS_URL}/fpschange.py
+curl -JOLsS ${SCRIPTS_URL}/sup/fpschange.py
 
 for container in ${all[@]}; do
     docker cp fpschange.py  ${container}:/scripts/fpschange.py

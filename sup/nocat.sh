@@ -21,7 +21,7 @@ if [ ${#all[@]} -eq 0 ]; then
 fi
 
 rm -f nocat.py
-curl -sOL ${SCRIPTS_URL}/nocat.py
+curl -sOL ${SCRIPTS_URL}/sup/nocat.py
 
 for container in ${all[@]}; do
     docker cp nocat.py  ${container}:/scripts/nocat.py

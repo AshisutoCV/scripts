@@ -21,7 +21,7 @@ if [ ${#all[@]} -eq 0 ]; then
 fi
 
 rm -f showlic.py
-curl -JOLsS ${SCRIPTS_URL}/showlic.py
+curl -JOLsS ${SCRIPTS_URL}/sup/showlic.py
 
 for container in ${all[@]}; do
     docker cp showlic.py  ${container}:/scripts/showlic.py

@@ -22,7 +22,7 @@ if [ ${#all[@]} -eq 0 ]; then
 fi
 
 rm -f lic.py
-curl -JOLsS ${SCRIPTS_URL}/lic.py
+curl -JOLsS ${SCRIPTS_URL}/lic/lic.py
 
 for container in ${all[@]}; do
     docker cp lic.py  ${container}:/scripts/lic.py
