@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 ES_PATH=/usr/local/ericomshield
 
 if ((EUID != 0)); then
@@ -20,8 +22,7 @@ if [ ${#all[@]} -eq 0 ]; then
 fi
 
 rm -f lic.py
-#wget https://ericom-tec.ashisuto.co.jp/shield/lic.py
-curl -JOLsS https://ericom-tec.ashisuto.co.jp/shield/lic.py
+curl -JOLsS ${SCRIPTS_URL}/lic.py
 
 for container in ${all[@]}; do
     docker cp lic.py  ${container}:/scripts/lic.py

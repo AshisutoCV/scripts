@@ -11,7 +11,7 @@ if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/dev-scripts/deverop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/dev-scripts/develop"
 
 function usage() {
     echo "USAGE: $0 [--pre-use]"
@@ -90,8 +90,8 @@ function select_version() {
     echo "=================================================================="
 
     if [ $pre_flg -eq 1 ] ; then
-        CHART_VERSION=$(curl -s ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
-        S_APP_VERSION=$(curl -s ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $2 }')
+        CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
+        S_APP_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $2 }')
         if [ "$CHART_VERSION" == "NA" ]; then
             log_message "現在ご利用可能なリリース前先行利用バージョンはありません。"
             fin 1
@@ -119,7 +119,7 @@ function select_version() {
         elif [ "$BRANCH" == "Staging" ]; then
             VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         else
-            VER=$(curl -s ${SCRIPTS_URL}/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
+            VER=$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
         fi
 
         echo "どのバージョンをセットアップしますか？"
@@ -159,7 +159,7 @@ function select_version() {
     fi
 
     if [ "$BRANCH" == "Rel" ]; then
-        BRANCH="Rel-$(curl -s ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
+        BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
     log_message "Rel-${S_APP_VERSION} をセットアップします。"
@@ -183,29 +183,76 @@ function fin() {
 
 function get_scripts() {
     log_message "[start] get install scripts"
-    curl -s -O ${SCRIPTS_URL}/shield-install.sh
-    chmod +x shield-install.sh
+    cp -fp shield-setupsh shield-setupsh_backup
+    curl -s -OL ${SCRIPTS_URL}/shield-setup.sh
+    chmod +x shield-setupsh
+    cp -fp configure-sysctl-values.sh configure-sysctl-values.sh_backup
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh
+    chmod +x configure-sysctl-values.sh
     log_message "[end] get install scripts"
+}
+
+function check_sysctl() {
+    log_message "[start] check sysctl file"
+    if [ $(diff -c configure-sysctl-values.sh configure-sysctl-values.sh_backup | wc -l) -gt 0 ]; then
+        log_message "[start] exec sysctl script"
+            sudo configure-sysctl-values.sh
+        log_message "[end] exec sysctl script"
+    fi
+    log_message "[end] check sysctl file"
 }
 
 function get_yaml() {
     log_message "[start] get yaml files"
-    for yamlfile in ( "farm management proxy common value-elk" ); do
+    COMPONENTS=(farm proxy management values-elk common)
+    for yamlfile in "${COMPONENTS[@]}"
+    do
         cp -fp custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup
         curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-${yamlfile}.yaml
+    done
+    check_yaml
+    for yamlfile in "${COMPONENTS[@]}"
+    do
         if [ $(diff -c custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup | wc -l) -gt 0 ]; then
                diff -c custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup > diff_custom-${yamlfile}.yaml
         fi
     done
+    
     log_message "[end] get yaml files"
 
     echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、shield-update.shを再実行してください。"
-    for difffile in $(ls diff_*.yaml) ; do
+    for difffile in $(ls diff_*.yaml)
+    do
         echo ${difffile}
         echo ${S_APP_VERSION} > .es_update
     done
     fin 0
 }
+
+function check_yaml() {
+    mng_anti_flg=$(cat custom-management.yaml_backup | grep -v "#" | grep antiAffinity | grep -c hard)
+    if [[ $mng_anti_flg -eq 1 ]];then
+        sed -i -e '/#.*antiAffinity/s/#//g' custom-management.yaml
+    fi
+
+    farm_anti_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep antiAffinity | grep -c hard)   
+    if [[ $mng_anti_flg -eq 1 ]];then
+        sed -i -e '/#.*antiAffinity/s/#//g' custom-farm.yaml
+    fi
+
+    spell_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep DISABLE_SPELL_CHECK | grep -c true)
+    if [ $spell_flg -eq 1 ]; then
+        sed -i -e 's/^#farm-services/farm-services/' custom-farm.yaml
+        sed -i -e 's/^#.*DISABLE_SPELL_CHECK/  DISABLE_SPELL_CHECK/' custom-farm.yaml
+    fi
+
+    ses_limit_flg=$(cat custom-proxy.yaml_backup | grep -v "#" | grep checkSessionLimit | grep -c true)
+    if [ $ses_limit_flg -eq 1 ]; then
+        sed -i -e 's/^#shield-proxy/shield-proxy/' custom-proxy.yaml
+        sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
+    fi
+}
+
 
 function exec_update(){
     if [ $dev_flg -eq 1 ]; then

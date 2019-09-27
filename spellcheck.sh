@@ -26,7 +26,6 @@ fi
 
 
 rm -f spellcheck.sh
-#wget -O spellcheck.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Setup/spellcheck.sh
 curl -JLsS -o spellcheck.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Setup/spellcheck.sh
 
 

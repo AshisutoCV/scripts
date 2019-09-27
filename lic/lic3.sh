@@ -1,16 +1,8 @@
 #!/bin/bash
 
-if ((EUID != 0)); then
-    #    sudo su
-    echo "Usage: $0 [filename]"
-    echo " Please run it as Root"
-    echo "sudo $0 $@"
-    exit
-fi
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
-
-
-curl -JOLsS https://ericom-tec.ashisuto.co.jp/shield/licset3.sh
+curl -JOLsS ${SCRIPTS_URL}/licset3.sh
 
 kubectl cp --namespace=management licset3.sh shield-management-consul-0:/var/tmp/licset3.sh
 

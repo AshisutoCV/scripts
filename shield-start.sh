@@ -36,7 +36,6 @@ function deploy_shield() {
     sed -i -e '/helm upgrade --install/s/shield-repo\/shield/shield-repo\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
-    #sed -i -e '/curl.*yaml/d' deploy-shield.sh
 
     VERSION_REPO=$S_APP_VERSION
     export VERSION_REPO

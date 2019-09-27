@@ -117,9 +117,13 @@ function get_docker_cmd() {
     echo "=================================================================================" >>"$LOGFILE"
     echo "" >>"$LOGFILE"
 
-    sed -e '/[1-9]\s--etcd --controlplane --worker$/s/.*/'${DOCKERRUNCMD1}'/' $CMDFILE
-    sed -e '/[1-9]\s--etcd --controlplane$/s/.*/'${DOCKERRUNCMD2}'/' $CMDFILE
-    sed -e '/[1-9]\s--worker$/s/worker/'${DOCKERRUNCMD3}'/' $CMDFILE
+    DOCKERRUNCMD1=$(echo ${DOCKERRUNCMD1} | sed -e 's/\//\\\//')
+    DOCKERRUNCMD2=$(echo ${DOCKERRUNCMD2} | sed -e 's/\//\\\//')
+    DOCKERRUNCMD3=$(echo ${DOCKERRUNCMD3} | sed -e 's/\//\\\//')
+
+    sed -i -e "/[a-zA-Z_0-9]\s--etcd --controlplane --worker$/s/.*/${DOCKERRUNCMD1}/" $CMDFILE
+    sed -i -e "/[a-zA-Z_0-9]\s--etcd --controlplane$/s/.*/${DOCKERRUNCMD2}/" $CMDFILE
+    sed -i -e "/[a-zA-Z_0-9]\s--worker$/s/.*/${DOCKERRUNCMD3}/" $CMDFILE
 
     log_message "[end] Generate commands"
 }
@@ -536,6 +540,7 @@ check_args $@
 
 if [[ add_flg -eq 1 ]];then
     # echo docker command
+    get_docker_cmd
     docker_cmd
     set_label
 fi

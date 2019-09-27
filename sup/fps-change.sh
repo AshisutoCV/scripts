@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 ES_PATH=/usr/local/ericomshield
 
 if ((EUID != 0)); then
@@ -28,8 +30,7 @@ if [ ${#all[@]} -eq 0 ]; then
 fi
 
 rm -f fpschange.py
-#wget https://ericom-tec.ashisuto.co.jp/shield/fpschange.py
-curl -JOLsS https://ericom-tec.ashisuto.co.jp/shield/fpschange.py
+curl -JOLsS ${SCRIPTS_URL}/fpschange.py
 
 for container in ${all[@]}; do
     docker cp fpschange.py  ${container}:/scripts/fpschange.py

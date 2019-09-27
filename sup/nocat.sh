@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 ES_PATH=/usr/local/ericomshield
 
 if ((EUID != 0)); then
@@ -20,7 +21,7 @@ if [ ${#all[@]} -eq 0 ]; then
 fi
 
 rm -f nocat.py
-wget https://ericom-tec.ashisuto.co.jp/shield/nocat.py
+curl -sOL ${SCRIPTS_URL}/nocat.py
 
 for container in ${all[@]}; do
     docker cp nocat.py  ${container}:/scripts/nocat.py

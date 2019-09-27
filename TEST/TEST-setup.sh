@@ -4,6 +4,8 @@
 #######################################BH###
 ################  K.K.Ashisuto #############
 
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 #Check if we are root
 if ((EUID != 0)); then
     #    sudo su
@@ -61,9 +63,9 @@ get_os_dist
 
 if [ $pre_flg -eq 1 ] ; then
     if [ "$dist_name" == "ubuntu" ]; then
-        BRANCH=$( curl -s https://ericom-tec.ashisuto.co.jp/shield/TEST-pre-rel-ver.txt )
+        BRANCH=$( curl -sL ${SCRIPTS_URL}/TEST/TEST-pre-rel-ver.txt )
     else
-        BRANCH=$( curl -s https://ericom-tec.ashisuto.co.jp/shield/TEST-centos-pre-rel-ver.txt )
+        BRANCH=$( curl -sL ${SCRIPTS_URL}/TEST/TEST-centos-pre-rel-ver.txt )
     fi
     if [ "$BRANCH" == "NA" ]; then
         echo "現在ご利用可能なリリース前先行利用バージョンはありません。"
@@ -97,14 +99,14 @@ else
     echo "どのバージョンをセットアップしますか？"
 
     if [ "$dist_name" == "ubuntu" ]; then
-        for i in $( curl -s https://ericom-tec.ashisuto.co.jp/shield/TEST-rel-ver.txt )
+        for i in $( curl -sL ${SCRIPTS_URL}/TEST/TEST-rel-ver.txt )
         do
             n=$(( $n + 1 ))
             vers[$n]=$i
             echo "$n: $i"
         done
     else
-        for i in $( curl -s https://ericom-tec.ashisuto.co.jp/shield/TEST-centos-rel-ver.txt )
+        for i in $( curl -sL ${SCRIPTS_URL}/TEST/TEST-centos-rel-ver.txt )
         do
             n=$(( $n + 1 ))
             vers[$n]=$i
@@ -130,7 +132,6 @@ fi
 
 if [ "$dist_name" = "ubuntu" ]; then
     rm -f ericomshield-setup.sh
-    #wget https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Setup/ericomshield-setup.sh
     curl -JOLsS https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Setup/ericomshield-setup.sh
 
 

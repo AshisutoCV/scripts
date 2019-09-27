@@ -6,14 +6,14 @@
 ####################
 
 LOGFILE="install.log"
-#CMDFILE="command.txt"
+CMDFILE="command.txt"
 BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
 ERICOMPASS="Ericom123$"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/dev-scripts/deverop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/dev-scripts/develop"
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
@@ -158,8 +158,8 @@ function select_version() {
     echo "=================================================================="
 
     if [ $pre_flg -eq 1 ] ; then
-        CHART_VERSION=$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-pre-rel-ver.txt | awk '{ print $1 }')
-        S_APP_VERSION=$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-pre-rel-ver.txt | awk '{ print $2 }')
+        CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
+        S_APP_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $2 }')
         if [ "$CHART_VERSION" == "NA" ]; then
             log_message "現在ご利用可能なリリース前先行利用バージョンはありません。"
             fin 1
@@ -190,7 +190,7 @@ function select_version() {
         elif [ "$BRANCH" == "Staging" ]; then
             VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         else
-            VER=$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
+            VER=$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
         fi
 
         echo "どのバージョンをセットアップしますか？"
@@ -230,7 +230,7 @@ function select_version() {
     fi
 
     if [ "$BRANCH" != "Staging" ] || [ "$BRANCH" != "Dev"  ]; then
-        BRANCH="Rel-$(curl -s https://ericom-tec.ashisuto.co.jp/shield/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
+        BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
     log_message "Rel-${S_APP_VERSION} をセットアップします。"
@@ -284,7 +284,7 @@ function delete_ver() {
 function uninstall_shield() {
     log_message "[start] uninstall shield"
 
-    curl -s -o delete-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
     chmod +x delete-shield.sh
     ./delete-shield.sh | tee -a $LOGFILE
     rm -f .es_version
@@ -296,7 +296,7 @@ function uninstall_shield() {
 function delete_all() {
     log_message "[start] deletel all object"
 
-    curl -s -o delete-all.sh https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh
+    curl -s -OL ${SCRIPTS_URL}/delete-all.sh
     chmod +x delete-all.sh
     ./delete-all.sh | tee -a $LOGFILE
 
@@ -305,7 +305,7 @@ function delete_all() {
     echo '------------------------------------------------------------'
     echo "(【必要に応じて】, 下記を他のノードでも実行してください。)"
     echo ""
-    echo "curl -s -o delete-all.sh https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh"
+    echo "curl -s -OL ${SCRIPTS_URL}/delete-all.sh"
     echo 'chmod +x delete-all.sh'
     echo './delete-all.sh'
     echo ""
@@ -321,7 +321,7 @@ function add_repo() {
         BRANCHFLG=""
     fi
     log_message "[start] add shield repo"
-    curl -s -o add-shield-repo.sh  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/add-shield-repo.sh
+    curl -s -O  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/add-shield-repo.sh
     chmod +x add-shield-repo.sh
     ./add-shield-repo.sh ${BRANCHFLG} -p ${ERICOMPASS} >> $LOGFILE 2>&1
     log_message "[end] add shield repo"
@@ -358,7 +358,7 @@ function check_ha() {
 function deploy_shield() {
     log_message "[start] deploy shield"
 
-    curl -s -o deploy-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
     chmod +x deploy-shield.sh
 
     sed -i -e '/^VERSION_REPO/d' deploy-shield.sh
@@ -369,19 +369,18 @@ function deploy_shield() {
     sed -i -e '/helm upgrade --install/s/shield-repo\/shield/shield-repo\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
-    #sed -i -e '/curl.*yaml/d' deploy-shield.sh
 
     if [ ! -f custom-farm.yaml ] || [ $yamlget_flg -eq 1 ]; then
-        curl -s -o custom-farm.yaml https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-farm.yaml
+        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-farm.yaml
     fi
     if [ ! -f custom-management.yaml ] || [ $yamlget_flg -eq 1 ]; then
-        curl -s -o custom-management.yaml https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-management.yaml
+        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-management.yaml
     fi
     if [ ! -f custom-proxy.yaml ] || [ $yamlget_flg -eq 1 ]; then
-        curl -s -o custom-proxy.yaml https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-proxy.yaml
+        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-proxy.yaml
     fi
     if [ ! -f custom-values-elk.yaml ] || [ $yamlget_flg -eq 1 ]; then
-        curl -s -o custom-values-elk.yaml https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-values-elk.yaml
+        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-values-elk.yaml
     fi
 
     if [ $spell_flg -ne 1 ]; then
@@ -407,7 +406,7 @@ function deploy_shield() {
     ./deploy-shield.sh | tee -a $LOGFILE
     log_message "[end] deploieng shield"
 
-    curl -s -o deploy-shield.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
 
     log_message "[end] deploy shield"
 }
@@ -576,19 +575,19 @@ function get_scripts() {
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh
     chmod +x clean-rancher-agent.sh
 
-    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/delete-all.sh
+    curl -s -OL ${SCRIPTS_URL}/delete-all.sh
     chmod +x delete-all.sh
 
-    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-nodes.sh
+    curl -s -OL ${SCRIPTS_URL}/shield-nodes.sh
     chmod +x shield-nodes.sh
 
-    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-start.sh
+    curl -s -OL ${SCRIPTS_URL}/shield-start.sh
     chmod +x shield-start.sh
 
-    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-stop.sh
+    curl -s -OL ${SCRIPTS_URL}/shield-stop.sh
     chmod +x shield-stop.sh
 
-    curl -s -O https://ericom-tec.ashisuto.co.jp/shield/shield-update.sh
+    curl -s -OL ${SCRIPTS_URL}/shield-update.sh
     chmod +x shield-update.sh
     log_message "[end] get operation scripts"
 }
@@ -652,16 +651,15 @@ choose_network_interface
 
 # set sysctl
 log_message "[start] setting sysctl-values"
-curl -s -o configure-sysctl-values.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh
+curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh
 chmod +x configure-sysctl-values.sh
 sudo ./configure-sysctl-values.sh | tee -a $LOGFILE
 log_message "[end] setting sysctl-values"
 
 # install docker
 log_message "[start] install docker"
-curl -s -o install-docker.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh
+curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh
 chmod +x install-docker.sh
-sed -i -e 's/sudo/sudo -E/g' install-docker.sh
 
 check_docker
 
@@ -702,7 +700,7 @@ if [[ "pong" == $(curl -s -k "${RANCHERURL}/ping") ]]; then
     log_message "[info] already start rancher"
 else
     log_message "[start] run rancher"
-    curl -s -o run-rancher.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
     chmod +x run-rancher.sh
     ./run-rancher.sh | tee -a $LOGFILE
     log_message "[end] run rancher"
@@ -977,7 +975,7 @@ else
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -989,7 +987,7 @@ else
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  | tee -a $CMDFILE 
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1010,7 +1008,7 @@ else
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1022,7 +1020,7 @@ else
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  | tee -a $CMDFILE 
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1048,7 +1046,7 @@ else
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1075,7 +1073,7 @@ else
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1087,7 +1085,7 @@ else
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1113,7 +1111,7 @@ else
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1134,7 +1132,7 @@ else
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1146,7 +1144,7 @@ else
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1167,7 +1165,7 @@ else
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -O https://ericom-tec.ashisuto.co.jp/shield/node-setup.sh"  | tee -a $CMDFILE
+             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1179,7 +1177,7 @@ else
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1205,7 +1203,7 @@ else
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
-                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  
+                 echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1276,7 +1274,7 @@ else
     elif  [[ $OS == "RHEL" ]]; then
         sudo rm -f "/etc/yum.repos.d/kubernetes.repo"
     fi
-    curl -s -o install-kubectl.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-kubectl.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-kubectl.sh
     chmod +x install-kubectl.sh
     ./install-kubectl.sh  >> $LOGFILE 2>&1
     if ! which kubectl > /dev/null 2>&1 ; then
@@ -1313,7 +1311,7 @@ if which helm > /dev/null 2>&1 ; then
     log_message "[end] install helm "
 else
     log_message "[start] install helm "
-    curl -s -o install-helm.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-helm.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-helm.sh
     chmod +x install-helm.sh
     ./install-helm.sh >> $LOGFILE 2>&1
     if ! which helm > /dev/null 2>&1 ; then

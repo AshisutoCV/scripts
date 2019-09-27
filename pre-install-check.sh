@@ -8,8 +8,7 @@ if ((EUID !=0)); then
 fi
 
 rm -f shield-pre-install-check.sh
-#wget -O shield-pre-install-check.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Setup/shield-pre-install-check.sh
-curl -JLsS -o shield-pre-install-check.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Setup/shield-pre-install-check.sh
+curl -JLsS -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Setup/shield-pre-install-check.sh
 
 chmod +x shield-pre-install-check.sh
 echo "preparing..."

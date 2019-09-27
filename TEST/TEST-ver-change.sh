@@ -3,6 +3,8 @@
 #####   Ericom Shield Version Changer  #####
 ################  K.K.Ashisuto #############
 
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 #Check if we are root
 if ((EUID != 0)); then
     #    sudo su
@@ -17,12 +19,6 @@ if [ ! -d /usr/local/ericomshield ]; then
     exit 1
 fi
 
-
-#if [ $(sed -n 1p  /usr/local/ericomshield/shield-version.txt | cut -d' ' -f1) = "#Release" ]; then
-#    NOW_VER="Rel-$(sed -n 1p  /usr/local/ericomshield/shield-version.txt | cut -d' ' -f2 | cut -d'-' -f1)"
-#else
-#    NOW_VER="$(sed -n 1p  /usr/local/ericomshield/shield-version.txt | cut -d' ' -f2)"
-#fi
 
 NOW_VER="$(sed -n 1p  /usr/local/ericomshield/shield-version.txt | awk 'match($0, /(Rel|Staging|Dev).*on/) {print substr($0, RSTART, RLENGTH)}' | cut -d' ' -f1)"
 
@@ -49,7 +45,7 @@ do
 done
 
 if [ $pre_flg -eq 1 ] ; then
-    BRANCH=$( curl -s https://ericom-tec.ashisuto.co.jp/shield/pre-rel-ver.txt )
+    BRANCH=$( curl -sL ${SCRIPTS_URL}/TEST/TEST-pre-rel-ver.txt )
     if [ "$BRANCH" == "NA" ]; then
         echo "現在ご利用可能なリリース前先行利用バージョンはありません。"
         exit 1
@@ -68,7 +64,7 @@ else
     declare -A vers
     n=0
     echo "どのバージョンをターゲットとしてセットしますか？"
-    for i in $( curl -s https://ericom-tec.ashisuto.co.jp/shield/TEST-rel-ver.txt )
+    for i in $( curl -sL ${SCRIPTS_URL}/TEST/TEST-rel-ver.txt )
     do
         n=$(( $n + 1 ))
         vers[$n]=$i
@@ -94,7 +90,6 @@ echo "=========================================================="
 echo -n "新しいターゲットバージョン："
 echo "$(cat /usr/local/ericomshield/.esbranch)"
 mv /usr/local/ericomshield/update.sh /usr/local/ericomshield/update.sh-BAK
-#wget -O /usr/local/ericomshield/update.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Setup/update.sh
 curl -JLsS -o /usr/local/ericomshield/update.sh https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Setup/update.sh
 chmod +x /usr/local/ericomshield/update.sh && rm -f /usr/local/ericomshield/update.sh-BAK
 

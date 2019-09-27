@@ -26,7 +26,7 @@ for dir in $cleanupdirs; do
     sudo rm -rf $dir
 done
 
-sudo rm -rf /home/${SUDO_USER}/rancher-store
+sudo rm -rf rancher-store
 rm -f .ra_*
 rm -f .es_version
 rm -f .es_branch
