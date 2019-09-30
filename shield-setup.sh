@@ -5,6 +5,11 @@
 ### VER=20190925a-dev
 ####################
 
+if [ ! -e ./logs/ ];then
+    mkdir logs
+    mv -f ./*.log ./logs/ > /dev/null 2>&1
+fi
+
 LOGFILE="./logs/install.log"
 CMDFILE="command.txt"
 BRANCH="Rel"
@@ -368,6 +373,7 @@ function deploy_shield() {
     sed -i -e '/helm upgrade --install/s/shield-repo\/shield/shield-repo\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
+    sed -i -e '/^LOGFILE=/s/last_deploy.log/"\.\/logs\/last_deploy.log"/'  deploy-shield.sh
 
     if [ ! -f custom-farm.yaml ] || [ $yamlget_flg -eq 1 ]; then
         curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-farm.yaml
