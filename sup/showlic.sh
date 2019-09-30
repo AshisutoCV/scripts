@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ES_PATH=/usr/local/ericomshield
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/scripts/develop"
 
 if ((EUID != 0)); then
     #    sudo su
