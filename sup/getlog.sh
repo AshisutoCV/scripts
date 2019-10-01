@@ -1,0 +1,153 @@
+#!/bin/bash
+
+
+usage() {
+   echo "$0 [target log] (target date) (target time) (get filed) "
+   echo
+   echo "    --target_log (-L)  : 取得対象ログの種類。"
+   echo "                           - connections"
+   echo "                           - applications"
+   echo "                           - file-sanitization"
+   echo "                           - file-transfer"
+   echo "                           - file-preview"
+   echo "                           - errors"
+   echo "                           - systemalert"
+   echo "                           - systemusage"
+   echo "                           - reports"
+   echo "    --target_date (-D) : 取得対象日。(YYYY-MM-DD)。 省略した場合は本日。"
+   echo "    --target_time (-T) : 取得対象時刻。開始時刻-終了時刻(HHMM-HHMM)。 省略した場合24時間。(0000-2359)"
+   echo "    --get_field (-F)   : 指定したフィールドを含むログを取得。"
+}
+
+
+TARGET_DATE=$(date +"%Y-%m-%d")
+TARGET_TIME="0000-2359"
+QUERY='"match_all":{}'
+
+
+for i in `seq 1 ${#}`
+do
+    if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+        usage
+        exit 0
+    elif [ "$1" == "--target_log" ] || [ "$1" == "-L" ] ; then
+        shift
+        TARGET_LOG=$1
+    elif [ "$1" == "--target_date" ] || [ "$1" == "-D" ] ; then
+        shift
+        TARGET_DATE=$1
+    elif [ "$1" == "--target_time" ] || [ "$1" == "-T" ] ; then
+        shift
+        TARGET_TIME=$1
+    elif [ "$1" == "--get_field" ] || [ "$1" == "-F" ] ; then
+        shift
+        GET_FIELD=$1
+    else
+        args="${args} ${1}"
+    fi
+    shift
+done
+
+if [ ! -z ${args} ]; then
+    echo "${args} は不正な引数です。"
+    usage
+    exit 1
+fi
+
+if [ -z $TARGET_LOG ];then
+  echo "target_logの指定は必須です。"
+  usage
+  exit 1
+fi
+
+if [ ! -z $GET_FIELD ];then
+    QUERY='"exists":{"field":"'${GET_FIELD}'"}'
+fi
+
+TY=${TARGET_DATE:0:4}
+Tm=${TARGET_DATE:5:2}
+Td=${TARGET_DATE:8:2}
+
+sTY=${TARGET_DATE:0:4}
+sTm=${TARGET_DATE:5:2}
+sTd=${TARGET_DATE:8:2}
+eTY=${TARGET_DATE:0:4}
+eTm=${TARGET_DATE:5:2}
+eTd=${TARGET_DATE:8:2}
+
+sTH=${TARGET_TIME:0:2}
+sTM=${TARGET_TIME:2:2}
+eTH=${TARGET_TIME:5:2}
+eTM=${TARGET_TIME:7:2}
+
+sTY=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%Y)
+sTm=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%m)
+sTd=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%d)
+eTY=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%Y)
+eTm=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%m)
+eTd=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%d)
+sTH=$(date --date "${sTH} 9hours ago" +%H)
+eTH=$(date --date "${eTH} 9hours ago" +%H)
+
+
+if [ "${TARGET_LOG}" == "reports" ];then
+    if [ "${sTd}" == "${eTd}" ];then
+        TARGET="${TARGET_LOG}-${sTY}.${sTm}.${sTd}"
+    else
+        TARGET="${TARGET_LOG}-${sTY}.${sTm}.${sTd},${TARGET_LOG}-${eTY}.${eTm}.${eTd}"
+    fi
+else
+    if [ "${sTm}" == "${eTm}" ];then
+        TARGET="${TARGET_LOG}-${sTY}-${sTm}-01"
+    else
+        TARGET="${TARGET_LOG}-${sTY}-${sTm}-01,${TARGET_LOG}-${eTY}-${eTm}-01"
+    fi
+fi
+
+RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl "http://localhost:9200/${TARGET}/_search" -H 'Content-Type: application/json' -d'
+    {
+      "version": true,
+      "from": 0,
+      "size": 10000,
+      "sort": [
+        {
+          "@timestamp": {
+            "order": "asc",
+            "unmapped_type": "boolean"
+          }
+        }
+      ],
+      "_source": {
+      },
+      "stored_fields": [
+        "*"
+      ],
+      "query": {
+        "bool": {
+          "must": [
+            {
+              '${QUERY}'
+            },
+            {
+              "range": {
+                "@timestamp": {
+                  "format": "strict_date_optional_time",
+                  "gte": "'${sTY}'-'${sTm}'-'${sTd}'T'${sTH}':'${sTM}':00.000Z",
+                  "lte": "'${eTY}'-'${eTm}'-'${eTd}'T'${eTH}':'${eTM}':59.999Z"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }'
+)
+
+if [[ $(echo "$RET" | jq -r '.hits.hits[]._source' | jq -c . | grep -c "timestamp") -ge 10000 ]];then
+    echo
+    echo "エラー：ヒット件数が多すぎます。target_time を短く指定するか、get_fieldにより対象を絞りこんでください。"
+    echo
+    exit 1
+fi
+
+echo "$RET" | jq -r '.hits.hits[]._source' | jq -c .
