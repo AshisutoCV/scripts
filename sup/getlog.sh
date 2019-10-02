@@ -1,5 +1,9 @@
 #!/bin/bash
 
+####################
+### K.K. Ashisuto
+### VER=20191002a
+####################
 
 usage() {
    echo "$0 [target log] (target date) (target time) (get filed) "
@@ -11,8 +15,9 @@ usage() {
    echo "                           - file-transfer"
    echo "                           - file-preview"
    echo "                           - errors"
-   echo "                           - systemalert"
    echo "                           - systemusage"
+   echo "                           - systemalert"
+   echo "                           - systemtest"
    echo "                           - reports"
    echo "    --target_date (-D) : 取得対象日。(YYYY-MM-DD)。 省略した場合は本日。"
    echo "    --target_time (-T) : 取得対象時刻。開始時刻-終了時刻(HHMM-HHMM)。 省略した場合24時間。(0000-2359)"
@@ -33,6 +38,11 @@ do
     elif [ "$1" == "--target_log" ] || [ "$1" == "-L" ] ; then
         shift
         TARGET_LOG=$1
+         if [[ $(cat $0 | grep -c -E "\-\s${TARGET_LOG}\"$") -eq 0 ]];then
+             echo "エラー: target_logの指定が不正です。"
+             usage
+             exit 1
+         fi
     elif [ "$1" == "--target_date" ] || [ "$1" == "-D" ] ; then
         shift
         TARGET_DATE=$1
@@ -64,26 +74,17 @@ if [ ! -z $GET_FIELD ];then
     QUERY='"exists":{"field":"'${GET_FIELD}'"}'
 fi
 
-TY=${TARGET_DATE:0:4}
-Tm=${TARGET_DATE:5:2}
-Td=${TARGET_DATE:8:2}
-
-sTY=${TARGET_DATE:0:4}
-sTm=${TARGET_DATE:5:2}
-sTd=${TARGET_DATE:8:2}
-eTY=${TARGET_DATE:0:4}
-eTm=${TARGET_DATE:5:2}
-eTd=${TARGET_DATE:8:2}
-
 sTH=${TARGET_TIME:0:2}
 sTM=${TARGET_TIME:2:2}
 eTH=${TARGET_TIME:5:2}
 eTM=${TARGET_TIME:7:2}
 
 sTY=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%Y)
+sTy=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%y)
 sTm=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%m)
 sTd=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%d)
 eTY=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%Y)
+eTy=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%y)
 eTm=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%m)
 eTd=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%d)
 sTH=$(date --date "${sTH} 9hours ago" +%H)
@@ -95,6 +96,12 @@ if [ "${TARGET_LOG}" == "reports" ];then
         TARGET="${TARGET_LOG}-${sTY}.${sTm}.${sTd}"
     else
         TARGET="${TARGET_LOG}-${sTY}.${sTm}.${sTd},${TARGET_LOG}-${eTY}.${eTm}.${eTd}"
+    fi
+elif [ "${TARGET_LOG}" == "systemalert" ] || [ "${TARGET_LOG}" == "systemtest" ]  ;then
+    if [ "${sTm}" == "${eTm}" ];then
+        TARGET="${TARGET_LOG}-${sTy}${sTm}"
+    else
+        TARGET="${TARGET_LOG}-${sTy}${sTm},${TARGET_LOG}-${eTy}${eTm}"
     fi
 else
     if [ "${sTm}" == "${eTm}" ];then
@@ -143,10 +150,17 @@ RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl "http
     }'
 )
 
+ERROR=$(echo "$RET" | jq -r .error.type)
+
+if [[ "${ERROR}" == "null" ]];then
 if [[ $(echo "$RET" | jq -r '.hits.hits[]._source' | jq -c . | grep -c "timestamp") -ge 10000 ]];then
-    echo
-    echo "エラー：ヒット件数が多すぎます。target_time を短く指定するか、get_fieldにより対象を絞りこんでください。"
-    echo
+        echo
+        echo "エラー: ヒット件数が多すぎます。target_time を短く指定するか、get_fieldにより対象を絞りこんでください。"
+        echo
+        exit 1
+    fi
+else
+    echo "エラー: ${ERROR}"
     exit 1
 fi
 
