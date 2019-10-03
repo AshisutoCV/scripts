@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20190926-dev
+### VER=20191003a
 ####################
 
 LOGFILE="./logs/stop-start.log"
