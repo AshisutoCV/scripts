@@ -4,7 +4,7 @@
 #######################################BH###
 ################  K.K.Ashisuto #############
 
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/scripts/master"
 
 #Check if we are root
 if ((EUID != 0)); then
