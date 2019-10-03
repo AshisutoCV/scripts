@@ -10,7 +10,7 @@ BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/scripts/master"
 
 function usage() {
     echo "USAGE: $0 [--pre-use]"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/scripts/master"
 
 ES_PATH=/usr/local/ericomshield
 
