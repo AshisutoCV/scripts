@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/scripts/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 curl -JOLsS ${SCRIPTS_URL}/li/licset.sh
 
