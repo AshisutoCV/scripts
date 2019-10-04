@@ -5,6 +5,11 @@
 ### VER=20191003a
 ####################
 
+#-----------------
+TZ="Asia/Tokyo"
+TTZ="+9:00"
+#-----------------
+
 usage() {
    echo "$0 [target log] (target date) (target time) (get filed) "
    echo
@@ -24,7 +29,6 @@ usage() {
    echo "    --get_field (-F)    : 指定したフィールドを含むログを取得。"
    echo "    --output_dir (-O)   : 指定したディレクトリにログをファイル出力します。ファイル名は「[target_log](-get_field)_[target_date(yyyymmdd))]」。"
 }
-
 
 TARGET_DATE=$(date +"%Y-%m-%d")
 TARGET_TIME="0000-2359"
@@ -93,16 +97,16 @@ sTM=${TARGET_TIME:2:2}
 eTH=${TARGET_TIME:5:2}
 eTM=${TARGET_TIME:7:2}
 
-sTY=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%Y)
-sTy=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%y)
-sTm=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%m)
-sTd=$(date --date "${TARGET_DATE} ${sTH}:${sTM} 9hours ago" +%d)
-eTY=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%Y)
-eTy=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%y)
-eTm=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%m)
-eTd=$(date --date "${TARGET_DATE} ${eTH}:${eTM} 9hours ago" +%d)
-sTH=$(date --date "${sTH} 9hours ago" +%H)
-eTH=$(date --date "${eTH} 9hours ago" +%H)
+sTY=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%Y)
+sTy=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%y)
+sTm=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%m)
+sTd=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%d)
+eTY=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%Y)
+eTy=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%y)
+eTm=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%m)
+eTd=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%d)
+sTH=$(date --date "${sTH} ${TTZ}" +%H)
+eTH=$(date --date "${eTH} ${TTZ}" +%H)
 
 
 if [ "${TARGET_LOG}" == "reports" ];then
@@ -178,8 +182,28 @@ else
     exit 1
 fi
 
+RET=$(echo "$RET" | jq -c '.hits.hits[]._source')
+
+RES=""
+while read line
+do
+        LEFT=$(echo $line | sed -E 's/(^.*@timestamp":)(.*$)/\1/')
+        RIGHT=$(echo $line | sed -E 's/(^.*"@timestamp":.*)(,".*$)/\2/')
+        TIMESTAMP=$(echo $line | sed -E 's/(^.*"@timestamp":")([^"]*)(",.*$)/\2/')
+    TIMESTAMP=$(env TZ=${TZ} date --date "${TIMESTAMP}" +%Y-%m-%dT%H:%M:%S${TTZ})
+    if [[ ${RES} == "" ]];then
+        RES=${LEFT}'"'${TIMESTAMP}'"'${RIGHT}
+    else
+        RES=${RES}"\n"${LEFT}'"'${TIMESTAMP}'"'${RIGHT}
+    fi
+done<<END
+$RET
+END
+
+
+
 if [ -z ${LOGFILE} ];then
-    echo "$RET" | jq -c '.hits.hits[]._source'
+    echo -e "$RES"
 else
-    echo "$RET" | jq -c '.hits.hits[]._source' >> ${LOGFILE}
+    echo -e "$RES" >> ${LOGFILE}
 fi
