@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/scripts/master"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/sshield"
 ES_PATH=/usr/local/ericomshield
 
 if ((EUID != 0)); then

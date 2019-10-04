@@ -17,7 +17,7 @@ if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
 ERICOMPASS="Ericom123$"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/scripts/master"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/sshield"
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
