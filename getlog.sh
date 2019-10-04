@@ -183,14 +183,17 @@ else
 fi
 
 RET=$(echo "$RET" | jq -c '.hits.hits[]._source')
+if [[ ${#RET} -eq 0 ]];then
+    exit 0
+fi
 
 RES=""
 while read line
 do
         LEFT=$(echo $line | sed -E 's/(^.*@timestamp":)(.*$)/\1/')
-        RIGHT=$(echo $line | sed -E 's/(^.*"@timestamp":.*)(,".*$)/\2/')
-        TIMESTAMP=$(echo $line | sed -E 's/(^.*"@timestamp":")([^"]*)(",.*$)/\2/')
-    TIMESTAMP=$(env TZ=${TZ} date --date "${TIMESTAMP}" +%Y-%m-%dT%H:%M:%S${TTZ})
+        RIGHT=$(echo $line | sed -E 's/(^.*"@timestamp":"[^"]*")(.*$)/\2/')
+        TIMESTAMP=$(echo $line | sed -E 's/(^.*"@timestamp":")([^"]*)(.*$)/\2/')
+        TIMESTAMP=$(env TZ=${TZ} date --date "${TIMESTAMP}" +%Y-%m-%dT%H:%M:%S${TTZ})
     if [[ ${RES} == "" ]];then
         RES=${LEFT}'"'${TIMESTAMP}'"'${RIGHT}
     else
