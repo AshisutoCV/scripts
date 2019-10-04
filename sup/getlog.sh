@@ -2,13 +2,13 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191002a
+### VER=20191003a
 ####################
 
 usage() {
    echo "$0 [target log] (target date) (target time) (get filed) "
    echo
-   echo "    --target_log (-L)  : 取得対象ログの種類。"
+   echo "    --target_log (-L)   : 取得対象ログの種類。"
    echo "                           - connections"
    echo "                           - applications"
    echo "                           - file-sanitization"
@@ -19,16 +19,16 @@ usage() {
    echo "                           - systemalert"
    echo "                           - systemtest"
    echo "                           - reports"
-   echo "    --target_date (-D) : 取得対象日。(YYYY-MM-DD)。 省略した場合は本日。"
-   echo "    --target_time (-T) : 取得対象時刻。開始時刻-終了時刻(HHMM-HHMM)。 省略した場合24時間。(0000-2359)"
-   echo "    --get_field (-F)   : 指定したフィールドを含むログを取得。"
+   echo "    --target_date (-D)  : 取得対象日。(YYYY-MM-DD)。 省略した場合は本日。"
+   echo "    --target_time (-T)  : 取得対象時刻。開始時刻-終了時刻(HHMM-HHMM)。 省略した場合24時間。(0000-2359)"
+   echo "    --get_field (-F)    : 指定したフィールドを含むログを取得。"
+   echo "    --output_dir (-O)   : 指定したディレクトリにログをファイル出力します。ファイル名は「[target_log](-get_field)_[target_date(yyyymmdd))]」。"
 }
 
 
 TARGET_DATE=$(date +"%Y-%m-%d")
 TARGET_TIME="0000-2359"
 QUERY='"match_all":{}'
-
 
 for i in `seq 1 ${#}`
 do
@@ -52,6 +52,12 @@ do
     elif [ "$1" == "--get_field" ] || [ "$1" == "-F" ] ; then
         shift
         GET_FIELD=$1
+    elif [ "$1" == "--output_dir" ] || [ "$1" == "-O" ] ; then
+        shift
+        OUTPUT_DIR=$1
+        if [ ! -e ${OUTPUT_DIR} ];then
+            mkdir -p ${OUTPUT_DIR}
+        fi
     else
         args="${args} ${1}"
     fi
@@ -74,6 +80,14 @@ if [ ! -z $GET_FIELD ];then
     QUERY='"exists":{"field":"'${GET_FIELD}'"}'
 fi
 
+if [ ! -z ${OUTPUT_DIR} ];then
+    yyyymmdd=$(date --date "${TARGET_DATE}" +%Y%m%d)
+    if [ ! -z ${GET_FIELD} ];then
+        LOGFILE="${OUTPUT_DIR}/${TARGET_LOG}-${GET_FIELD}_${yyyymmdd}"
+    else
+        LOGFILE="${OUTPUT_DIR}/${TARGET_LOG}_${yyyymmdd}"
+    fi
+fi
 sTH=${TARGET_TIME:0:2}
 sTM=${TARGET_TIME:2:2}
 eTH=${TARGET_TIME:5:2}
@@ -164,4 +178,8 @@ else
     exit 1
 fi
 
-echo "$RET" | jq -r '.hits.hits[]._source' | jq -c .
+if [ -z ${LOGFILE} ];then
+    echo "$RET" | jq -c '.hits.hits[]._source'
+else
+    echo "$RET" | jq -c '.hits.hits[]._source' >> ${LOGFILE}
+fi
