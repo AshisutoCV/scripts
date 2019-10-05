@@ -6,12 +6,13 @@
 ####################
 
 #-----------------
-TZ="Asia/Tokyo"
-TTZ="+9:00"
+TZ="Asia/Tokyo"    # 結果のtimestampをTZに調整して表示
+TTZ="+9:00"        # 検索時間のズレを調整するため設定を推奨
 #-----------------
+SIZE=100
 
 usage() {
-   echo "$0 [target log] (target date) (target time) (get filed) "
+   echo "$0 [target log] (target date) (target time) (get filed) (output_dir)"
    echo
    echo "    --target_log (-L)   : 取得対象ログの種類。"
    echo "                           - connections"
@@ -109,31 +110,13 @@ sTH=$(date --date "${sTH} ${TTZ}" +%H)
 eTH=$(date --date "${eTH} ${TTZ}" +%H)
 
 
-if [ "${TARGET_LOG}" == "reports" ];then
-    if [ "${sTd}" == "${eTd}" ];then
-        TARGET="${TARGET_LOG}-${sTY}.${sTm}.${sTd}"
-    else
-        TARGET="${TARGET_LOG}-${sTY}.${sTm}.${sTd},${TARGET_LOG}-${eTY}.${eTm}.${eTd}"
-    fi
-elif [ "${TARGET_LOG}" == "systemalert" ] || [ "${TARGET_LOG}" == "systemtest" ]  ;then
-    if [ "${sTm}" == "${eTm}" ];then
-        TARGET="${TARGET_LOG}-${sTy}${sTm}"
-    else
-        TARGET="${TARGET_LOG}-${sTy}${sTm},${TARGET_LOG}-${eTy}${eTm}"
-    fi
-else
-    if [ "${sTm}" == "${eTm}" ];then
-        TARGET="${TARGET_LOG}-${sTY}-${sTm}-01"
-    else
-        TARGET="${TARGET_LOG}-${sTY}-${sTm}-01,${TARGET_LOG}-${eTY}-${eTm}-01"
-    fi
-fi
+TARGET="${TARGET_LOG}-*"
 
-RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl "http://localhost:9200/${TARGET}/_search" -H 'Content-Type: application/json' -d'
+RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
     {
       "version": true,
       "from": 0,
-      "size": 10000,
+      "size": '${SIZE}',
       "sort": [
         {
           "@timestamp": {
@@ -168,45 +151,65 @@ RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl "http
     }'
 )
 
-ERROR=$(echo "$RET" | jq -r .error.type)
-
-if [[ "${ERROR}" == "null" ]];then
-if [[ $(echo "$RET" | jq -r '.hits.hits[]._source' | jq -c . | grep -c "timestamp") -ge 10000 ]];then
-        echo
-        echo "エラー: ヒット件数が多すぎます。target_time を短く指定するか、get_fieldにより対象を絞りこんでください。"
-        echo
+next_flg=1
+first_scroll=1
+while [[ $next_flg -eq 1 ]]
+do
+    if [[ ${first_scroll} -ne 1 ]];then
+            RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+            {
+                "scroll": "1m",
+                "scroll_id" : '${SCROLL_ID}'
+            }')
+    else
+        SCROLL_ID=$(echo "$RET" | jq -c ._scroll_id)
+    fi
+    first_scroll=0
+    ERROR=$(echo "$RET" | jq -r .error.type)
+    if [[ "${ERROR}" == "null" ]];then
+        RET=$(echo "$RET" | jq -c '.hits.hits[]._source')
+        if  [[ ${#RET} -eq 0 ]];then
+            next_flg=0
+            kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XDELETE "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+            {
+                "scroll_id" : '${SCROLL_ID}'
+            }' >/dev/null
+            if [[ ${#RET} -eq 0 ]];then
+                exit 0
+            fi
+        fi
+    else
+        echo "エラー: ${ERROR}"
         exit 1
     fi
-else
-    echo "エラー: ${ERROR}"
-    exit 1
-fi
 
-RET=$(echo "$RET" | jq -c '.hits.hits[]._source')
-if [[ ${#RET} -eq 0 ]];then
-    exit 0
-fi
 
-RES=""
-while read line
-do
-        LEFT=$(echo $line | sed -E 's/(^.*@timestamp":)(.*$)/\1/')
-        RIGHT=$(echo $line | sed -E 's/(^.*"@timestamp":"[^"]*")(.*$)/\2/')
-        TIMESTAMP=$(echo $line | sed -E 's/(^.*"@timestamp":")([^"]*)(.*$)/\2/')
-        TIMESTAMP=$(env TZ=${TZ} date --date "${TIMESTAMP}" +%Y-%m-%dT%H:%M:%S${TTZ})
-    if [[ ${RES} == "" ]];then
-        RES=${LEFT}'"'${TIMESTAMP}'"'${RIGHT}
-    else
-        RES=${RES}"\n"${LEFT}'"'${TIMESTAMP}'"'${RIGHT}
-    fi
-done<<END
+    if [[ ! -z ${TZ} ]];then
+        RES=""
+        while read -r line
+        do
+            LEFT=$(echo $line | sed -E 's/(^.*@timestamp":)(.*$)/\1/')
+            RIGHT=$(echo $line | sed -E 's/(^.*"@timestamp":"[^"]*")(.*$)/\2/')
+            TIMESTAMP=$(echo $line | sed -E 's/(^.*"@timestamp":")([^"]*)(.*$)/\2/')
+            TIMESTAMP=$(env TZ=${TZ} date --date "${TIMESTAMP}" +%Y-%m-%dT%H:%M:%S.%3N${TTZ})
+            if [[ ${RES} == "" ]];then
+                RES=${LEFT}'"'${TIMESTAMP}'"'${RIGHT}
+            else
+                RES=${RES}${LEFT}'"'${TIMESTAMP}'"'${RIGHT}
+            fi
+        done <<END
 $RET
 END
 
+    else
+        RES=${RET}
+    fi
 
 
-if [ -z ${LOGFILE} ];then
-    echo -e "$RES"
-else
-    echo -e "$RES" >> ${LOGFILE}
-fi
+    if [ -z ${LOGFILE} ];then
+        echo ${RES} | jq -c .
+    else
+        echo ${RES} | jq -c . >> ${LOGFILE}
+    fi
+
+done
