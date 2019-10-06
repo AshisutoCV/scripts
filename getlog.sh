@@ -14,7 +14,8 @@ SIZE=100
 usage() {
    echo "$0 [target log] (target date) (target time) (get filed) (output_dir)"
    echo
-   echo "    --target_log (-L)   : 取得対象ログの種類。"
+   echo "    --target_log (-L)   : 取得対象ログの種類。 "
+   echo "                           複数指定可能。複数指定の場合はそれぞれにオプションをつけること。 (ex.: -L connections -L applications)"
    echo "                           - connections"
    echo "                           - applications"
    echo "                           - file-sanitization"
@@ -27,6 +28,7 @@ usage() {
    echo "                           - reports"
    echo "    --target_date (-D)  : 取得対象日。(YYYY-MM-DD)。 省略した場合は本日。"
    echo "    --target_time (-T)  : 取得対象時刻。開始時刻-終了時刻(HHMM-HHMM)。 省略した場合24時間。(0000-2359)"
+   echo "                           (秒を含めた6桁でも対応。 ex.: 095500-095505)"
    echo "    --get_field (-F)    : 指定したフィールドを含むログを取得。"
    echo "    --output_dir (-O)   : 指定したディレクトリにログをファイル出力します。ファイル名は「[target_log](-get_field)_[target_date(yyyymmdd))]」。"
 }
@@ -34,6 +36,7 @@ usage() {
 TARGET_DATE=$(date +"%Y-%m-%d")
 TARGET_TIME="0000-2359"
 QUERY='"match_all":{}'
+TARGET_LOGs=()
 
 for i in `seq 1 ${#}`
 do
@@ -43,7 +46,8 @@ do
     elif [ "$1" == "--target_log" ] || [ "$1" == "-L" ] ; then
         shift
         TARGET_LOG=$1
-         if [[ $(cat $0 | grep -c -E "\-\s${TARGET_LOG}\"$") -eq 0 ]];then
+        TARGET_LOGs+=( ${TARGET_LOG} )
+         if [[ $(cat $0 | grep -c -E "\-\s${TARGET_LOG}\"$") -eq 0 ]] && [[ "${TARGET_LOG}" != "*" ]];then
              echo "エラー: target_logの指定が不正です。"
              usage
              exit 1
@@ -75,7 +79,7 @@ if [ ! -z ${args} ]; then
     exit 1
 fi
 
-if [ -z $TARGET_LOG ];then
+if [[ ${#TARGET_LOGs[@]} -eq 0 ]];then
   echo "target_logの指定は必須です。"
   usage
   exit 1
@@ -93,10 +97,23 @@ if [ ! -z ${OUTPUT_DIR} ];then
         LOGFILE="${OUTPUT_DIR}/${TARGET_LOG}_${yyyymmdd}"
     fi
 fi
-sTH=${TARGET_TIME:0:2}
-sTM=${TARGET_TIME:2:2}
-eTH=${TARGET_TIME:5:2}
-eTM=${TARGET_TIME:7:2}
+
+if [[ ${#TARGET_TIME} -eq 9 ]];then
+    sTH=${TARGET_TIME:0:2}
+    sTM=${TARGET_TIME:2:2}
+    sTS=00
+    eTH=${TARGET_TIME:5:2}
+    eTM=${TARGET_TIME:7:2}
+    eTS=59
+else
+    sTH=${TARGET_TIME:0:2}
+    sTM=${TARGET_TIME:2:2}
+    sTS=${TARGET_TIME:4:2}
+    eTH=${TARGET_TIME:7:2}
+    eTM=${TARGET_TIME:9:2}
+    eTS=${TARGET_TIME:11:2}
+fi
+
 
 sTY=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%Y)
 sTy=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%y)
@@ -109,8 +126,15 @@ eTd=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%d)
 sTH=$(date --date "${sTH} ${TTZ}" +%H)
 eTH=$(date --date "${eTH} ${TTZ}" +%H)
 
-
-TARGET="${TARGET_LOG}-*"
+i=0
+for e in ${TARGET_LOGs[@]}; do
+    if [[ $i -eq 0 ]];then
+        TARGET="${e}-*"
+    else
+        TARGET="${TARGET},${e}-*"
+    fi
+    let i++
+done
 
 RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
     {
@@ -140,8 +164,8 @@ RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET
               "range": {
                 "@timestamp": {
                   "format": "strict_date_optional_time",
-                  "gte": "'${sTY}'-'${sTm}'-'${sTd}'T'${sTH}':'${sTM}':00.000Z",
-                  "lte": "'${eTY}'-'${eTm}'-'${eTd}'T'${eTH}':'${eTM}':59.999Z"
+                  "gte": "'${sTY}'-'${sTm}'-'${sTd}'T'${sTH}':'${sTM}':'${sTS}'.000Z",
+                  "lte": "'${eTY}'-'${eTm}'-'${eTd}'T'${eTH}':'${eTM}':'${eTS}'.999Z"
                 }
               }
             }
@@ -207,9 +231,9 @@ END
 
 
     if [ -z ${LOGFILE} ];then
-        echo ${RES} | jq -c .
+        echo ${RES}  | jq -c '[ ."@timestamp", .]'
     else
-        echo ${RES} | jq -c . >> ${LOGFILE}
+        echo ${RES}  | jq -c '[ ."@timestamp", .]' >> ${LOGFILE}
     fi
 
 done
