@@ -91,6 +91,9 @@ fi
 
 if [ ! -z ${OUTPUT_DIR} ];then
     yyyymmdd=$(date --date "${TARGET_DATE}" +%Y%m%d)
+    if [[ ${#TARGET_LOGs[@]} -ge 2 ]];then
+        TARGET_LOG="getlogs"
+    fi
     if [ ! -z ${GET_FIELD} ];then
         LOGFILE="${OUTPUT_DIR}/${TARGET_LOG}-${GET_FIELD}_${yyyymmdd}"
     else
