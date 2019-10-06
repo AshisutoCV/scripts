@@ -23,6 +23,9 @@
 ## delete-all.sh
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
 
+## getlog.sh
+* [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
+
 ***
 * fps-change.sh
 * nocat.sh

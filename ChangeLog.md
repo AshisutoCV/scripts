@@ -29,15 +29,15 @@
 * CentOSにおいて、rancher-store ディレクトリが削除されない問題に対応
 * 各種追加スクリプトやyamlなどの削除を追加
 
+#### getlog.sh
+* 複数ログ対応
+* 10000件以上の出力に対応
+* TZ指定による時刻変換に対応
+* ファイルへの出力対応
+
 ### 移動
 #### sup へ
-* fps-change.sh
-* nocat.sh
-* showlic.sh
-* shield-registry-start.sh
-* spellcheck.sh
-* install-proxy-rules.sh
-* uninstall-proxy-rules.sh
+* getlog.sh
 --------------------------------------------------------------
 
 ## [VER=20190919b] - 2019/09/19
