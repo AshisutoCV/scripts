@@ -67,5 +67,6 @@
 	* 上位プロキシ問題暫定回避(iptables設定)スクリプト(Swarm限定)(メーカー製)
 * uninstall-proxy-rules.sh
 	* 上位プロキシ問題暫定回避(iptables設定)設定削除スクリプト(Swarm限定)(メーカー製)
-
+* getlog.sh
+    * elkからのログ取り出しスクリプト(k8s限定)
 
