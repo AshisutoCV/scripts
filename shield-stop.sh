@@ -2,8 +2,13 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191003a
+### VER=20191007a
 ####################
+
+if [ ! -e ./logs/ ];then
+    mkdir logs
+    mv -f ./*.log ./logs/ > /dev/null 2>&1
+fi
 
 LOGFILE="./logs/stop-start.log"
 BRANCH="Staging"
