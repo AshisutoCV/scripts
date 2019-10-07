@@ -187,9 +187,9 @@ function fin() {
 
 function get_scripts() {
     log_message "[start] get install scripts"
-    cp -fp shield-setupsh shield-setupsh_backup
+    cp -fp shield-setup.sh shield-setup.sh_backup
     curl -s -OL ${SCRIPTS_URL}/shield-setup.sh
-    chmod +x shield-setupsh
+    chmod +x shield-setup.sh
     cp -fp configure-sysctl-values.sh configure-sysctl-values.sh_backup
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh
     chmod +x configure-sysctl-values.sh
