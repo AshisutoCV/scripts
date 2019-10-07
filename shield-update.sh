@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191007a
+### VER=20191007b
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -286,9 +286,31 @@ if [ ! -f .es_update ]; then
 
     get_yaml
 fi
-S_APP_VERSION=$(cat .es_update)
-rm -f .es_update
-exec_update
+
+if [ -f .es_update ]; then 
+
+    while :
+    do
+        echo ""
+        echo "================================================================================="
+        echo -n 'updateを実行します。よろしいですか？ [y/N]:'
+            read ANSWER
+            case $ANSWER in
+                "Y" | "y" | "yse" | "Yes" | "YES" )
+                    break
+                    ;;
+                "" | "n" | "N" | "no" | "No" | "NO" )
+                    ;;
+                * )
+                    echo "YまたはNで答えて下さい。"
+                    ;;
+            esac
+    done
+
+    S_APP_VERSION=$(cat .es_update)
+    rm -f .es_update
+    exec_update
+fi
 
 fin 0
 
