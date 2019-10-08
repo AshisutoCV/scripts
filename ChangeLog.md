@@ -6,6 +6,9 @@
 #### shield-restore.sh
 * 自動リストア抑止が行われるようになったbuild576以降のconsul_backupに対応。
 
+#### shield-update.sh
+* configure-sysctl-values.shの差分があった場合、他のノードでも実行するように表示。
+
 ## [VER=20191007b] - 2019/10/07
 
 ### 変更
