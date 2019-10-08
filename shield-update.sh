@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191007b
+### VER=20191008a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -200,7 +200,32 @@ function check_sysctl() {
     log_message "[start] check sysctl file"
     if [ $(diff -c configure-sysctl-values.sh configure-sysctl-values.sh_backup | wc -l) -gt 0 ]; then
         log_message "[start] exec sysctl script"
-            sudo configure-sysctl-values.sh
+        sudo configure-sysctl-values.sh
+        echo '------------------------------------------------------------'
+        echo "(下記を他のノードでも実行してください。)"
+        echo ""
+        echo "curl -s -OL https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"
+        echo 'chmod +x configure-sysctl-values.sh'
+        echo './configure-sysctl-values.sh'
+        echo ""
+        echo '------------------------------------------------------------'
+        while :
+        do
+            echo ""
+            echo "================================================================================="
+            echo -n '先へ進んでよろしいですか？ [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+        done
         log_message "[end] exec sysctl script"
     fi
     log_message "[end] check sysctl file"
