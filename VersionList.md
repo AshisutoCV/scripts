@@ -31,6 +31,10 @@
 ## getlog.sh
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
 
+## shield-restore.sh
+* [20191008a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191008a---20191008)
+* [20190920a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190920a---20190920)
+
 ***
 * fps-change.sh
 * nocat.sh
