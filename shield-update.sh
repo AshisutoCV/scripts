@@ -239,6 +239,9 @@ function get_yaml() {
         cp -fp custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup
         curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-${yamlfile}.yaml
     done
+    log_message "[end] get yaml files"
+    
+    log_message "[start] check yaml files"
     check_yaml
     for yamlfile in "${COMPONENTS[@]}"
     do
@@ -247,14 +250,20 @@ function get_yaml() {
         fi
     done
     
-    log_message "[end] get yaml files"
+    if [[ $(ls diff_*.yaml 2>/dev/null | wc -l) -ne 0 ]]; then
+        echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、shield-update.shを再実行してください。"
 
-    echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、shield-update.shを再実行してください。"
-    for difffile in $(ls diff_*.yaml)
-    do
-        echo ${difffile}
-        echo ${S_APP_VERSION} > .es_update
-    done
+        for difffile in $(ls diff_*.yaml)
+        do
+            echo ${difffile}
+        done
+    else
+        echo "yamlファイルに更新はありませんでした。そのままshield-update.shを再実行してください。"
+    fi
+
+    log_message "[end] check yaml files"
+
+    echo ${S_APP_VERSION} > .es_update
     fin 0
 }
 
