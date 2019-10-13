@@ -16,8 +16,11 @@ BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
+
 ERICOMPASS="Ericom123$"
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+HELM_REPO="helmrepo.shield-service.net"
+KKA_REPO="ericom-tec.ashisuto.co.jp/chart"
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
@@ -36,7 +39,7 @@ function usage() {
     echo "    --delete-all      : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
     exit 0
     ### for Develop only
-    # [--staging | --dev] [--version <Chart version>]
+    # [--staging | --dev] [--version <Chart version>] [--kka-repo]
     ##
 }
 
@@ -57,6 +60,7 @@ function check_args(){
     ses_limit_flg=0
     uninstall_flg=0
     deleteall_flg=0
+    kka_flg=0
     S_APP_VERSION=""
 
     echo "args: $1" >> $LOGFILE
@@ -85,6 +89,8 @@ function check_args(){
             dev_flg=1
         elif [ "$1" == "--staging" ] || [ "$1" == "--Staging" ] ; then
             stg_flg=1
+        elif [ "$1" == "--kka-repo" ] || [ "$1" == "--Kka-repo" ] || [ "$1" == "--KKA-repo" ] || [ "$1" == "--KKA-Repo" ] || [ "$1" == "--Kka-Repo" ] ; then
+            kka_flg=1
         elif [ "$1" == "-v" ] || [ "$1" == "--version" ] || [ "$1" == "--Version" ]; then
             shift
             S_APP_VERSION="$1"
@@ -105,6 +111,7 @@ function check_args(){
     echo "args: $args" >> $LOGFILE
     echo "dev_flg: $dev_flg" >> $LOGFILE
     echo "stg_flg: $stg_flg" >> $LOGFILE
+    echo "kka_flg: $kka_flg" >> $LOGFILE
     echo "ver_flg: $ver_flg" >> $LOGFILE
     echo "update_flg: $update_flg" >> $LOGFILE
     echo "deploy_flg: $deploy_flg" >> $LOGFILE
@@ -147,11 +154,11 @@ function check_args(){
 
 function select_version() {
     CHART_VERSION=""
-    if which helm >/dev/null 2>&1 ;then
+    if [ -f ".es_version" ]; then
+        VERSION_DEPLOYED=$(cat .es_version)
+    elif which helm >/dev/null 2>&1 ;then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=`echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g"`
-    elif [ -f ".es_version" ]; then
-        VERSION_DEPLOYED=$(cat .es_version)
     fi
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ]; then
@@ -184,15 +191,20 @@ function select_version() {
             CHART=(${S_APP_VERSION//./ })
             CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
     else
+
+        if [ $kka_flg -eq 1 ]; then
+            HELM_REPO=${KKA_REPO}
+        fi
+
         declare -A vers_c
         declare -A vers_a
         n=0
         m=0
 
         if [ "$BRANCH" == "Dev" ]; then
-            VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/dev/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
+            VER=$(curl -s "https://ericom:${ERICOMPASS}@${HELM_REPO}/dev/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         elif [ "$BRANCH" == "Staging" ]; then
-            VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
+            VER=$(curl -s "https://ericom:${ERICOMPASS}@${HELM_REPO}/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         else
             VER=$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
         fi
@@ -327,6 +339,9 @@ function add_repo() {
     log_message "[start] add shield repo"
     curl -s -O  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/add-shield-repo.sh
     chmod +x add-shield-repo.sh
+    if [ $kka_flg -eq 1 ];then
+        sed -i -E  "s/^(SHIELD_REPO_URL=\"https:\/\/).*\"/\1${KKA_REPO}\"/" add-shield-repo.sh
+    fi
     ./add-shield-repo.sh ${BRANCHFLG} -p ${ERICOMPASS} >> $LOGFILE 2>&1
     log_message "[end] add shield repo"
 }

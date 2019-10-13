@@ -16,12 +16,14 @@ if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+HELM_REPO="helmrepo.shield-service.net"
+KKA_REPO="ericom-tec.ashisuto.co.jp/chart"
 
 function usage() {
     echo "USAGE: $0 [--pre-use]"
     exit 0
     ### for Develop only
-    # [--staging | --dev] [--pre-use]
+    # [--staging | --dev] [--pre-use] [--kka-repo]
     ##
 }
 
@@ -34,6 +36,7 @@ function check_args(){
     args=""
     dev_flg=0
     stg_flg=0
+    kka_flg=0
     S_APP_VERSION=""
 
     echo "args: $1" >> $LOGFILE
@@ -48,6 +51,8 @@ function check_args(){
             dev_flg=1
         elif [ "$1" == "--staging" ] || [ "$1" == "--Staging" ] ; then
             stg_flg=1
+        elif [ "$1" == "--kka-repo" ] || [ "$1" == "--Kka-repo" ] || [ "$1" == "--KKA-repo" ] || [ "$1" == "--KKA-Repo" ] || [ "$1" == "--Kka-Repo" ] ; then
+            kka_flg=1
         else
             args="${args} ${1}"
         fi
@@ -64,6 +69,7 @@ function check_args(){
     echo "args: $args" >> $LOGFILE
     echo "dev_flg: $dev_flg" >> $LOGFILE
     echo "stg_flg: $stg_flg" >> $LOGFILE
+    echo "kka_flg: $kka_flg" >> $LOGFILE
     echo "////////////////////////////////" >> $LOGFILE
 
     if [ $dev_flg -eq 1 ] ; then
@@ -79,11 +85,11 @@ function check_args(){
 
 function select_version() {
     CHART_VERSION=""
-    if which helm >/dev/null 2>&1 ;then
+    if [ -f ".es_version" ]; then
+        VERSION_DEPLOYED=$(cat .es_version)
+    elif which helm >/dev/null 2>&1 ;then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=`echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g"`
-    elif [ -f ".es_version" ]; then
-        VERSION_DEPLOYED=$(cat .es_version)
     fi
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ]; then
@@ -113,15 +119,20 @@ function select_version() {
             esac
         fi
     else
+
+        if [ $kka_flg -eq 1 ]; then
+            HELM_REPO=${KKA_REPO}
+        fi
+
         declare -A vers_c
         declare -A vers_a
         n=0
         m=0
 
         if [ "$BRANCH" == "Dev" ]; then
-            VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/dev/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
+            VER=$(curl -s "https://ericom:${ERICOMPASS}@${HELM_REPO}/dev/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         elif [ "$BRANCH" == "Staging" ]; then
-            VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
+            VER=$(curl -s "https://ericom:${ERICOMPASS}@${HELM_REPO}/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         else
             VER=$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
         fi
@@ -294,12 +305,15 @@ function check_yaml() {
 
 function exec_update(){
     if [ $dev_flg -eq 1 ]; then
-        /bin/bash ./shield-setup.sh --update --version ${S_APP_VERSION} --Dev
+        ${DEV_STG}='--Dev'  
     elif [ $stg_flg -eq 1 ]; then
-        /bin/bash ./shield-setup.sh --update --version ${S_APP_VERSION} --Staging
-    else
-        /bin/bash ./shield-setup.sh --update --version ${S_APP_VERSION}
+        ${DEV_STG}='--Staging'
     fi
+    if [ $kka_flg -eq 1 ]; then
+        ${KKAREPO}='--kka-repo'  
+    fi
+
+        /bin/bash ./shield-setup.sh --update --version ${S_APP_VERSION} ${DEV_STG} ${KKAREPO}
 }
 
 ######START#####
