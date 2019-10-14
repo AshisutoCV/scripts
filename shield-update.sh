@@ -173,8 +173,12 @@ function select_version() {
         done
     fi
 
-    if [ "$BRANCH" == "Rel" ]; then
-        BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
+    if [ "$BRANCH" == "Dev" ]; then
+        BRANCH="$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $4}')"
+    elif [ "$BRANCH" == "Staging" ]; then
+        BRANCH="$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $3}')"
+    else
+        BRANCH=Rel-"$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
     log_message "Rel-${S_APP_VERSION} をセットアップします。"
