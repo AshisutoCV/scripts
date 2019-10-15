@@ -346,7 +346,35 @@ function add_repo() {
     if [ $kka_flg -eq 1 ];then
         sed -i -E  "s/^(SHIELD_REPO_URL=\"https:\/\/).*\"/\1${KKA_REPO}\"/" add-shield-repo.sh
     fi
+
+    SHREPO=$(cat add-shield-repo.sh |grep -E ^SHIELD_REPO=|awk -F'["/]' '{print $3}')
+    BRREPO=$(echo ${BRANCH} | awk -F'[-.]' '{for(i=1;i<NF;++i){printf(tolower($i))}print $NF}')
+    SHREPO_CNT=$(curl -s "https://ericom:${ERICOMPASS}@${HELM_REPO}/${SHREPO}/index.yaml"  | grep -c $(cat .es_version))
+    BRREPO_CNT=$(curl -s "https://ericom:${ERICOMPASS}@${HELM_REPO}/${BRREPO}/index.yaml"  | grep -c $(cat .es_version))
+
+    echo "SHREPO: " ${SHREPO} >> $LOGFILE
+    echo "BRREPO: " ${BRREPO} >> $LOGFILE
+    echo "SHREPO_CNT: " ${SHREPO_CNT} >> $LOGFILE
+    echo "BRREPO_CNT: " ${BRREPO_CNT} >> $LOGFILE
+
+    if [[ "${SHREPO}" != "${BRREPO}" ]]; then
+        if [[ ${SHREPO_CNT} -eq 0 ]]; then
+            if [[ ${BRREPO_CNT} -eq 0 ]]; then
+                failed_to_install "add repo no-chart in helm repo"
+            else
+                sed -i -E "s/^(SHIELD_REPO=.*\/).*\"/\1${BRREPO}\"/" add-shield-repo.sh
+            fi
+        else
+            if [[ ${BRREPO_CNT} -eq 0 ]]; then
+                sed -i -E "s/^(SHIELD_REPO=.*\/).*\"/\1${BRREPO}\"/" add-shield-repo.sh
+            fi
+        fi
+    fi
+
+    log_message "helm repo: $(grep -E ^SHIELD_REPO= add-shield-repo.sh | sed -E  "s/^(SHIELD_REPO=.*\/)(.*)\"/\2/")"
     ./add-shield-repo.sh ${BRANCHFLG} -p ${ERICOMPASS} >> $LOGFILE 2>&1
+
+    curl -s -O  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/add-shield-repo.sh
     log_message "[end] add shield repo"
 }
 
