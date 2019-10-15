@@ -15,7 +15,7 @@ BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/helm_kka-repo"
 HELM_REPO="helmrepo.shield-service.net"
 KKA_REPO="ericom-tec.ashisuto.co.jp/chart"
 

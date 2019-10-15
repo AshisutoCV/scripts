@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ES_PATH=/usr/local/ericomshield
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/helm_kka-repo"
 
 if ((EUID != 0)); then
     #    sudo su

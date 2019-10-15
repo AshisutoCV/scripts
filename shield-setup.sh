@@ -18,7 +18,7 @@ if [ -f .es_branch ]; then
 fi
 
 ERICOMPASS="Ericom123$"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/helm_kka-repo"
 HELM_REPO="helmrepo.shield-service.net"
 KKA_REPO="ericom-tec.ashisuto.co.jp/chart"
 

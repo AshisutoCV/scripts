@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/helm_kka-repo"
 ES_PATH=/usr/local/ericomshield
 
 if ((EUID != 0)); then
