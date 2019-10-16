@@ -317,7 +317,7 @@ if [ ! -f .es_update ]; then
 
     # get install scripts
     get_scripts
-
+    check_sysctl    
     get_yaml
 fi
 
