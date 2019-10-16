@@ -1,6 +1,7 @@
 # Version List
 ***
 ## shield-update.sh
+* [20191016a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191016a---20191016)
 * [20191010a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191010a---20191010)
 * [20191008a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191008a---20191008)
 * [20191007b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191007b---20191007)
