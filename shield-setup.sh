@@ -980,13 +980,6 @@ else
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo './node-setup.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
@@ -1011,13 +1004,6 @@ else
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo './node-setup.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
@@ -1078,13 +1064,6 @@ else
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo './node-setup.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
@@ -1137,13 +1116,6 @@ else
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo './node-setup.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x install-docker.sh'  | tee -a $CMDFILE
@@ -1168,13 +1140,6 @@ else
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo "curl -s -OL ${SCRIPTS_URL}/node-setup.sh"  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'chmod +x node-setup.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo './node-setup.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh"  | tee -a $CMDFILE
