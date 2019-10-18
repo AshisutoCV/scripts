@@ -1,0 +1,5 @@
+#service_cluster_ip_range: 10.43.0.0/16
+#cluster_cidr: 10.42.0.0/16
+#cluster_dns_server: 10.43.0.10
+#max-pods: 110
+#docker_version: 18.09.8
