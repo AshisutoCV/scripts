@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191018a
+### VER=20191028a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -660,6 +660,15 @@ curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/
 chmod +x configure-sysctl-values.sh
 sudo ./configure-sysctl-values.sh | tee -a $LOGFILE
 log_message "[end] setting sysctl-values"
+
+# check ubuntu env
+if [[ $OS == "Ubuntu" ]]; then
+    if [[$(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
+        sudo add-apt-repository universe
+    fi
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
+fi
 
 # install docker
 log_message "[start] install docker"
