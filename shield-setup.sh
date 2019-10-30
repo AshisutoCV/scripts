@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191028a
+### VER=20191030a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -374,6 +374,7 @@ function deploy_shield() {
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
     sed -i -e '/^LOGFILE=/s/last_deploy.log/"\.\/logs\/last_deploy.log"/'  deploy-shield.sh
+    sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
 
     if [ ! -f custom-farm.yaml ] || [ $yamlget_flg -eq 1 ]; then
         curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-farm.yaml
