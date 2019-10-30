@@ -5,8 +5,9 @@
 ### 変更
 #### shield-setup.sh
 * deploy-shield.sh内のTZ指定部分のメーカーbugをケアするように対応
+* ses_limit_flgが正しく指定できない問題を修正。
 
-#### shield-setup.sh
+#### shield-start.sh
 * deploy-shield.sh内のTZ指定部分のメーカーbugをケアするように対応
 
 --------------------------------------------------------------
