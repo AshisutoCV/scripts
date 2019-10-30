@@ -76,7 +76,7 @@ function check_args(){
         elif [ "$1" == "--spell-check-on" ] || [ "$1" == "--Spell-check-on" ] ; then
             spell_flg=1
         elif [ "$1" == "--ses-check-off" ] || [ "$1" == "--Ses-check-off" ] ; then
-            ses_check_flg=1
+            ses_limit_flg=1
         elif [ "$1" == "--uninstall" ] || [ "$1" == "--Uninstall" ] ; then
             uninstall_flg=1
         elif [ "$1" == "--delete-all" ] || [ "$1" == "--Delete-all" ] || [ "$1" == "--Delete-All" ] ; then
