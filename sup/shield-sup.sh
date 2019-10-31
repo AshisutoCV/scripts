@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191031a
+### VER=20191031b
 ####################
 
 #Check if we are root
@@ -14,6 +14,34 @@ if ((EUID != 0)); then
     echo " Please run it as Root"
     echo "sudo" $0
     exit
+fi
+
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
+
+usage() {
+   echo "$0 [-y]"
+   echo "    -y   : All logs are collected without confirmation."
+}
+
+y_flg=0
+
+for i in `seq 1 ${#}`
+do
+    if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+        usage
+        exit 0
+    elif [ "$1" == "-y" ]; then
+        y_flg=1
+    else
+        args="${args} ${1}"
+    fi
+    shift
+done
+
+if [ ! -z ${args} ]; then
+    log_message "${args} は不正な引数です。"
+    exit 1
 fi
 
 echo
@@ -34,6 +62,9 @@ cat /etc/hosts > $TMPDIR/systeminfo/etc-hosts 2>&1
 cat /etc/resolv.conf > $TMPDIR/systeminfo/etcresolvconf 2>&1
 systemd-resolve --status > $TMPDIR/systeminfo/systemd-resolve 2>&1
 free -m > $TMPDIR/systeminfo/free-m 2>&1
+cat /proc/buddyinfo > $TMPDIR/systeminfo/proc-buddyinfo 2>&1
+cat /proc/meminfo > $TMPDIR/systeminfo/proc-meminfo 2>&1
+cat /proc/cpuinfo > $TMPDIR/systeminfo/proc-cpuinfo 2>&1
 uptime > $TMPDIR/systeminfo/uptime 2>&1
 dmesg > $TMPDIR/systeminfo/dmesg 2>&1
 df -hT > $TMPDIR/systeminfo/df-hT 2>&1
@@ -42,6 +73,7 @@ if df -i >/dev/null 2>&1; then
 fi
 lsmod > $TMPDIR/systeminfo/lsmod 2>&1
 mount > $TMPDIR/systeminfo/mount 2>&1
+cat /etc/fstab > $TMPDIR/systeminfo/fstab 2>&1
 ps auxfww > $TMPDIR/systeminfo/ps-auxfww 2>&1
 top d 5 n 4 b > $TMPDIR/systeminfo/top 2>&1
 lsof -Pn > $TMPDIR/systeminfo/lsof-Pn 2>&1
@@ -192,27 +224,32 @@ echo
 echo "Created /tmp/${FILENAME}"
 
 # all var log collect
-VARLOGSIZE=$(du -sh /var/log/ --exclude='journal' --exclude="*.db")
-while :
-do
-    echo ""
-    echo -n '/var/log配下のログ(journalを除く)を収集しますか？（対象ログのサイズは ${VARLOGSIZE} です。） [y/N]:'
-        read ANSWER
-        case $ANSWER in
-            "Y" | "y" | "yse" | "Yes" | "YES" )
-                varlog_flg=1
-                break
-                ;;
-            "" | "n" | "N" | "no" | "No" | "NO" )
-                varlog_flg=0
-                break
-                ;;
-            * )
-                echo "YまたはNで答えて下さい。"
-                ;;
-        esac
-done
-if [[ varlog_flg == 1 ]];then
+VARLOGSIZE=$(du -sh /var/log/ --exclude='journal' --exclude="*.db" | awk '{print $1}')
+
+if [[ y_flg -eq 0 ]]; then
+    while :
+    do
+        echo ""
+        echo -n "Do you want to collect logs under /var/log　(except journal) ? (The target log size is about ${VARLOGSIZE}.) [Y/n]:"
+            read ANSWER
+            case $ANSWER in
+                "" | "Y" | "y" | "yse" | "Yes" | "YES" )
+                    varlog_flg=1
+                    break
+                    ;;
+                "n" | "N" | "no" | "No" | "NO" )
+                    varlog_flg=0
+                    break
+                    ;;
+                * )
+                    echo "Please input Y or N "
+                    ;;
+            esac
+    done
+else
+    varlog_flg=1
+fi
+if [[ varlog_flg -eq 1 ]];then
     echo " Preparing the tar file: /tmp/varlog_$FILENAME "
     tar czf /tmp/varlog_$FILENAME -C /var/log/ .
     echo " Done! "
@@ -220,11 +257,62 @@ if [[ varlog_flg == 1 ]];then
     echo "Created /tmp/varlog_${FILENAME}"
 fi
 
+# report log collect
+if [[ y_flg -eq 0 ]]; then
+    while :
+    do
+        echo ""
+        echo -n "Do you want to collect logs in the Report ? [Y/n]:"
+            read ANSWER
+            case $ANSWER in
+                "" | "Y" | "y" | "yse" | "Yes" | "YES" )
+                    getlog_flg=1
+                    break
+                    ;;
+                "n" | "N" | "no" | "No" | "NO" )
+                    getlog_flg=0
+                    break
+                    ;;
+                * )
+                    echo "Please input Y or N "
+                    ;;
+            esac
+    done
+else
+    getlog_flg=1
+fi
+if [[ getlog_flg -eq 1 ]];then
+    echo " Shield Support: Collecting Report logs ....."
+    echo " >>> It takes a lot of time. Please wait patiently. ....."
+    YESTERDAY=$(date --date "$(date +"%Y-%m-%d %H:%M:%S") +15:00" +%Y-%m-%d)
+    TMPDIR=$(mktemp -d)
+    mkdir -p $TMPDIR/getlogs
+    curl -sOL ${SCRIPTS_URL}/sup/getlog.sh 
+    chmod +x getlog.sh
+    for L in allsystemstats applications connectioninfo connections errors feedback file-download file-preview file-sanitization file-transfer raw reports scalebrowser systemalert systemtest systemmsage
+    do
+        ./getlog.sh -L $L -O $TMPDIR/getlogs
+        ./getlog.sh -L $L -D ${YESTERDAY} -O $TMPDIR/getlogs
+    done
+    echo " Preparing the tar file: /tmp/getlog_$FILENAME "
+    tar czf /tmp/getlog_$FILENAME -C $TMPDIR/getlogs/ .
+    rm -rf $TMPDIR
+    echo " Done! "
+    echo
+    echo "Created /tmp/getlog_${FILENAME}"
+fi
+
 # finish
 echo
-echo -n "Please send this file /tmp/${FILENAME} "
-if [[ varlog_flg == 1 ]];then
-    echo -n "and /tmp/varlog_${FILENAME} "
+echo "Please get these files"
+echo
+echo  "/tmp/${FILENAME} "
+if [[ varlog_flg -eq 1 ]];then
+    echo "/tmp/varlog_${FILENAME} "
 fi
-echo "to Support Center."
+if [[ getlog_flg -eq 1 ]];then
+    echo "/tmp/getlog_${FILENAME} "
+fi
+echo
+echo "And send to Support Center."
 echo
