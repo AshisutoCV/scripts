@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191031a
+### VER=20191031b
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -664,7 +664,7 @@ log_message "[end] setting sysctl-values"
 
 # check ubuntu env
 if [[ $OS == "Ubuntu" ]]; then
-    if [[$(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
+    if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
         sudo add-apt-repository universe
     fi
     sudo apt-get update -qq
