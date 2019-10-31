@@ -2,14 +2,17 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191003a
+### VER=20191031a
 ####################
 
-#-----------------
-TZ="Asia/Tokyo"    # 結果のtimestampをTZに調整して表示
+####-----------------
+#TZ="Asia/Tokyo"    # 結果のtimestampをTZに調整して表示
 TTZ="+9:00"        # 検索時間のズレを調整するため設定を推奨
-#-----------------
-SIZE=100
+####-----------------
+SIZE=10000 
+if [[ ! -z ${TZ} ]];then
+    SIZE=100
+fi
 
 usage() {
    echo "$0 [target log] (target date) (target time) (get filed) (output_dir)"
