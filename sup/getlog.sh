@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191031a
+### VER=20191031b
 ####################
 
 ####-----------------
@@ -24,11 +24,17 @@ usage() {
    echo "                           - file-sanitization"
    echo "                           - file-transfer"
    echo "                           - file-preview"
-   echo "                           - errors"
+   echo "                           - file-download"
    echo "                           - systemusage"
    echo "                           - systemalert"
    echo "                           - systemtest"
-   echo "                           - reports"
+   echo "                           - errors"
+   echo "                           - feedback"
+   echo "                           - reports (k8sのみ)"
+   echo "                           - allsystemstats (swarmのみ)"
+   echo "                           - connectioninfo (swarmのみ)"
+   echo "                           - scalebrowser　(swarmのみ)"
+   echo "                           - raw (swarmのみ)"
    echo "    --target_date (-D)  : 取得対象日。(YYYY-MM-DD)。 省略した場合は本日。"
    echo "    --target_time (-T)  : 取得対象時刻。開始時刻-終了時刻(HHMM-HHMM)。 省略した場合24時間。(0000-2359)"
    echo "                           (秒を含めた6桁でも対応。 ex.: 095500-095505)"
@@ -41,6 +47,27 @@ TARGET_TIME="0000-2359"
 QUERY='"match_all":{}'
 TARGET_LOGs=()
 
+#OS Check
+if [ -f /etc/redhat-release ]; then
+    OS="RHEL"
+else
+    OS="Ubuntu"
+fi
+# install jq
+if ! which jq > /dev/null 2>&1 ;then
+    echo "Need install jq. installing..."
+    if [[ $OS == "Ubuntu" ]]; then
+        sudo apt-get install -y -qq jq
+    elif [[ $OS == "RHEL" ]]; then
+        sudo yum -y -q install epel-release
+        sudo yum -y -q install jq
+    fi
+    if ! which jq > /dev/null 2>&1 ;then
+        echo "failed to install jq. exiting."
+        exit 1
+    fi
+fi
+
 for i in `seq 1 ${#}`
 do
     if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
@@ -50,7 +77,7 @@ do
         shift
         TARGET_LOG=$1
         TARGET_LOGs+=( ${TARGET_LOG} )
-         if [[ $(cat $0 | grep -c -E "\-\s${TARGET_LOG}\"$") -eq 0 ]] && [[ "${TARGET_LOG}" != "*" ]];then
+         if [[ $(cat $0 | grep -c -E "\-\s${TARGET_LOG}\"$") -eq 0 ]] && [[ $(cat $0 | grep -c -E "\-\s${TARGET_LOG} (.*)\"$") -eq 0 ]];then
              echo "エラー: target_logの指定が不正です。"
              usage
              exit 1
@@ -142,55 +169,105 @@ for e in ${TARGET_LOGs[@]}; do
     let i++
 done
 
-RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
-    {
-      "version": true,
-      "from": 0,
-      "size": '${SIZE}',
-      "sort": [
+if which kubectl > /dev/null 2>&1 ; then
+    RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
         {
-          "@timestamp": {
-            "order": "asc",
-            "unmapped_type": "boolean"
-          }
-        }
-      ],
-      "_source": {
-      },
-      "stored_fields": [
-        "*"
-      ],
-      "query": {
-        "bool": {
-          "must": [
+          "version": true,
+          "from": 0,
+          "size": '${SIZE}',
+          "sort": [
             {
-              '${QUERY}'
-            },
-            {
-              "range": {
-                "@timestamp": {
-                  "format": "strict_date_optional_time",
-                  "gte": "'${sTY}'-'${sTm}'-'${sTd}'T'${sTH}':'${sTM}':'${sTS}'.000Z",
-                  "lte": "'${eTY}'-'${eTm}'-'${eTd}'T'${eTH}':'${eTM}':'${eTS}'.999Z"
-                }
+              "@timestamp": {
+                "order": "asc",
+                "unmapped_type": "boolean"
               }
             }
-          ]
-        }
-      }
-    }'
-)
+          ],
+          "_source": {
+          },
+          "stored_fields": [
+            "*"
+          ],
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  '${QUERY}'
+                },
+                {
+                  "range": {
+                    "@timestamp": {
+                      "format": "strict_date_optional_time",
+                      "gte": "'${sTY}'-'${sTm}'-'${sTd}'T'${sTH}':'${sTM}':'${sTS}'.000Z",
+                      "lte": "'${eTY}'-'${eTm}'-'${eTd}'T'${eTH}':'${eTM}':'${eTS}'.999Z"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }'
+    )
+else
+    ELKCONTAINER=$(sudo docker ps |grep shield-elk | cut -d" " -f 1)
+    RET=$(sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XGET "http://localhost:9200/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
+        {
+          "version": true,
+          "from": 0,
+          "size": '${SIZE}',
+          "sort": [
+            {
+              "@timestamp": {
+                "order": "asc",
+                "unmapped_type": "boolean"
+              }
+            }
+          ],
+          "_source": {
+          },
+          "stored_fields": [
+            "*"
+          ],
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  '${QUERY}'
+                },
+                {
+                  "range": {
+                    "@timestamp": {
+                      "format": "strict_date_optional_time",
+                      "gte": "'${sTY}'-'${sTm}'-'${sTd}'T'${sTH}':'${sTM}':'${sTS}'.000Z",
+                      "lte": "'${eTY}'-'${eTm}'-'${eTd}'T'${eTH}':'${eTM}':'${eTS}'.999Z"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }'
+    )
+fi
 
 next_flg=1
 first_scroll=1
 while [[ $next_flg -eq 1 ]]
 do
     if [[ ${first_scroll} -ne 1 ]];then
+        if which kubectl > /dev/null 2>&1 ; then
             RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
             {
                 "scroll": "1m",
                 "scroll_id" : '${SCROLL_ID}'
             }')
+        else
+            RET=$(sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XGET "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+            {
+                "scroll": "1m",
+                "scroll_id" : '${SCROLL_ID}'
+            }')
+        fi
     else
         SCROLL_ID=$(echo "$RET" | jq -c ._scroll_id)
     fi
@@ -200,10 +277,17 @@ do
         RET=$(echo "$RET" | jq -c '.hits.hits[]._source')
         if  [[ ${#RET} -eq 0 ]];then
             next_flg=0
-            kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XDELETE "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
-            {
-                "scroll_id" : '${SCROLL_ID}'
-            }' >/dev/null
+            if which kubectl > /dev/null 2>&1 ; then
+                kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XDELETE "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+                {
+                    "scroll_id" : '${SCROLL_ID}'
+                }' >/dev/null
+            else
+                sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XDELETE "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+                {
+                    "scroll_id" : '${SCROLL_ID}'
+                }' >/dev/null
+            fi
             if [[ ${#RET} -eq 0 ]];then
                 exit 0
             fi
