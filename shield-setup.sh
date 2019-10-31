@@ -595,6 +595,16 @@ function get_scripts() {
 
     curl -s -OL ${SCRIPTS_URL}/shield-update.sh
     chmod +x shield-update.sh
+    
+    if [ ! -e ./sup/ ];then
+        mkdir sup
+    fi
+    curl -s -o ./sup/shield-sup.sh -L ${SCRIPTS_URL}/sup/shield-sup.sh
+    chmod +x ./sup/shield-sup.sh
+
+    curl -s -o ./sup/getlog.sh -L ${SCRIPTS_URL}/sup/getlog.sh
+    chmod +x ./sup/getlog.sh
+
     log_message "[end] get operation scripts"
 }
 
@@ -634,6 +644,9 @@ export BRANCH
 echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 
+# get operation scripts
+get_scripts
+
 #update or deploy
 if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
     #if [ $update_flg -eq 1 ];then
@@ -648,9 +661,6 @@ if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
     #fi
     fin 0
 fi
-
-# get operation scripts
-get_scripts
 
 # set MY_IP
 choose_network_interface

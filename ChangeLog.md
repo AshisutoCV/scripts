@@ -1,14 +1,21 @@
 # Changelog
 
+
 ## [VER=20191031b] - 2019/10/31
 
+### 追加
+#### shield-sup.sh
+* 新規作成。
+
 ### 変更
+#### getlog.sh
+* swarm版にも対応。
 
 #### shield-setup.sh
 * UbuntuにおいてUniverseリポジトリの追加と、libssl1.1の問題に対処しました。(BugFix)
+* shield-sup.sh および getlog.sh を取得するように設定。(sup/ 配下に配置。)
 
 --------------------------------------------------------------
-
 
 ## [VER=20191031a] - 2019/10/31
 
