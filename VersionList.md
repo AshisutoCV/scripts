@@ -34,6 +34,7 @@
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
 
 ## getlog.sh
+* [20191031a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191031a---20191031)
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
 
 ## shield-restore.sh
