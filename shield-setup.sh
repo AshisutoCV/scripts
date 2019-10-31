@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191018a
+### VER=20191031a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -76,7 +76,7 @@ function check_args(){
         elif [ "$1" == "--spell-check-on" ] || [ "$1" == "--Spell-check-on" ] ; then
             spell_flg=1
         elif [ "$1" == "--ses-check-off" ] || [ "$1" == "--Ses-check-off" ] ; then
-            ses_check_flg=1
+            ses_limit_flg=1
         elif [ "$1" == "--uninstall" ] || [ "$1" == "--Uninstall" ] ; then
             uninstall_flg=1
         elif [ "$1" == "--delete-all" ] || [ "$1" == "--Delete-all" ] || [ "$1" == "--Delete-All" ] ; then
@@ -374,6 +374,7 @@ function deploy_shield() {
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
     sed -i -e '/^LOGFILE=/s/last_deploy.log/"\.\/logs\/last_deploy.log"/'  deploy-shield.sh
+    sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
 
     if [ ! -f custom-farm.yaml ] || [ $yamlget_flg -eq 1 ]; then
         curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-farm.yaml
@@ -660,6 +661,15 @@ curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/
 chmod +x configure-sysctl-values.sh
 sudo ./configure-sysctl-values.sh | tee -a $LOGFILE
 log_message "[end] setting sysctl-values"
+
+# check ubuntu env
+if [[ $OS == "Ubuntu" ]]; then
+    if [[$(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
+        sudo add-apt-repository universe
+    fi
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
+fi
 
 # install docker
 log_message "[start] install docker"
