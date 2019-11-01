@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191031b
+### VER=20191101a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -337,7 +337,7 @@ function check_ha() {
 
     if [[ $NUM_MNG -eq 3 ]];then
         if [ -f custom-management.yaml ]; then
-             if [ grep -c antiAffinity custom-management.yaml ];then
+             if [[ $(grep -c antiAffinity custom-management.yaml) -eq 1 ]];then
                  sed -i -e '/#.*antiAffinity/s/#//g' custom-management.yaml
              else
                  sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-management.yaml
@@ -348,7 +348,7 @@ function check_ha() {
     fi
     if [[ $NUM_FARM -eq 3 ]];then
         if [ -f custom-farm.yaml ]; then
-             if [ grep -c antiAffinity custom-farm.yaml ];then
+             if [[ $(grep -c antiAffinity custom-farm.yaml) -eq 1 ]];then
                  sed -i -e '/#.*antiAffinity/s/#//g' custom-farm.yaml
              else
                  sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-farm.yaml
