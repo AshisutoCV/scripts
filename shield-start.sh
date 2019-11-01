@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191031a
+### VER=20191101b
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -43,6 +43,7 @@ function deploy_shield() {
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
     sed -i -e '/^LOGFILE=/s/last_deploy.log/"\.\/logs\/last_deploy.log"/'  deploy-shield.sh
     sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
+    sed -i -e 's/s\/\\\/usr\\\/share\\\/zoneinfo/s\/.*\\\/usr\\\/share\\\/zoneinfo/' deploy-shield.sh
     VERSION_REPO=$S_APP_VERSION
     export VERSION_REPO
 
