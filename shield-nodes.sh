@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191007a
+### VER=20191105a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -126,9 +126,9 @@ function get_docker_cmd() {
     DOCKERRUNCMD2=$(echo ${DOCKERRUNCMD2} | sed -e 's/\//\\\//')
     DOCKERRUNCMD3=$(echo ${DOCKERRUNCMD3} | sed -e 's/\//\\\//')
 
-    sed -i -e "/[a-zA-Z_0-9]\s--etcd --controlplane --worker$/s/.*/${DOCKERRUNCMD1}/" $CMDFILE
-    sed -i -e "/[a-zA-Z_0-9]\s--etcd --controlplane$/s/.*/${DOCKERRUNCMD2}/" $CMDFILE
-    sed -i -e "/[a-zA-Z_0-9]\s--worker$/s/.*/${DOCKERRUNCMD3}/" $CMDFILE
+    sed -i -e "/[a-zA-Z_0-9]\s--etcd --controlplane --worker$/s|.*|${DOCKERRUNCMD1}|" $CMDFILE
+    sed -i -e "/[a-zA-Z_0-9]\s--etcd --controlplane$/s|.*|${DOCKERRUNCMD2}|" $CMDFILE
+    sed -i -e "/[a-zA-Z_0-9]\s--worker$/s|.*|${DOCKERRUNCMD3}|" $CMDFILE
 
     log_message "[end] Generate commands"
 }
