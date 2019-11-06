@@ -2,6 +2,7 @@
 ***
 
 ## shield-setup.sh
+* [20191106a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191106a---20191106)
 * [20191101b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191101b---20191101)
 * [20191101a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191101a---20191101)
 * [20191031b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191031b---20191031)
@@ -12,6 +13,7 @@
 * [20190913a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190913a---20190913)
 
 ## shield-update.sh
+* [20191106a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191106a---20191106)
 * [20191016a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191016a---20191016)
 * [20191010a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191010a---20191010)
 * [20191008a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191008a---20191008)
