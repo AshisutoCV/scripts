@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191016a
+### VER=20191106a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -162,7 +162,7 @@ function select_version() {
         done
     fi
 
-    if [ "$BRANCH" == "Rel" ]; then
+    if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev"  ]; then
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
