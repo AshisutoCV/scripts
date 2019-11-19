@@ -6,6 +6,8 @@ Nityananda Gohain
 School of Engineering, Tezpur University
 27/10/17
 Modified by Ericom for Ericom Shield
+20191119a
+Modified by K.K. Ashisuto
 """
 
 """
@@ -58,7 +60,7 @@ def writeToYum(proxy, port, username, password, flag):
     # writing starts
     if not flag:
         with open(yum_, "a+") as opened_file:
-            opened_file.write('proxy="{}";\n'.format(make_proxy_url_string(proxy, port, username, password)))
+            opened_file.write('proxy={};\n'.format(make_proxy_url_string(proxy, port, username, password)))
 
 
 # This function writes to the environment file

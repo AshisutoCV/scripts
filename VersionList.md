@@ -1,6 +1,9 @@
 # Version List
 ***
 
+## proxy-cent.py
+* [20191119a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191119a---20191119)
+
 ## shield-setup.sh
 * [20191106a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191106a---20191106)
 * [20191101b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191101b---20191101)
