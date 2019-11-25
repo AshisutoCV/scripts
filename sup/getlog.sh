@@ -2,16 +2,19 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191031b
+### VER=20191120a
 ####################
 
 ####-----------------
 #TZ="Asia/Tokyo"    # 結果のtimestampをTZに調整して表示
-TTZ="+9:00"        # 検索時間のズレを調整するため設定を推奨
+TTZ="Asia/Tokyo"    # 検索日時の入力において、入力値をどのTZとして扱うか。
 ####-----------------
+
+
 SIZE=10000 
 if [[ ! -z ${TZ} ]];then
     SIZE=100
+    nTZ=$(env TZ=${TZ} date +%z | sed -e s/00$/:00/)
 fi
 
 usage() {
@@ -42,7 +45,8 @@ usage() {
    echo "    --output_dir (-O)   : 指定したディレクトリにログをファイル出力します。ファイル名は「[target_log](-get_field)_[target_date(yyyymmdd))]」。"
 }
 
-TARGET_DATE=$(date +"%Y-%m-%d")
+
+TARGET_DATE=$(env TZ=${TTZ} date +"%Y-%m-%d")
 TARGET_TIME="0000-2359"
 QUERY='"match_all":{}'
 TARGET_LOGs=()
@@ -148,16 +152,16 @@ else
 fi
 
 
-sTY=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%Y)
-sTy=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%y)
-sTm=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%m)
-sTd=$(date --date "${TARGET_DATE} ${sTH}:${sTM} ${TTZ}" +%d)
-eTY=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%Y)
-eTy=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%y)
-eTm=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%m)
-eTd=$(date --date "${TARGET_DATE} ${eTH}:${eTM} ${TTZ}" +%d)
-sTH=$(date --date "${sTH} ${TTZ}" +%H)
-eTH=$(date --date "${eTH} ${TTZ}" +%H)
+sTY=$(env TZ=UTC date --date "${TARGET_DATE} ${sTH}:${sTM}" +%Y)
+sTy=$(env TZ=UTC date --date "${TARGET_DATE} ${sTH}:${sTM}" +%y)
+sTm=$(env TZ=UTC date --date "${TARGET_DATE} ${sTH}:${sTM}" +%m)
+sTd=$(env TZ=UTC date --date "${TARGET_DATE} ${sTH}:${sTM}" +%d)
+eTY=$(env TZ=UTC date --date "${TARGET_DATE} ${eTH}:${eTM}" +%Y)
+eTy=$(env TZ=UTC date --date "${TARGET_DATE} ${eTH}:${eTM}" +%y)
+eTm=$(env TZ=UTC date --date "${TARGET_DATE} ${eTH}:${eTM}" +%m)
+eTd=$(env TZ=UTC date --date "${TARGET_DATE} ${eTH}:${eTM}" +%d)
+sTH=$(env TZ=UTC date --date "${TARGET_DATE} ${sTH}:${sTM}" +%H)
+eTH=$(env TZ=UTC date --date "${TARGET_DATE} ${eTH}:${eTM}" +%H)
 
 i=0
 for e in ${TARGET_LOGs[@]}; do
@@ -305,7 +309,7 @@ do
             LEFT=$(echo $line | sed -E 's/(^.*@timestamp":)(.*$)/\1/')
             RIGHT=$(echo $line | sed -E 's/(^.*"@timestamp":"[^"]*")(.*$)/\2/')
             TIMESTAMP=$(echo $line | sed -E 's/(^.*"@timestamp":")([^"]*)(.*$)/\2/')
-            TIMESTAMP=$(env TZ=${TZ} date --date "${TIMESTAMP}" +%Y-%m-%dT%H:%M:%S.%3N${TTZ})
+            TIMESTAMP=$(env TZ=${TZ} date --date "${TIMESTAMP}" +%Y-%m-%dT%H:%M:%S.%3N${nTZ})
             if [[ ${RES} == "" ]];then
                 RES=${LEFT}'"'${TIMESTAMP}'"'${RIGHT}
             else
