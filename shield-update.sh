@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191106a
+### VER=20191203a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -200,13 +200,13 @@ function check_sysctl() {
     log_message "[start] check sysctl file"
     if [ $(diff -c configure-sysctl-values.sh configure-sysctl-values.sh_backup | wc -l) -gt 0 ]; then
         log_message "[start] exec sysctl script"
-        sudo configure-sysctl-values.sh
+        sudo ./configure-sysctl-values.sh
         echo '------------------------------------------------------------'
         echo "(下記を他のノードでも実行してください。)"
         echo ""
         echo "curl -s -OL https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"
         echo 'chmod +x configure-sysctl-values.sh'
-        echo './configure-sysctl-values.sh'
+        echo 'sudo ./configure-sysctl-values.sh'
         echo ""
         echo '------------------------------------------------------------'
         while :
@@ -252,6 +252,7 @@ function get_yaml() {
     
     if [[ $(ls diff_*.yaml 2>/dev/null | wc -l) -ne 0 ]]; then
         echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、shield-update.shを再実行してください。"
+        echo "※基本的にはユーザが意図して設定変更した箇所以外は新しいyamlファイルの記述を採用してください。"
 
         for difffile in $(ls diff_*.yaml)
         do
