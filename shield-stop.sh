@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191007a
+### VER=20191206a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -33,21 +33,25 @@ function stop_shield() {
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
 
     chmod +x delete-shield.sh
-    sed -i -e '/Are you sure you want to delete the deployment/d' delete-shield.sh
-    sed -i -e '/case/d' delete-shield.sh
-    sed -i -e '/yes/d' delete-shield.sh
-    sed -i -e 's/Uninstalling/Stopping/' delete-shield.sh
-    sed -i -e '/;;/d' delete-shield.sh
-    sed -i -e '/*)/d' delete-shield.sh
-    sed -i -e '/no/d' delete-shield.sh
-    sed -i -e '/Ok!/d' delete-shield.sh
-    sed -i -e '/esac/d' delete-shield.sh
-    sed -i -e '/helm delete --purge "common"/d' delete-shield.sh
-    sed -i -e '/kubectl delete namespace "common"/d' delete-shield.sh
-    sed -i -e '/helm delete --purge "shield-common"/d' delete-shield.sh
-    sed -i -e '/kubectl delete namespace "shield-common"/d' delete-shield.sh
-
-    ./delete-shield.sh | tee -a $LOGFILE
+    if [[ $((1911 - ${BRANCH:4:2}${BRANCH:7:2})) -gt 0 ]];then
+        sed -i -e '/Are you sure you want to delete the deployment/d' delete-shield.sh
+        sed -i -e '/case/d' delete-shield.sh
+        sed -i -e '/yes/d' delete-shield.sh
+        sed -i -e 's/Uninstalling/Stopping/' delete-shield.sh
+        sed -i -e '/;;/d' delete-shield.sh
+        sed -i -e '/*)/d' delete-shield.sh
+        sed -i -e '/no/d' delete-shield.sh
+        sed -i -e '/Ok!/d' delete-shield.sh
+        sed -i -e '/esac/d' delete-shield.sh
+        sed -i -e '/helm delete --purge "common"/d' delete-shield.sh
+        sed -i -e '/kubectl delete namespace "common"/d' delete-shield.sh
+        sed -i -e '/helm delete --purge "shield-common"/d' delete-shield.sh
+        sed -i -e '/kubectl delete namespace "shield-common"/d' delete-shield.sh
+        ./delete-shield.sh | tee -a $LOGFILE
+    else
+        sed -i -e 's/Uninstalling/Stopping/' delete-shield.sh
+        ./delete-shield.sh -s | tee -a $LOGFILE
+    fi
 
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
 
