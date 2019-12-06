@@ -33,6 +33,7 @@
 * [20190911a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190911a---20190911)
 
 ## shield-stop.sh
+* [20191206a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191206a---20191206)
 * [20191007a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191007a---20191007)
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
 * [20190919b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190919b---20190919)
