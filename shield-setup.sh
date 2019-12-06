@@ -1356,10 +1356,10 @@ do
             echo '上記ノードにどのShieldコンポーネントを配置しますか？ '
             echo ""
             echo '0) Cluster Management のみ'
-            echo '---------------------------------------------------------'
-            echo '【オールインワンの場合】'
-            echo '---------------------------------------------------------'
-            echo '1) 全て (management, proxy, elk, farm-services, remort-browsers)'
+            #echo '---------------------------------------------------------'
+            #echo '【オールインワンの場合】'
+            #echo '---------------------------------------------------------'
+            #echo '1) 全て (management, proxy, elk, farm-services, remort-browsers)'
             echo '---------------------------------------------------------'
             echo '【System ComponentとBrowserを分ける場合】'
             echo '---------------------------------------------------------'
@@ -1376,14 +1376,14 @@ do
                 "0")
                     break
                     ;;
-                "1")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
-                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
-                    kubectl label node ${NODENAME} shield-role/management=accept --overwrite
-                    kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
-                    kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
-                    break
-                    ;;
+                #"1")
+                #    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
+                #    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
+                #    kubectl label node ${NODENAME} shield-role/management=accept --overwrite
+                #    kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
+                #    kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                #    break
+                #    ;;
                 "2")
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
@@ -1410,6 +1410,7 @@ do
             echo "*** {$NODENAME} ***"
             echo ""
             echo '上記ノードにどのShieldコンポーネントを配置しますか？ '
+            echo '※オールインワンは正式サポートされません。(1,11,21,31)'
             echo ""
             echo '0) Cluster Management のみ'
             echo '---------------------------------------------------------'
