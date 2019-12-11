@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191206a
+### VER=20191211a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -130,6 +130,24 @@ function check_args(){
         if  [ $BRANCH == "Rel" ] ; then
             export BRANCH="Staging"
         fi
+        while :
+        do
+            echo ""
+            echo "================================================================================="
+            echo -n 'Shieldのみアンインストールしてよろしいですか？（クラスタはそのままです。） [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        fin 9
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+        done
         uninstall_shield
         fin 0
     fi
@@ -139,6 +157,24 @@ function check_args(){
         if  [ $BRANCH == "Rel" ] ; then
             export BRANCH="Staging"
         fi
+        while :
+        do
+            echo ""
+            echo "================================================================================="
+            echo -n '全てを削除してよろしいですか？ [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        fin 9
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+        done
         uninstall_shield
         delete_all
         fin 0
@@ -290,7 +326,7 @@ function uninstall_shield() {
 
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
     chmod +x delete-shield.sh
-    ./delete-shield.sh | tee -a $LOGFILE
+    ./delete-shield.sh -s | tee -a $LOGFILE
     rm -f .es_version
     rm -f .es_branch
 
@@ -1363,8 +1399,8 @@ do
             echo '---------------------------------------------------------'
             echo '【System ComponentとBrowserを分ける場合】'
             echo '---------------------------------------------------------'
-            echo '2) System Componentのみ (management, proxy, elk)'
-            echo '3) Browser Farm (farm-services, remort-browsers)'
+            echo '2) System Component + Farm-service (management, proxy, elk, farm-services)'
+            echo '3) Browser のみ (remort-browsers)'
             echo '---------------------------------------------------------'
             echo '99) Advanced Option'
             echo ""
@@ -1388,10 +1424,10 @@ do
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     break
                     ;;
                 "3")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
@@ -1418,15 +1454,15 @@ do
             echo '---------------------------------------------------------'
             echo '1) 全て (management, proxy, elk, farm-services, remort-browsers)'
             echo '---------------------------------------------------------'
-            echo '【System ComponentとBrowserを分ける場合】'
-            echo '---------------------------------------------------------'
-            echo '2) System Componentのみ (management, proxy, elk)'
-            echo '3) Browser Farm (farm-services, remort-browsers)'
-            echo '---------------------------------------------------------'
             echo '【System Componentにfarm-serviceを同居させる場合】'
             echo '---------------------------------------------------------'
-            echo '4) System Component + Farm-service (management, proxy, elk, farm-services)'
-            echo '5) Browser のみ (remort-browsers)'
+            echo '2) System Component + Farm-service (management, proxy, elk, farm-services)'
+            echo '3) Browser のみ (remort-browsers)'
+            echo '---------------------------------------------------------'
+            echo '【Browserにfarm-serviceを同居させる場合】'
+            echo '---------------------------------------------------------'
+            echo '4) System Componentのみ (management, proxy, elk)'
+            echo '5) Browser Farm (farm-services, remort-browsers)'
             echo '---------------------------------------------------------'
             echo ''
             echo '///////////////////////////////////////////////////////////'
@@ -1436,12 +1472,12 @@ do
             echo '11) 全て (management, proxy, farm-services, remort-browsers)'
             echo '19) ELK のみ (elk)'
             echo '---------------------------------------------------------'
-            echo '12) System Componentのみ (management, proxy)'
-            echo '13) Browser Farm (farm-services, remort-browsers)'
+            echo '12) System Component + Farm-service (management, proxy, farm-services)'
+            echo '13) Browser のみ (remort-browsers)'
             echo '19) ELK のみ (elk)'
             echo '---------------------------------------------------------'
-            echo '14) System Component + Farm-service (management, proxy, farm-services)'
-            echo '15) Browser のみ (remort-browsers)'
+            echo '14) System Componentのみ (management, proxy)'
+            echo '15) Browser Farm (farm-services, remort-browsers)'
             echo '19) ELK のみ (elk)'
             echo '---------------------------------------------------------'
             echo ''
@@ -1451,12 +1487,12 @@ do
             echo '21) 全て (management, elk, farm-services, remort-browsers)'
             echo '29) Proxyのみ(proxy)'
             echo '---------------------------------------------------------'
-            echo '22) System Componentのみ (management, elk)'
-            echo '23) Browser Farm (farm-services, remort-browsers)'
+            echo '22) System Component + Farm-service (management, elk, farm-services)'
+            echo '23) Browser のみ (remort-browsers)'
             echo '29) Proxyのみ(proxy)'
             echo '---------------------------------------------------------'
-            echo '24) System Component + Farm-service (management, elk, farm-services)'
-            echo '25) Browser のみ (remort-browsers)'
+            echo '24) System Componentのみ (management, elk)'
+            echo '25) Browser Farm (farm-services, remort-browsers)'
             echo '29) Proxyのみ(proxy)'
             echo '---------------------------------------------------------'
             echo ''
@@ -1468,13 +1504,13 @@ do
             echo '38) ELK のみ (elk)'
             echo '39) Proxyのみ(proxy)'
             echo '---------------------------------------------------------'
-            echo '32) Managementのみ (management)'
-            echo '33) Browser Farm (farm-services, remort-browsers)'
+            echo '32) Management + Farm-service (management, farm-services)'
+            echo '33) Browser のみ (remort-browsers)'
             echo '38) ELK のみ (elk)'
             echo '39) Proxyのみ(proxy)'
             echo '---------------------------------------------------------'
-            echo '34) Management + Farm-service (management, farm-services)'
-            echo '35) Browser のみ (remort-browsers)'
+            echo '34) Managementのみ (management)'
+            echo '35) Browser Farm (farm-services, remort-browsers)'
             echo '38) ELK のみ (elk)'
             echo '39) Proxyのみ(proxy)'
             echo ""
@@ -1489,59 +1525,59 @@ do
                     break
                     ;;
                 "1")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
-                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
                 "2")
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     break
                     ;;
                 "3")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
                 "4")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
                     break
                     ;;
                 "5")
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
                 "11")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
-                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
                 "12")
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     break
                     ;;
                 "13")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
                 "14")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                     break
                     ;;
                 "15")
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
@@ -1550,29 +1586,29 @@ do
                     break
                     ;;
                 "21")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
-                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
                 "22")
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     break
                     ;;
                 "23")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
                 "24")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
                     break
                     ;;
                 "25")
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
@@ -1581,26 +1617,26 @@ do
                     break
                     ;;
                 "31")
+                    kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
-                    kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     break
                     ;;
                 "32")
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     break
                     ;;
                 "33")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
                 "34")
-                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                     break
                     ;;
                 "35")
+                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                     break
                     ;;
