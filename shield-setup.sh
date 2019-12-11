@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191206a
+### VER=20191211a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -130,6 +130,24 @@ function check_args(){
         if  [ $BRANCH == "Rel" ] ; then
             export BRANCH="Staging"
         fi
+        while :
+        do
+            echo ""
+            echo "================================================================================="
+            echo -n 'Shieldのみアンインストールしてよろしいですか？（クラスタはそのままです。） [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        fin 9
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+        done
         uninstall_shield
         fin 0
     fi
@@ -139,6 +157,24 @@ function check_args(){
         if  [ $BRANCH == "Rel" ] ; then
             export BRANCH="Staging"
         fi
+        while :
+        do
+            echo ""
+            echo "================================================================================="
+            echo -n '全てを削除してよろしいですか？ [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        fin 9
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+        done
         uninstall_shield
         delete_all
         fin 0
@@ -290,7 +326,7 @@ function uninstall_shield() {
 
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
     chmod +x delete-shield.sh
-    ./delete-shield.sh | tee -a $LOGFILE
+    ./delete-shield.sh -s | tee -a $LOGFILE
     rm -f .es_version
     rm -f .es_branch
 
