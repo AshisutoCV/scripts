@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191003a
+### VER=20191212a
 ####################
 
 if which helm ; then
@@ -27,6 +27,7 @@ for dir in $cleanupdirs; do
 done
 
 sudo rm -rf rancher-store
+sudo rm -rf ericomshield
 rm -f .ra_*
 rm -f .es_version
 rm -f .es_branch
