@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191211a
+### VER=20191213a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -771,7 +771,7 @@ else
     log_message "[waiting] launched rancher"
     while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
     echo ""
-
+    sleep 5
     # Rabcer first Login
     LOGINRESPONSE=$(curl -s -k "${RANCHERURL}/v3-public/localProviders/local?action=login" \
         -H 'content-type: application/json' \
