@@ -21,7 +21,7 @@ docker volume prune -f
 sudo rm -rf /var/lib/docker
 sudo systemctl restart docker
 
-cleanupdirs="/var/lib/etcd /etc/kubernetes /etc/cni /opt/cni /var/lib/cni /var/run/calico /var/run/flannel /opt/rke"
+cleanupdirs="/etc/ceph /etc/cni /etc/kubernetes /opt/cni /opt/rke /run/secrets/kubernetes.io /run/calico /var/run/calico /run/flannel /var/run/flannel /var/lib/calico /var/lib/etcd /var/lib/cni /var/lib/kubelet /var/lib/rancher/rke/log"
 for dir in $cleanupdirs; do
     sudo rm -rf $dir
 done
