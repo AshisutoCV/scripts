@@ -15,6 +15,7 @@ BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
+ERICOMPASS="Ericom123$"
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 function usage() {
