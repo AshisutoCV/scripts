@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191218a
+### VER=20191218b
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -252,7 +252,7 @@ function get_yaml() {
     done
     
     if [[ $(ls diff_*.yaml 2>/dev/null | wc -l) -ne 0 ]]; then
-        echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、shield-update.shを再実行してください。"
+        echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、$0 ${ALL_ARGS} を再実行してください。"
         echo "※基本的にはユーザが意図して設定変更した箇所以外は新しいyamlファイルの記述を採用してください。"
 
         for difffile in $(ls diff_*.yaml)
@@ -260,7 +260,7 @@ function get_yaml() {
             echo ${difffile}
         done
     else
-        echo "yamlファイルに更新はありませんでした。そのままshield-update.shを再実行してください。"
+        echo "yamlファイルに更新はありませんでした。そのまま再度　$0 ${ALL_ARGS} を再実行してください。"
     fi
 
     log_message "[end] check yaml files"
@@ -308,7 +308,9 @@ function exec_update(){
 log_message "###### START ###########################################################"
 
 # check args and set flags
+ALL_ARGS="$@"
 check_args $@
+
 export BRANCH
 
 if [ ! -f .es_update ]; then

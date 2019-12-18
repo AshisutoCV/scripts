@@ -21,6 +21,7 @@
 * [20190913a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190913a---20190913)
 
 ## shield-update.sh
+* [20191218b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191218b---20191218)
 * [20191218a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191218a---20191218)
 * [20191203a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191203a---20191203)
 * [20191106a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191106a---20191106)
