@@ -28,6 +28,7 @@ done
 
 sudo rm -rf rancher-store
 sudo rm -rf ericomshield
+sudo rm -rf .kube
 rm -f .ra_*
 rm -f .es_version
 rm -f .es_branch
