@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191218c
+### VER=20191218c-dev
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -774,19 +774,25 @@ else
     log_message "[waiting] launched rancher"
     while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
     echo ""
-    sleep 5
-    # Rabcer first Login
-    LOGINRESPONSE=$(curl -s -k "${RANCHERURL}/v3-public/localProviders/local?action=login" \
-        -H 'content-type: application/json' \
-        --data-binary '{
-            "username":"admin",
-            "password":"admin"
-          }' \
-        )
-    echo "LOGINRESPONSE: $LOGINRESPONSE" >> $LOGFILE
+    sleep 1
+    # Rancer first Login
+    for i in `seq 3`
+    do
+        LOGINRESPONSE=$(curl -s -k "${RANCHERURL}/v3-public/localProviders/local?action=login" \
+            -H 'content-type: application/json' \
+            --data-binary '{
+                "username":"admin",
+                "password":"admin"
+              }' \
+            )
+        echo "LOGINRESPONSE: $LOGINRESPONSE" >> $LOGFILE
+        if [ $(echo $LOGINRESPONSE | grep -c error) -eq 0  ]; then
+            break
+        fi
+    done
     LOGINTOKEN=$(echo $LOGINRESPONSE | jq -r .token)
     log_message "LOGINTOKEN: $LOGINTOKEN"
-    if [ -z $LOGINTOKEN ]; then
+    if [ "$LOGINTOKEN" == "null" ] || [ -z $LOGINTOKEN ]; then
         failed_to_install "get LOGINTOKEN " "all"
     fi
 
@@ -836,7 +842,7 @@ else
 
     # Extract and store token
     APITOKEN=$(echo $APIRESPONSE | jq -r .token)
-    if [ -z $APITOKEN ]; then
+    if [ "$APITOKEN" == "null" ] || [ -z $APITOKEN ]; then
         failed_to_install "get APITOKEN " "all"
     fi
     echo $APITOKEN > .ra_apitoken
@@ -946,7 +952,7 @@ else
     CLUSTERID=$(echo $CLUSTERRESPONSE | jq -r .id)
     echo $CLUSTERID > .ra_clusterid
     log_message "CLUSTERID: $CLUSTERID"
-    if [ -z $CLUSTERID ]; then
+    if [ "$CLUSTERID" == "null" ] || [ -z $CLUSTERID ] ; then
         failed_to_install "Extract CLUSTERID " "all"
     fi
     log_message "[end] Extract clusterid "
@@ -998,7 +1004,7 @@ else
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
         | jq -r '.data[].nodeCommand' | head -1)
-    if [ -z "$AGENTCMD" ]; then
+    if [ "$AGENTCMD" == "null" ] || [ -z "$AGENTCMD" ]; then
         failed_to_install "Extract AGENTCMD " "all"
     fi
 
@@ -1358,7 +1364,7 @@ SYSPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=System" \
     -H "Authorization: Bearer $APITOKEN" \
     | jq -r '.data[].id')
 log_message "SYSPROJECTID: $SYSPROJECTID"
-if [ -z $SYSPROJECTID ]; then
+if [ "$SYSPROJECTID" == "null" ] || [ -z $SYSPROJECTID ]; then
     failed_to_install "Extract SYSPROJECTID " "all"
 fi
 log_message "[end] get System project id"
