@@ -141,6 +141,10 @@ move_to_project
 
 log_message "[end] Start Shield"
 
+echo ""
+echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
+echo ""
+
 fin 0
 
 
