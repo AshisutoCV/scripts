@@ -662,6 +662,7 @@ fi
 #read custom_env file
 if [ -f .es_custom_env ]; then
     CLUSTER_CIDR=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_cidr | awk -F'[: ]' '{print $NF}')
+    DOCKER0=$(cat .es_custom_env | grep -v '^\s*#' | grep docker0 | awk -F'[: ]' '{print $NF}')
     SERVICE_CLUSTER_IP_RANGE=$(cat .es_custom_env | grep -v '^\s*#' | grep service_cluster_ip_range | awk -F'[: ]' '{print $NF}')
     CLUSTER_DNS_SERVER=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_dns_server | awk -F'[: ]' '{print $NF}')
     MAX_PODS=$(cat .es_custom_env | grep -v '^\s*#' | grep max-pods | awk -F'[: ]' '{print $NF}')
@@ -722,6 +723,9 @@ if [[ $OS == "Ubuntu" ]]; then
 fi
 
 # install docker
+if [ -z $DOCKER0 ]; then DOCKER0="172.17.0.1/16"; fi
+echo "DOCKER0: $DOCKER0" >> $LOGFILE
+sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"
 log_message "[start] install docker"
 curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh
 chmod +x install-docker.sh
