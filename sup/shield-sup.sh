@@ -5,8 +5,12 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191031b
+### VER=20191227a
 ####################
+
+####-----------------
+TTZ="Asia/Tokyo"    # getlog.sh利用のため
+####-----------
 
 #Check if we are root
 if ((EUID != 0)); then
@@ -23,6 +27,17 @@ usage() {
    echo "$0 [-y]"
    echo "    -y   : All logs are collected without confirmation."
 }
+
+CURRENT_DIR=$(cd $(dirname $0); pwd)
+
+if [[ $CURRENT_DIR =~ sup  ]]; then
+        cd $(dirname $(cd $(dirname $0); pwd))
+else
+    if [ ! -d /usr/local/ericomshield ];then
+        cd $(dirname $(find /home/ -name shield-setup.sh 2>/dev/null))
+    fi
+fi
+
 
 y_flg=0
 
@@ -134,7 +149,7 @@ if $(command -v ip >/dev/null 2>&1); then
   ip route > $TMPDIR/networking/iproute 2>&1
 fi
 if $(command -v ifconfig >/dev/null 2>&1); then
-  ifconfig -a > $TMPDIR/networking/ifconfiga
+  ifconfig -a > $TMPDIR/networking/ifconfig-a
 fi
 echo " Done! "
 echo
@@ -158,6 +173,10 @@ if [ $(docker ps |grep -c rancher) -ge 1 ]; then
    for RANCHERSERVER in $RANCHERSERVERS; do
      docker inspect $RANCHERSERVER > $TMPDIR/rancher/containerinspect/server-$RANCHERSERVER 2>&1
      docker logs -t $RANCHERSERVER > $TMPDIR/rancher/containerlogs/server-$RANCHERSERVER 2>&1
+   done
+   for RANCHERAGENT in $RANCHERAGENTS; do
+     docker inspect $RANCHERAGENT > $TMPDIR/rancher/containerinspect/agent-$RANCHERAGENT 2>&1
+     docker logs -t $RANCHERAGENT > $TMPDIR/rancher/containerlogs/agent-$RANCHERSERANCHERAGENTRVER 2>&1
    done
    echo " Done! "
    echo
@@ -215,16 +234,24 @@ fi
 echo " Done! "
 echo
 
-FILENAME="$(hostname)-$(date +'%Y-%m-%d_%H_%M_%S').tgz"
-echo " Preparing the tar file: /tmp/$FILENAME "
-tar czf /tmp/$FILENAME -C ${TMPDIR}/ .
+FILENAME="$(hostname)-$(date +'%Y-%m-%d_%H_%M_%S')"
+echo " Preparing the tar file: /tmp/${FILENAME}.tar.gz "
+tar -czf /tmp/${FILENAME}.tar.gz -C ${TMPDIR}/ .
 rm -rf ${TMPDIR}
 echo " Done! "
 echo
-echo "Created /tmp/${FILENAME}"
+echo "Created /tmp/${FILENAME}.tar.gz"
 
 # all var log collect
-VARLOGSIZE=$(du -sh /var/log/ --exclude='journal' --exclude="*.db" | awk '{print $1}')
+VARLOGSIZE=$(du -sb /var/log/ --exclude='journal' --exclude="*.db" | awk '{print $1}')
+
+# for swarm
+if [ -d /usr/local/ericomshield/ ]; then
+    VARLOGSIZE2=$(du -sb /var/lib/docker/containers/ | awk '{print $1}')
+    VARLOGSIZE=$(($VARLOGSIZE+$VARLOGSIZE2))
+fi
+
+VARLOGSIZE=$(numfmt --to=iec $VARLOGSIZE)
 
 if [[ y_flg -eq 0 ]]; then
     while :
@@ -250,11 +277,23 @@ else
     varlog_flg=1
 fi
 if [[ varlog_flg -eq 1 ]];then
-    echo " Preparing the tar file: /tmp/varlog_$FILENAME "
-    tar czf /tmp/varlog_$FILENAME -C /var/log/ .
+    # for swarm
+    if [ -d /usr/local/ericomshield/ ]; then
+        echo " Collecting container logs. "    
+        mkdir -p $TMPDIR/dockerlogs
+        docker ps --format "{{.Names}}" | xargs -I {} bash -c "sudo docker logs {} > $TMPDIR/dockerlogs/{}.log 2>&1"
+    fi
+    echo " Preparing the tar file: /tmp/varlog_${FILENAME}.tar.zg "
+    tar --exclude='journal' -cf /tmp/varlog_${FILENAME}.tar -C /var/log/ .
+    # for swarm
+    if [ -d /usr/local/ericomshield/ ]; then
+        tar -rf /tmp/varlog_${FILENAME}.tar -C $TMPDIR dockerlogs
+    fi
+    gzip /tmp/varlog_${FILENAME}.tar
+    rm -rf ${TMPDIR}
     echo " Done! "
     echo
-    echo "Created /tmp/varlog_${FILENAME}"
+    echo "Created /tmp/varlog_${FILENAME}.tar.gz"
 fi
 
 # report log collect
@@ -284,34 +323,42 @@ fi
 if [[ getlog_flg -eq 1 ]];then
     echo " Shield Support: Collecting Report logs ....."
     echo " >>> It takes a lot of time. Please wait patiently. ....."
-    YESTERDAY=$(date --date "$(date +"%Y-%m-%d %H:%M:%S") +15:00" +%Y-%m-%d)
+    YESTERDAY=$(env TZ=${TTZ} date --date "1 day ago" +%Y-%m-%d)
     TMPDIR=$(mktemp -d)
     mkdir -p $TMPDIR/getlogs
-    curl -sOL ${SCRIPTS_URL}/sup/getlog.sh 
+    if [ -f getlog.sh ];then
+        if [ ! -f getlog.sh_backup ];then
+            mv getlog.sh getlog.sh_backup
+        fi
+        curl -sOL ${SCRIPTS_URL}/sup/getlog.sh 
+    fi
     chmod +x getlog.sh
     for L in allsystemstats applications connectioninfo connections errors feedback file-download file-preview file-sanitization file-transfer raw reports scalebrowser systemalert systemtest systemmsage
     do
         ./getlog.sh -L $L -O $TMPDIR/getlogs
         ./getlog.sh -L $L -D ${YESTERDAY} -O $TMPDIR/getlogs
     done
-    echo " Preparing the tar file: /tmp/getlog_$FILENAME "
-    tar czf /tmp/getlog_$FILENAME -C $TMPDIR/getlogs/ .
+    if [ -f getlog.sh_backup ];then
+            mv -f getlog.sh_backup getlog.sh
+    fi
+    echo " Preparing the tar file: /tmp/getlog_${FILENAME}.tar.gz "
+    tar czf /tmp/getlog_${FILENAME}.tar.gz -C $TMPDIR/getlogs/ .
     rm -rf $TMPDIR
     echo " Done! "
     echo
-    echo "Created /tmp/getlog_${FILENAME}"
+    echo "Created /tmp/getlog_${FILENAME}.tar.gz"
 fi
 
 # finish
 echo
 echo "Please get these files"
 echo
-echo  "/tmp/${FILENAME} "
+echo  "/tmp/${FILENAME}.tar.gz "
 if [[ varlog_flg -eq 1 ]];then
-    echo "/tmp/varlog_${FILENAME} "
+    echo "/tmp/varlog_${FILENAME}.tar.gz "
 fi
 if [[ getlog_flg -eq 1 ]];then
-    echo "/tmp/getlog_${FILENAME} "
+    echo "/tmp/getlog_${FILENAME}.tar.gz "
 fi
 echo
 echo "And send to Support Center."
