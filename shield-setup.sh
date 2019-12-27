@@ -1045,7 +1045,7 @@ else
              echo "" 
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'そして、'
-             echo '(【必要に応じて】 下記コマンドを他のオールインワンノード(Cluster Management + Worker)で実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1063,7 +1063,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+                 echo "sudo mkdir -p /etc/docker"
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1074,7 +1075,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'または、'  | tee -a $CMDFILE
-             echo '(【必要に応じて】 下記コマンドを他の Cluster Management ノードで実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の Cluster Management単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1092,7 +1093,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+                 echo "sudo mkdir -p /etc/docker"
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1103,7 +1105,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'または、'  | tee -a $CMDFILE
-             echo '(【必要に応じて】 下記コマンドを他の Worker ノードで実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の Worker単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1121,7 +1123,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+                 echo "sudo mkdir -p /etc/docker"
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1138,7 +1141,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'そして、'  | tee -a $CMDFILE
-             echo '(【必要に応じて】 下記コマンドを他の Cluster Management ノードで実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の Cluster Management単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1156,7 +1159,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+                 echo "sudo mkdir -p /etc/docker"
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1167,7 +1171,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'そして、'  | tee -a $CMDFILE
-             echo '(【必要に応じて】 下記コマンドを他の Worker ノードで実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の Worker単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1185,7 +1189,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+                 echo "sudo mkdir -p /etc/docker"
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1196,7 +1201,7 @@ else
              echo ""  | tee -a $CMDFILE
              ;;
         "3") DOCKERRUNCMD=""
-             echo '下記コマンドをオールインワンノード(Cluster Management + Worker)で実行してください。'  | tee -a $CMDFILE
+             echo '下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1214,7 +1219,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+                 echo "sudo mkdir -p /etc/docker"
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1225,7 +1231,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'または、'  | tee -a $CMDFILE
-             echo '下記コマンドを Cluster Management ノードで実行してください。'  | tee -a $CMDFILE
+             echo '下記コマンドを Cluster Management単体 ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1243,7 +1249,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+                 echo "sudo mkdir -p /etc/docker"
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1254,7 +1261,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'そして'  | tee -a $CMDFILE
-             echo '下記コマンドを WORKER ノードで実行してください。'  | tee -a $CMDFILE
+             echo '下記コマンドを WORKER単体 ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1272,7 +1279,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+                 echo "sudo mkdir -p /etc/docker"
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
