@@ -725,6 +725,9 @@ fi
 # install docker
 if [ ! -z $DOCKER0 ]; then 
     echo "DOCKER0: $DOCKER0" >> $LOGFILE
+    if [ ! -d /etc/docker/ ];then
+        sudo mkdir -p /etc/docker
+    fi
     sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"
 fi
 log_message "[start] install docker"
