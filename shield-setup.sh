@@ -868,7 +868,10 @@ else
           }' \
        >>"$LOGFILE" 2>&1
     log_message "[end] Set server-url"
-
+fi
+if [ -f .ra_clusterid ]; then
+    log_message "[info] already exist CLUSTERID"
+else
     # Create cluster
     echo ""
     echo "================================================================================="
@@ -964,7 +967,11 @@ else
         failed_to_install "Extract CLUSTERID " "all"
     fi
     log_message "[end] Extract clusterid "
-
+fi
+if [ -f $CMDFILE ]; then
+    log_message "[info] already exist CMDFILE"
+    cat ${CMDFILE}
+else
     # create cluster regist token
     curl -s -k "${RANCHERURL}/v3/clusterregistrationtoken" \
         -H 'content-type: application/json' \
@@ -1296,49 +1303,50 @@ else
     echo ""
 
     $DOCKERRUNCMD >> $LOGFILE 2>&1
-
-    while :
-    do
-    echo ""
-    echo "================================================================================="
-    echo 'それぞれのノードでコマンドの実行は完了しましたか？'
-    echo -n '先に進んでもよろしいですか？ [y/N]:'
-        read ANSWER
-        case $ANSWER in
-            "Y" | "y" | "yse" | "Yes" | "YES" )
-                break
-                ;;
-            "" | "n" | "N" | "no" | "No" | "NO" )
-                ;;
-            * )
-                echo "YまたはNで答えて下さい。"
-                ;;
-        esac
-    done
-
-    # waiting cluster to active
-    log_message "[waiting] Cluster to active"
-    if [ ! -f .ra_rancherurl ] || [ ! -f .ra_clusterid ] || [ ! -f .ra_apitoken ];then
-        log_message ".raファイルがありません。"
-        failed_to_install "waiting cluster to active" "all"
-    fi
-
-    while :
-        do
-           CLUSTERSTATE=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
-           echo "Waiting for state to become active.: $CLUSTERSTATE" | tee -a $LOGFILE
-           if [ "active" = "$CLUSTERSTATE" ] ;then
-               sleep 5
-               CLUSTERSTATE2=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
-               if [ "active" = "$CLUSTERSTATE2" ] ;then
-                   break
-               fi
-           fi
-           sleep 10
-    done
-    log_message "[end] Exec docker command "
-    echo ""
 fi
+
+while :
+do
+echo ""
+echo "================================================================================="
+echo 'それぞれのノードでコマンドの実行は完了しましたか？'
+echo -n '先に進んでもよろしいですか？ [y/N]:'
+    read ANSWER
+    case $ANSWER in
+        "Y" | "y" | "yse" | "Yes" | "YES" )
+            break
+            ;;
+        "" | "n" | "N" | "no" | "No" | "NO" )
+            ;;
+        * )
+            echo "YまたはNで答えて下さい。"
+            ;;
+    esac
+done
+
+# waiting cluster to active
+log_message "[waiting] Cluster to active"
+if [ ! -f .ra_rancherurl ] || [ ! -f .ra_clusterid ] || [ ! -f .ra_apitoken ];then
+    log_message ".raファイルがありません。"
+    failed_to_install "waiting cluster to active" "all"
+fi
+
+while :
+    do
+       CLUSTERSTATE=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
+       echo "Waiting for state to become active.: $CLUSTERSTATE" | tee -a $LOGFILE
+       if [ "active" = "$CLUSTERSTATE" ] ;then
+           sleep 5
+           CLUSTERSTATE2=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
+           if [ "active" = "$CLUSTERSTATE2" ] ;then
+               break
+           fi
+       fi
+       sleep 10
+done
+log_message "[end] Exec docker command "
+echo ""
+
 
 # install kubectl
 curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-kubectl.sh
