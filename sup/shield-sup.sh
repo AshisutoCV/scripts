@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191031b-dev
+### VER=20191227a
 ####################
 
 ####-----------------
@@ -27,6 +27,17 @@ usage() {
    echo "$0 [-y]"
    echo "    -y   : All logs are collected without confirmation."
 }
+
+CURRENT_DIR=$(cd $(dirname $0); pwd)
+
+if [[ $CURRENT_DIR =~ sup  ]]; then
+        cd $(dirname $(cd $(dirname $0); pwd))
+else
+    if [ ! -d /usr/local/ericomshield ];then
+        cd $(dirname $(find /home/ -name shield-setup.sh 2>/dev/null))
+    fi
+fi
+
 
 y_flg=0
 
