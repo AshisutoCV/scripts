@@ -1070,8 +1070,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo "sudo mkdir -p /etc/docker"
-                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1100,9 +1100,9 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo "sudo mkdir -p /etc/docker"
-                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
-             fi
+                  echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
+            fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
@@ -1130,8 +1130,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo "sudo mkdir -p /etc/docker"
-                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1166,8 +1166,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo "sudo mkdir -p /etc/docker"
-                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1196,8 +1196,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo "sudo mkdir -p /etc/docker"
-                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1226,8 +1226,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo "sudo mkdir -p /etc/docker"
-                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1256,8 +1256,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo "sudo mkdir -p /etc/docker"
-                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1286,8 +1286,8 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              if [ ! -z $DOCKER0 ]; then 
-                 echo "sudo mkdir -p /etc/docker"
-                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\""
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
