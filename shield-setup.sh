@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191218c
+### VER=20191227a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -662,6 +662,7 @@ fi
 #read custom_env file
 if [ -f .es_custom_env ]; then
     CLUSTER_CIDR=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_cidr | awk -F'[: ]' '{print $NF}')
+    DOCKER0=$(cat .es_custom_env | grep -v '^\s*#' | grep docker0 | awk -F'[: ]' '{print $NF}')
     SERVICE_CLUSTER_IP_RANGE=$(cat .es_custom_env | grep -v '^\s*#' | grep service_cluster_ip_range | awk -F'[: ]' '{print $NF}')
     CLUSTER_DNS_SERVER=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_dns_server | awk -F'[: ]' '{print $NF}')
     MAX_PODS=$(cat .es_custom_env | grep -v '^\s*#' | grep max-pods | awk -F'[: ]' '{print $NF}')
@@ -722,6 +723,13 @@ if [[ $OS == "Ubuntu" ]]; then
 fi
 
 # install docker
+if [ ! -z $DOCKER0 ]; then 
+    echo "DOCKER0: $DOCKER0" >> $LOGFILE
+    if [ ! -d /etc/docker/ ];then
+        sudo mkdir -p /etc/docker
+    fi
+    sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"
+fi
 log_message "[start] install docker"
 curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh
 chmod +x install-docker.sh
@@ -774,19 +782,25 @@ else
     log_message "[waiting] launched rancher"
     while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
     echo ""
-    sleep 5
-    # Rabcer first Login
-    LOGINRESPONSE=$(curl -s -k "${RANCHERURL}/v3-public/localProviders/local?action=login" \
-        -H 'content-type: application/json' \
-        --data-binary '{
-            "username":"admin",
-            "password":"admin"
-          }' \
-        )
-    echo "LOGINRESPONSE: $LOGINRESPONSE" >> $LOGFILE
+    sleep 1
+    # Rancer first Login
+    for i in `seq 5`
+    do
+        LOGINRESPONSE=$(curl -s -k "${RANCHERURL}/v3-public/localProviders/local?action=login" \
+            -H 'content-type: application/json' \
+            --data-binary '{
+                "username":"admin",
+                "password":"admin"
+              }' \
+            )
+        echo "LOGINRESPONSE: $LOGINRESPONSE" >> $LOGFILE
+        if [ $(echo $LOGINRESPONSE | grep -c error) -eq 0  ]; then
+            break
+        fi
+    done
     LOGINTOKEN=$(echo $LOGINRESPONSE | jq -r .token)
     log_message "LOGINTOKEN: $LOGINTOKEN"
-    if [ -z $LOGINTOKEN ]; then
+    if [ "$LOGINTOKEN" == "null" ] || [ -z $LOGINTOKEN ]; then
         failed_to_install "get LOGINTOKEN " "all"
     fi
 
@@ -836,7 +850,7 @@ else
 
     # Extract and store token
     APITOKEN=$(echo $APIRESPONSE | jq -r .token)
-    if [ -z $APITOKEN ]; then
+    if [ "$APITOKEN" == "null" ] || [ -z $APITOKEN ]; then
         failed_to_install "get APITOKEN " "all"
     fi
     echo $APITOKEN > .ra_apitoken
@@ -854,7 +868,10 @@ else
           }' \
        >>"$LOGFILE" 2>&1
     log_message "[end] Set server-url"
-
+fi
+if [ -f .ra_clusterid ]; then
+    log_message "[info] already exist CLUSTERID"
+else
     # Create cluster
     echo ""
     echo "================================================================================="
@@ -946,11 +963,15 @@ else
     CLUSTERID=$(echo $CLUSTERRESPONSE | jq -r .id)
     echo $CLUSTERID > .ra_clusterid
     log_message "CLUSTERID: $CLUSTERID"
-    if [ -z $CLUSTERID ]; then
+    if [ "$CLUSTERID" == "null" ] || [ -z $CLUSTERID ] ; then
         failed_to_install "Extract CLUSTERID " "all"
     fi
     log_message "[end] Extract clusterid "
-
+fi
+if [ -f $CMDFILE ]; then
+    log_message "[info] already exist CMDFILE"
+    cat ${CMDFILE}
+else
     # create cluster regist token
     curl -s -k "${RANCHERURL}/v3/clusterregistrationtoken" \
         -H 'content-type: application/json' \
@@ -998,7 +1019,7 @@ else
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
         | jq -r '.data[].nodeCommand' | head -1)
-    if [ -z "$AGENTCMD" ]; then
+    if [ "$AGENTCMD" == "null" ] || [ -z "$AGENTCMD" ]; then
         failed_to_install "Extract AGENTCMD " "all"
     fi
 
@@ -1031,7 +1052,7 @@ else
              echo "" 
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'そして、'
-             echo '(【必要に応じて】 下記コマンドを他のオールインワンノード(Cluster Management + Worker)で実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1046,6 +1067,12 @@ else
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  | tee -a $CMDFILE 
+                 echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1057,7 +1084,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'または、'  | tee -a $CMDFILE
-             echo '(【必要に応じて】 下記コマンドを他の Cluster Management ノードで実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の Cluster Management単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1074,6 +1101,12 @@ else
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  | tee -a $CMDFILE 
                  echo ""  | tee -a $CMDFILE
              fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+             fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
@@ -1083,7 +1116,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'または、'  | tee -a $CMDFILE
-             echo '(【必要に応じて】 下記コマンドを他の Worker ノードで実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の Worker単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1098,6 +1131,12 @@ else
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1115,7 +1154,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'そして、'  | tee -a $CMDFILE
-             echo '(【必要に応じて】 下記コマンドを他の Cluster Management ノードで実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の Cluster Management単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1130,6 +1169,12 @@ else
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1141,7 +1186,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'そして、'  | tee -a $CMDFILE
-             echo '(【必要に応じて】 下記コマンドを他の Worker ノードで実行してください。)'  | tee -a $CMDFILE
+             echo '(【必要に応じて】 下記コマンドを他の Worker単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1156,6 +1201,12 @@ else
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1167,7 +1218,7 @@ else
              echo ""  | tee -a $CMDFILE
              ;;
         "3") DOCKERRUNCMD=""
-             echo '下記コマンドをオールインワンノード(Cluster Management + Worker)で実行してください。'  | tee -a $CMDFILE
+             echo '下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1182,6 +1233,12 @@ else
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1193,7 +1250,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'または、'  | tee -a $CMDFILE
-             echo '下記コマンドを Cluster Management ノードで実行してください。'  | tee -a $CMDFILE
+             echo '下記コマンドを Cluster Management単体 ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1210,6 +1267,12 @@ else
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+             fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
@@ -1219,7 +1282,7 @@ else
              echo ""  | tee -a $CMDFILE
              echo '------------------------------------------------------------'  | tee -a $CMDFILE
              echo 'そして'  | tee -a $CMDFILE
-             echo '下記コマンドを WORKER ノードで実行してください。'  | tee -a $CMDFILE
+             echo '下記コマンドを WORKER単体 ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1234,6 +1297,12 @@ else
              echo ""  | tee -a $CMDFILE
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1250,49 +1319,50 @@ else
     echo ""
 
     $DOCKERRUNCMD >> $LOGFILE 2>&1
-
-    while :
-    do
-    echo ""
-    echo "================================================================================="
-    echo 'それぞれのノードでコマンドの実行は完了しましたか？'
-    echo -n '先に進んでもよろしいですか？ [y/N]:'
-        read ANSWER
-        case $ANSWER in
-            "Y" | "y" | "yse" | "Yes" | "YES" )
-                break
-                ;;
-            "" | "n" | "N" | "no" | "No" | "NO" )
-                ;;
-            * )
-                echo "YまたはNで答えて下さい。"
-                ;;
-        esac
-    done
-
-    # waiting cluster to active
-    log_message "[waiting] Cluster to active"
-    if [ ! -f .ra_rancherurl ] || [ ! -f .ra_clusterid ] || [ ! -f .ra_apitoken ];then
-        log_message ".raファイルがありません。"
-        failed_to_install "waiting cluster to active" "all"
-    fi
-
-    while :
-        do
-           CLUSTERSTATE=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
-           echo "Waiting for state to become active.: $CLUSTERSTATE" | tee -a $LOGFILE
-           if [ "active" = "$CLUSTERSTATE" ] ;then
-               sleep 5
-               CLUSTERSTATE2=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
-               if [ "active" = "$CLUSTERSTATE2" ] ;then
-                   break
-               fi
-           fi
-           sleep 10
-    done
-    log_message "[end] Exec docker command "
-    echo ""
 fi
+
+while :
+do
+echo ""
+echo "================================================================================="
+echo 'それぞれのノードでコマンドの実行は完了しましたか？'
+echo -n '先に進んでもよろしいですか？ [y/N]:'
+    read ANSWER
+    case $ANSWER in
+        "Y" | "y" | "yse" | "Yes" | "YES" )
+            break
+            ;;
+        "" | "n" | "N" | "no" | "No" | "NO" )
+            ;;
+        * )
+            echo "YまたはNで答えて下さい。"
+            ;;
+    esac
+done
+
+# waiting cluster to active
+log_message "[waiting] Cluster to active"
+if [ ! -f .ra_rancherurl ] || [ ! -f .ra_clusterid ] || [ ! -f .ra_apitoken ];then
+    log_message ".raファイルがありません。"
+    failed_to_install "waiting cluster to active" "all"
+fi
+
+while :
+    do
+       CLUSTERSTATE=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
+       echo "Waiting for state to become active.: $CLUSTERSTATE" | tee -a $LOGFILE
+       if [ "active" = "$CLUSTERSTATE" ] ;then
+           sleep 5
+           CLUSTERSTATE2=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
+           if [ "active" = "$CLUSTERSTATE2" ] ;then
+               break
+           fi
+       fi
+       sleep 10
+done
+log_message "[end] Exec docker command "
+echo ""
+
 
 # install kubectl
 curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-kubectl.sh
@@ -1358,7 +1428,7 @@ SYSPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=System" \
     -H "Authorization: Bearer $APITOKEN" \
     | jq -r '.data[].id')
 log_message "SYSPROJECTID: $SYSPROJECTID"
-if [ -z $SYSPROJECTID ]; then
+if [ "$SYSPROJECTID" == "null" ] || [ -z $SYSPROJECTID ]; then
     failed_to_install "Extract SYSPROJECTID " "all"
 fi
 log_message "[end] get System project id"

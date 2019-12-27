@@ -1,6 +1,12 @@
 # Version List
 ***
 
+## getlog.sh
+* [20191227a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191227a---20191227)
+* [20191031b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191031b---20191031)
+* [20191031a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191031a---20191031)
+* [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
+
 ## proxy-cent.py
 * [20191119a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191119a---20191119)
 
@@ -22,6 +28,7 @@
 * [20190913a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190913a---20190913)
 
 ## shield-update.sh
+* [20191227a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191227a---20191227)
 * [20191218b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191218b---20191218)
 * [20191218a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191218a---20191218)
 * [20191203a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191203a---20191203)
@@ -34,6 +41,7 @@
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
 
 ## shield-start.sh
+* [20191227a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191227a---20191227)
 * [20191218c](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191218c---20191218)
 * [20191101b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191101b---20191101)
 * [20191031a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191031a---20191031)
@@ -49,6 +57,7 @@
 * [20190823a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190823a---20190918)
 
 ## shield-nodes.sh
+* [20191227a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191227a---20191227)
 * [20191105a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191105a---20191105)
 * [20191007a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191007a---20191007)
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
@@ -57,11 +66,6 @@
 ## delete-all.sh
 * [20191216a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191216a---20191216)
 * [20191212a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191212a---20191212)
-* [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
-
-## getlog.sh
-* [20191031b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191031b---20191031)
-* [20191031a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191031a---20191031)
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
 
 ## shield-restore.sh

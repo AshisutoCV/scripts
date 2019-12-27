@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191218b
+### VER=20191227a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -331,7 +331,7 @@ if [ -f .es_update ]; then
     do
         echo ""
         echo "================================================================================="
-        echo -n 'updateを実行します。よろしいですか？ [y/N]:'
+        echo -n 'updateを実行します。よろしいですか？(Update前にShieldシステムを停止します。) [y/N]:'
             read ANSWER
             case $ANSWER in
                 "Y" | "y" | "yse" | "Yes" | "YES" )
@@ -347,6 +347,7 @@ if [ -f .es_update ]; then
 
     S_APP_VERSION=$(cat .es_update)
     rm -f .es_update
+    ./shield-stop.sh
     exec_update
 fi
 

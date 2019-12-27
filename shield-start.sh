@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191218c
+### VER=20191227a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -140,6 +140,10 @@ deploy_shield
 move_to_project
 
 log_message "[end] Start Shield"
+
+echo ""
+echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
+echo ""
 
 fin 0
 
