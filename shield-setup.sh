@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191218c-dev
+### VER=20191227a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -723,9 +723,10 @@ if [[ $OS == "Ubuntu" ]]; then
 fi
 
 # install docker
-if [ -z $DOCKER0 ]; then DOCKER0="172.17.0.1/16"; fi
-echo "DOCKER0: $DOCKER0" >> $LOGFILE
-sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"
+if [ ! -z $DOCKER0 ]; then 
+    echo "DOCKER0: $DOCKER0" >> $LOGFILE
+    sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"
+fi
 log_message "[start] install docker"
 curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh
 chmod +x install-docker.sh
@@ -780,7 +781,7 @@ else
     echo ""
     sleep 1
     # Rancer first Login
-    for i in `seq 3`
+    for i in `seq 5`
     do
         LOGINRESPONSE=$(curl -s -k "${RANCHERURL}/v3-public/localProviders/local?action=login" \
             -H 'content-type: application/json' \
@@ -1058,6 +1059,9 @@ else
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  | tee -a $CMDFILE 
                  echo ""  | tee -a $CMDFILE
              fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+             fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
@@ -1084,6 +1088,9 @@ else
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'  | tee -a $CMDFILE 
                  echo ""  | tee -a $CMDFILE
              fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+             fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
@@ -1109,6 +1116,9 @@ else
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1142,6 +1152,9 @@ else
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+             fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
@@ -1167,6 +1180,9 @@ else
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1194,6 +1210,9 @@ else
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+             fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
@@ -1220,6 +1239,9 @@ else
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
              fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
+             fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
@@ -1245,6 +1267,9 @@ else
              if [ ! -z $DOCKER_VER ]; then
                  echo 'sed  -i -e "/^APP_VERSION/s/.*/APP_VERSION=\"'${DOCKER_VER}'\"/" install-docker.sh'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
+             fi
+             if [ ! -z $DOCKER0 ]; then 
+                 echo 'sudo sh -c "echo '{\"bip\": \"${DOCKER0}\"}' > /etc/docker/daemon.json"'
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE

@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191105a
+### VER=20191227a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -223,15 +223,15 @@ function set_label(){
                             echo '上記ノードにどのShieldコンポーネントを配置しますか？ '
                             echo ""
                             echo '0) Cluster Management のみ'
-                            echo '---------------------------------------------------------'
-                            echo '【オールインワンの場合】'
-                            echo '---------------------------------------------------------'
-                            echo '1) 全て (management, proxy, elk, farm-services, remort-browsers)'
+                            #echo '---------------------------------------------------------'
+                            #echo '【オールインワンの場合】'
+                            #echo '---------------------------------------------------------'
+                            #echo '1) 全て (management, proxy, elk, farm-services, remort-browsers)'
                             echo '---------------------------------------------------------'
                             echo '【System ComponentとBrowserを分ける場合】'
                             echo '---------------------------------------------------------'
-                            echo '2) System Componentのみ (management, proxy, elk)'
-                            echo '3) Browser Farm (farm-services, remort-browsers)'
+                            echo '2) System Component + Farm-service (management, proxy, elk, farm-services)'
+                            echo '3) Browser のみ (remort-browsers)'
                             echo '---------------------------------------------------------'
                             echo '99) Advanced Option'
                             echo ""
@@ -244,24 +244,24 @@ function set_label(){
                                     break_flg=1
                                     break
                                     ;;
-                                "1")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
-                                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
-                                    kubectl label node ${NODENAME} shield-role/management=accept --overwrite
-                                    kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
-                                    kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
-                                    break_flg=1
-                                    break
-                                    ;;
+                                #"1")
+                                #    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
+                                #    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
+                                #    kubectl label node ${NODENAME} shield-role/management=accept --overwrite
+                                #    kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
+                                #    kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                                #    break_flg=1
+                                #    break
+                                #    ;;
                                 "2")
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "3")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
@@ -281,6 +281,7 @@ function set_label(){
                             echo "*** {$NODENAME} ***"
                             echo ""
                             echo '上記ノードにどのShieldコンポーネントを配置しますか？ '
+                            echo '※オールインワンは正式サポートされません。(1,11,21,31)'
                             echo ""
                             echo '0) Cluster Management のみ'
                             echo '---------------------------------------------------------'
@@ -288,15 +289,15 @@ function set_label(){
                             echo '---------------------------------------------------------'
                             echo '1) 全て (management, proxy, elk, farm-services, remort-browsers)'
                             echo '---------------------------------------------------------'
-                            echo '【System ComponentとBrowserを分ける場合】'
-                            echo '---------------------------------------------------------'
-                            echo '2) System Componentのみ (management, proxy, elk)'
-                            echo '3) Browser Farm (farm-services, remort-browsers)'
-                            echo '---------------------------------------------------------'
                             echo '【System Componentにfarm-serviceを同居させる場合】'
                             echo '---------------------------------------------------------'
-                            echo '4) System Component + Farm-service (management, proxy, elk, farm-services)'
-                            echo '5) Browser のみ (remort-browsers)'
+                            echo '2) System Component + Farm-service (management, proxy, elk, farm-services)'
+                            echo '3) Browser のみ (remort-browsers)'
+                            echo '---------------------------------------------------------'
+                            echo '【Browserにfarm-serviceを同居させる場合】'
+                            echo '---------------------------------------------------------'
+                            echo '4) System Componentのみ (management, proxy, elk)'
+                            echo '5) Browser Farm (farm-services, remort-browsers)'
                             echo '---------------------------------------------------------'
                             echo ''
                             echo '///////////////////////////////////////////////////////////'
@@ -306,12 +307,12 @@ function set_label(){
                             echo '11) 全て (management, proxy, farm-services, remort-browsers)'
                             echo '19) ELK のみ (elk)'
                             echo '---------------------------------------------------------'
-                            echo '12) System Componentのみ (management, proxy)'
-                            echo '13) Browser Farm (farm-services, remort-browsers)'
+                            echo '12) System Component + Farm-service (management, proxy, farm-services)'
+                            echo '13) Browser のみ (remort-browsers)'
                             echo '19) ELK のみ (elk)'
                             echo '---------------------------------------------------------'
-                            echo '14) System Component + Farm-service (management, proxy, farm-services)'
-                            echo '15) Browser のみ (remort-browsers)'
+                            echo '14) System Componentのみ (management, proxy)'
+                            echo '15) Browser Farm (farm-services, remort-browsers)'
                             echo '19) ELK のみ (elk)'
                             echo '---------------------------------------------------------'
                             echo ''
@@ -321,12 +322,12 @@ function set_label(){
                             echo '21) 全て (management, elk, farm-services, remort-browsers)'
                             echo '29) Proxyのみ(proxy)'
                             echo '---------------------------------------------------------'
-                            echo '22) System Componentのみ (management, elk)'
-                            echo '23) Browser Farm (farm-services, remort-browsers)'
+                            echo '22) System Component + Farm-service (management, elk, farm-services)'
+                            echo '23) Browser のみ (remort-browsers)'
                             echo '29) Proxyのみ(proxy)'
                             echo '---------------------------------------------------------'
-                            echo '24) System Component + Farm-service (management, elk, farm-services)'
-                            echo '25) Browser のみ (remort-browsers)'
+                            echo '24) System Componentのみ (management, elk)'
+                            echo '25) Browser Farm (farm-services, remort-browsers)'
                             echo '29) Proxyのみ(proxy)'
                             echo '---------------------------------------------------------'
                             echo ''
@@ -338,13 +339,13 @@ function set_label(){
                             echo '38) ELK のみ (elk)'
                             echo '39) Proxyのみ(proxy)'
                             echo '---------------------------------------------------------'
-                            echo '32) Managementのみ (management)'
-                            echo '33) Browser Farm (farm-services, remort-browsers)'
+                            echo '32) Management + Farm-service (management, farm-services)'
+                            echo '33) Browser のみ (remort-browsers)'
                             echo '38) ELK のみ (elk)'
                             echo '39) Proxyのみ(proxy)'
                             echo '---------------------------------------------------------'
-                            echo '34) Management + Farm-service (management, farm-services)'
-                            echo '35) Browser のみ (remort-browsers)'
+                            echo '34) Managementのみ (management)'
+                            echo '35) Browser Farm (farm-services, remort-browsers)'
                             echo '38) ELK のみ (elk)'
                             echo '39) Proxyのみ(proxy)'
                             echo ""
@@ -360,11 +361,11 @@ function set_label(){
                                     break
                                     ;;
                                 "1")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
-                                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
@@ -372,17 +373,16 @@ function set_label(){
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "3")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "4")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
@@ -390,38 +390,39 @@ function set_label(){
                                     break
                                     ;;
                                 "5")
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "11")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
-                                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "12")
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "13")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "14")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/proxy=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "15")
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
@@ -432,33 +433,33 @@ function set_label(){
                                     break
                                     ;;
                                 "21")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
-                                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "22")
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "23")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "24")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/elk=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "25")
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
@@ -469,30 +470,30 @@ function set_label(){
                                     break
                                     ;;
                                 "31")
+                                    kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
-                                    kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "32")
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "33")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "34")
-                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/management=accept --overwrite
                                     break_flg=1
                                     break
                                     ;;
                                 "35")
+                                    kubectl label node ${NODENAME} shield-role/farm-services=accept --overwrite
                                     kubectl label node ${NODENAME} shield-role/remote-browsers=accept --overwrite
                                     break_flg=1
                                     break
