@@ -17,7 +17,8 @@ if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
 ERICOMPASS="Ericom123$"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/git/feature/for_es1912"
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
@@ -189,22 +190,31 @@ function select_version() {
     elif [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
     fi
+    BUILD=()
+    BUILD=(${VERSION_DEPLOYED//./ })
+    BUILD=${BUILD[2]}
+    GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ]; then
         log_message "現在インストールされているバージョン: N/A"
     else
-        log_message "現在インストールされているバージョン: Rel-$VERSION_DEPLOYED"
+        log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
 
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
         S_APP_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $2 }')
+
         if [ "$CHART_VERSION" == "NA" ]; then
             log_message "現在ご利用可能なリリース前先行利用バージョンはありません。"
             fin 1
         else
-            echo -n "リリース前先行利用バージョン Rel-${S_APP_VERSION} をセットアップします。[Y/n]:"
+            BUILD=()
+            BUILD=(${S_APP_VERSION//./ })
+            BUILD=${BUILD[2]}
+            GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+            echo -n "リリース前先行利用バージョン ${GIT_BRANCH}_Build:${BUILD} をセットアップします。[Y/n]:"
             read ANSWER
             echo "pre-use: $S_APP_VERSION" >> $LOGFILE
             echo "ANSWER: $ANSWER" >> $LOGFILE
@@ -1739,5 +1749,3 @@ echo ""
 echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
 echo ""
 fin 0
-
-
