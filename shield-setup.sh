@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191227a
+### VER=20191227a-dev0106
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -185,7 +185,7 @@ function select_version() {
     CHART_VERSION=""
     if which helm >/dev/null 2>&1 ;then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
-        VERSION_DEPLOYED=`echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g"`
+        VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     elif [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
     fi
@@ -283,7 +283,7 @@ function check_group() {
     for GROUP in $(groups $USER | cut -d: -f2)
     do
         if [ "docker" == "$GROUP" ]; then
-            if [ ! $(docker info) >/dev/null 2>&1 ]; then
+            if [ ! $(docker info > /dev/null 2>&1) ]; then
                 log_message "================================================================================="
                 log_message "一度ログオフした後、ログインをしなおして、スクリプトを再度実行してください。"
                 log_message "================================================================================="
