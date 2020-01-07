@@ -18,7 +18,7 @@ if [ -f .es_branch ]; then
 fi
 ERICOMPASS="Ericom123$"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/git/feature/for_es1912"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/for_es1912"
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
@@ -251,7 +251,11 @@ function select_version() {
                 m=$(( $n / 2 ))
                 S_APP_VERSION=$i
                 vers_a[$m]=$S_APP_VERSION
-                echo "$m: Rel-$S_APP_VERSION"
+                BUILD=()
+                BUILD=(${S_APP_VERSION//./ })
+                BUILD=${BUILD[2]}
+                GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+                echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
             else
                 if [ $n = 1 ]; then
                     m=1
@@ -283,7 +287,12 @@ function select_version() {
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
-    log_message "Rel-${S_APP_VERSION} をセットアップします。"
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    BUILD=${BUILD[2]}
+    GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+
+    log_message "${GIT_BRANCH}_Build:${BUILD} をセットアップします。"
     echo ${S_APP_VERSION} > .es_version
 }
 
