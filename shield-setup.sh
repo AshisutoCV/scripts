@@ -5,20 +5,28 @@
 ### VER=20191227a-dev0106
 ####################
 
-if [ ! -e ./logs/ ];then
-    mkdir logs
-    mv -f ./*.log ./logs/ > /dev/null 2>&1
+if [ ! -e $ES_PATH ];then
+    mkdir -p $ES_PATH
+fi
+if [ ! -e ${ES_PATH}/logs/ ];then
+    mkdir -p ${ES_PATH}/logs
+    mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
+    mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
 
-LOGFILE="./logs/install.log"
+ES_PATH="$HOME/ericomshield"
+LOGFILE="${ES_PATH}/logs/install.log"
 CMDFILE="command.txt"
 BRANCH="Rel"
+ERICOMPASS="Ericom123$"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
+elif [ -f ${ES_PATH}/.es_branch ]; then
+    BRANCH=$(cat ${ES_PATH}/.es_branch)
 fi
-ERICOMPASS="Ericom123$"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/for_es1912"
+
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
@@ -678,6 +686,11 @@ else
     OS="Ubuntu"
 fi
 
+# check args and set flags
+check_args $@
+
+select_version
+
 #read custom_env file
 if [ -f .es_custom_env ]; then
     CLUSTER_CIDR=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_cidr | awk -F'[: ]' '{print $NF}')
@@ -694,11 +707,6 @@ if [ -f .ra_rancherurl ] || [ -f .ra_clusterid ] || [ -f .ra_apitoken ];then
     CLUSTERID=$(cat .ra_clusterid)
     APITOKEN=$(cat .ra_apitoken)
 fi
-
-# check args and set flags
-check_args $@
-
-select_version
 
 export BRANCH
 echo $BRANCH > .es_branch
