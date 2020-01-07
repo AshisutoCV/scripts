@@ -90,7 +90,11 @@ function select_version() {
     if [ -z $VERSION_DEPLOYED ]; then
         log_message "現在インストールされているバージョン: N/A"
     else
-        log_message "現在インストールされているバージョン: Rel-$VERSION_DEPLOYED"
+        BUILD=()
+        BUILD=(${VERSION_DEPLOYED//./ })
+        BUILD=${BUILD[2]}
+        GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+        log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
 
@@ -101,7 +105,11 @@ function select_version() {
             log_message "現在ご利用可能なリリース前先行利用バージョンはありません。"
             fin 1
         else
-            echo -n "リリース前先行利用バージョン Rel-${S_APP_VERSION} をセットアップします。[Y/n]:"
+            BUILD=()
+            BUILD=(${S_APP_VERSION//./ })
+            BUILD=${BUILD[2]}
+            GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+            echo -n "リリース前先行利用バージョン ${GIT_BRANCH}_Build:${BUILD} をセットアップします。[Y/n]:"
             read ANSWER
             echo "pre-use: $S_APP_VERSION" >> $LOGFILE
             echo "ANSWER: $ANSWER" >> $LOGFILE
@@ -135,7 +143,11 @@ function select_version() {
                 m=$(( $n / 2 ))
                 S_APP_VERSION=$i
                 vers_a[$m]=$S_APP_VERSION
-                echo "$m: Rel-$S_APP_VERSION"
+                BUILD=()
+                BUILD=(${S_APP_VERSION//./ })
+                BUILD=${BUILD[2]}
+                GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+                echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
             else
                 if [ $n = 1 ]; then
                     m=1
@@ -167,7 +179,12 @@ function select_version() {
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
     fi
 
-    log_message "Rel-${S_APP_VERSION} をセットアップします。"
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    BUILD=${BUILD[2]}
+    GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+
+    log_message "${GIT_BRANCH}_Build:${BUILD} をセットアップします。"
     echo ${S_APP_VERSION} > .es_version
 }
 
