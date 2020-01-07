@@ -5,6 +5,7 @@
 ### VER=20191227a-dev0106
 ####################
 
+ES_PATH="$HOME/ericomshield"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
@@ -14,11 +15,12 @@ if [ ! -e ${ES_PATH}/logs/ ];then
     mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
 
-ES_PATH="$HOME/ericomshield"
+
 LOGFILE="${ES_PATH}/logs/install.log"
 CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
+CURRENT_DIR=$(cd $(dirname $0); pwd)
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 if [ -f .es_branch ]; then
@@ -297,11 +299,27 @@ function select_version() {
 
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
+    CHKBRANCH=${BUILD[0]}${BUILD[1]}
     BUILD=${BUILD[2]}
     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
 
     log_message "${GIT_BRANCH}_Build:${BUILD} をセットアップします。"
+
+    change_dir
+
     echo ${S_APP_VERSION} > .es_version
+}
+
+function change_dir(){
+    if [[ $CHKBRANCH -lt 1911 ]];then
+        log_message "pwd: $(pwd)"        
+    else
+        log_message "[start] change dir"
+        log_message "pwd: $(pwd)"        
+        cd ${ES_PATH}
+        log_message "pwd: $(pwd)"        
+        log_message "[end] change dir"
+    fi
 }
 
 function check_group() {
@@ -660,9 +678,9 @@ function get_scripts() {
     curl -s -OL ${SCRIPTS_URL}/shield-stop.sh
     chmod +x shield-stop.sh
 
-    curl -s -OL ${SCRIPTS_URL}/shield-update.sh
-    chmod +x shield-update.sh
-    
+    curl -s -o ${CURRENT_DIR}/shield-update.sh -L ${SCRIPTS_URL}/shield-update.sh
+    chmod +x ${CURRENT_DIR}/shield-update.sh
+  
     if [ ! -e ./sup/ ];then
         mkdir sup
     fi
@@ -692,13 +710,13 @@ check_args $@
 select_version
 
 #read custom_env file
-if [ -f .es_custom_env ]; then
-    CLUSTER_CIDR=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_cidr | awk -F'[: ]' '{print $NF}')
-    DOCKER0=$(cat .es_custom_env | grep -v '^\s*#' | grep docker0 | awk -F'[: ]' '{print $NF}')
-    SERVICE_CLUSTER_IP_RANGE=$(cat .es_custom_env | grep -v '^\s*#' | grep service_cluster_ip_range | awk -F'[: ]' '{print $NF}')
-    CLUSTER_DNS_SERVER=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_dns_server | awk -F'[: ]' '{print $NF}')
-    MAX_PODS=$(cat .es_custom_env | grep -v '^\s*#' | grep max-pods | awk -F'[: ]' '{print $NF}')
-    DOCKER_VER=$(cat .es_custom_env | grep -v '^\s*#' | grep docker_version | awk -F'[: ]' '{print $NF}')
+if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
+    CLUSTER_CIDR=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep cluster_cidr | awk -F'[: ]' '{print $NF}')
+    DOCKER0=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep docker0 | awk -F'[: ]' '{print $NF}')
+    SERVICE_CLUSTER_IP_RANGE=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep service_cluster_ip_range | awk -F'[: ]' '{print $NF}')
+    CLUSTER_DNS_SERVER=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep cluster_dns_server | awk -F'[: ]' '{print $NF}')
+    MAX_PODS=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep max-pods | awk -F'[: ]' '{print $NF}')
+    DOCKER_VER=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep docker_version | awk -F'[: ]' '{print $NF}')
 fi
 
 #read ra files
@@ -1413,7 +1431,10 @@ fi
 
 # Get kubectl config
 log_message "[start] Get kubectl config"
-touch  ~/.kube/config
+if [ ! -d  ${HOME}/.kube ];then
+    mkdir -p ${HOME}/.kube
+fi
+touch  ${HOME}/.kube/config
 echo 'waiting....'
 sleep 30
 

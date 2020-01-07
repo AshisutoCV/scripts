@@ -2,21 +2,31 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191227a
+### VER=20191227a-dev
 ####################
 
-if [ ! -e ./logs/ ];then
-    mkdir logs
-    mv -f ./*.log ./logs/ > /dev/null 2>&1
+ES_PATH="$HOME/ericomshield"
+if [ ! -e $ES_PATH ];then
+    mkdir -p $ES_PATH
+fi
+if [ ! -e ${ES_PATH}/logs/ ];then
+    mkdir -p ${ES_PATH}/logs
+    mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
+    mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
 
-LOGFILE="./logs/update.log"
+
+LOGFILE="${ES_PATH}/logs/update.log"
 BRANCH="Rel"
+ERICOMPASS="Ericom123$"
+CURRENT_DIR=$(cd $(dirname $0); pwd)
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
+elif [ -f ${ES_PATH}/.es_branch ]; then
+    BRANCH=$(cat ${ES_PATH}/.es_branch)
 fi
-ERICOMPASS="Ericom123$"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 function usage() {
     echo "USAGE: $0 [--pre-use]"
@@ -181,13 +191,54 @@ function select_version() {
 
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
+    CHKBRANCH=${BUILD[0]}${BUILD[1]}
     BUILD=${BUILD[2]}
     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
 
     log_message "${GIT_BRANCH}_Build:${BUILD} をセットアップします。"
+
+    change_dir
+    
     echo ${S_APP_VERSION} > .es_version
 }
 
+function change_dir(){
+    if [[ $CHKBRANCH -lt 1911 ]];then
+        log_message "pwd: $(pwd)"        
+    else
+        log_message "[start] change dir"
+        log_message "pwd: $(pwd)"
+        find ${CURRENT_DIR} -maxdepth 1 -name \*.sh -not -name shield-setup.sh -not -name shield-update.sh | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
+        find ${CURRENT_DIR} -maxdepth 1 -name .es_\* -not -name .es_custom_env | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
+        find ${CURRENT_DIR} -maxdepth 1 -name .ra_\* | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
+        find ${CURRENT_DIR} -maxdepth 1 -name \*.yaml\* | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
+        mv -f ./sup ${ES_PATH}/ > /dev/null 2>&1
+        cd ${ES_PATH}
+        log_message "pwd: $(pwd)"        
+        log_message "[end] change dir"
+    fi
+}
+function mv_rancher_store(){
+    if [[ $CHKBRANCH -lt 1911 ]];then
+        :        
+    else
+        if [ -d ${CURRENT_DIR}/rancher-store ];then
+            log_message "[start] move rancher-store"
+            log_message "[start] stop rancher server"
+            docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
+            mv -f ${CURRENT_DIR}/rancher-store ${ES_PATH}/
+            log_message "[start] run rancher"
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            chmod +x run-rancher.sh
+            ./run-rancher.sh | tee -a $LOGFILE
+            log_message "[end] run rancher"
+            log_message "[waiting] launched rancher"
+            RANCHERURL=$(cat .ra_rancherurl)
+            while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
+            log_message "[end] move rancher-store"
+        fi
+    fi
+}
 function log_message() {
     local PREV_RET_CODE=$?
     echo "$@"
@@ -205,9 +256,9 @@ function fin() {
 
 function get_scripts() {
     log_message "[start] get install scripts"
-    cp -fp shield-setup.sh shield-setup.sh_backup
-    curl -s -OL ${SCRIPTS_URL}/shield-setup.sh
-    chmod +x shield-setup.sh
+    cp -fp ${CURRENT_DIR}/shield-setup.sh ${CURRENT_DIR}/shield-setup.sh_backup
+    curl -s -o ${CURRENT_DIR}/shield-setup.sh -L ${SCRIPTS_URL}/shield-setup.sh
+    chmod +x ${CURRENT_DIR}/shield-setup.sh
     cp -fp configure-sysctl-values.sh configure-sysctl-values.sh_backup
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh
     chmod +x configure-sysctl-values.sh
@@ -293,7 +344,7 @@ function check_yaml() {
     fi
 
     farm_anti_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep antiAffinity | grep -c hard)   
-    if [[ $mng_anti_flg -eq 1 ]];then
+    if [[ $farm_anti_flg -eq 1 ]];then
         sed -i -e '/#.*antiAffinity/s/#//g' custom-farm.yaml
     fi
 
@@ -332,6 +383,7 @@ export BRANCH
 
 if [ ! -f .es_update ]; then
     select_version
+
     export BRANCH
     echo $BRANCH > .es_branch
     log_message "BRANCH: $BRANCH"
@@ -340,10 +392,7 @@ if [ ! -f .es_update ]; then
     get_scripts
     check_sysctl    
     get_yaml
-fi
-
-if [ -f .es_update ]; then 
-
+else
     while :
     do
         echo ""
@@ -365,6 +414,7 @@ if [ -f .es_update ]; then
     S_APP_VERSION=$(cat .es_update)
     rm -f .es_update
     ./shield-stop.sh
+    mv_rancher_store
     exec_update
 fi
 
