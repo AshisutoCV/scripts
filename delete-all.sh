@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191216a
+### VER=20191216a-dev
 ####################
 
 if which helm ; then
@@ -29,6 +29,7 @@ done
 sudo rm -rf rancher-store
 sudo rm -rf ericomshield
 sudo rm -rf .kube
+sudo rm -rf sup
 rm -f .ra_*
 rm -f .es_version
 rm -f .es_branch
