@@ -190,14 +190,14 @@ function select_version() {
     elif [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
     fi
-    BUILD=()
-    BUILD=(${VERSION_DEPLOYED//./ })
-    BUILD=${BUILD[2]}
-    GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ]; then
         log_message "現在インストールされているバージョン: N/A"
     else
+        BUILD=()
+        BUILD=(${VERSION_DEPLOYED//./ })
+        BUILD=${BUILD[2]}
+        GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
@@ -302,7 +302,7 @@ function check_group() {
     for GROUP in $(groups $USER | cut -d: -f2)
     do
         if [ "docker" == "$GROUP" ]; then
-            if [ ! $(docker info > /dev/null 2>&1) ]; then
+            if [ ! $(docker info) > /dev/null 2>&1 ]; then
                 log_message "================================================================================="
                 log_message "一度ログオフした後、ログインをしなおして、スクリプトを再度実行してください。"
                 log_message "================================================================================="
