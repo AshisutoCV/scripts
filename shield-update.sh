@@ -20,7 +20,8 @@ LOGFILE="${ES_PATH}/logs/update.log"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 
 
 if [ -f .es_branch ]; then
