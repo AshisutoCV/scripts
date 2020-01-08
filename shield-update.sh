@@ -157,11 +157,15 @@ function select_version() {
                 m=$(( $n / 2 ))
                 S_APP_VERSION=$i
                 vers_a[$m]=$S_APP_VERSION
-                BUILD=()
-                BUILD=(${S_APP_VERSION//./ })
-                BUILD=${BUILD[2]}
-                GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
-                echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
+                    BUILD=()
+                    BUILD=(${S_APP_VERSION//./ })
+                    BUILD=${BUILD[2]}a
+                    GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+                    echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                else
+                    echo "$m: Rel-$S_APP_VERSION" 
+                fi
             else
                 if [ $n = 1 ]; then
                     m=1
@@ -191,15 +195,16 @@ function select_version() {
 
     if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev"  ]; then
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
+        BUILD=()
+        BUILD=(${S_APP_VERSION//./ })
+        CHKBRANCH=${BUILD[0]}${BUILD[1]}
+        BUILD=${BUILD[2]}
+        GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+
+        log_message "${GIT_BRANCH}_Build:${BUILD} をセットアップします。"
+    else
+        log_message "Rel-${S_APP_VERSION} をセットアップします。"
     fi
-
-    BUILD=()
-    BUILD=(${S_APP_VERSION//./ })
-    CHKBRANCH=${BUILD[0]}${BUILD[1]}
-    BUILD=${BUILD[2]}
-    GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
-
-    log_message "${GIT_BRANCH}_Build:${BUILD} をセットアップします。"
 
     change_dir
     
