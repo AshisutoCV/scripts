@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191227a-dev0106
+### VER=20200108a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -21,8 +21,7 @@ CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
