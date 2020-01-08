@@ -266,7 +266,7 @@ function select_version() {
                 if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
                     BUILD=()
                     BUILD=(${S_APP_VERSION//./ })
-                    BUILD=${BUILD[2]}a
+                    BUILD=${BUILD[2]}
                     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
                     echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
                 else
@@ -340,6 +340,8 @@ function check_group() {
         if [ "docker" == "$GROUP" ]; then
             if ! $(docker info > /dev/null 2>&1) ; then
                 log_message "================================================================================="
+                log_message "実行ユーザをdockerグループに追加する必要があります。"
+                log_message "(グループへの追加は行われています。)"
                 log_message "一度ログオフした後、ログインをしなおして、スクリプトを再度実行してください。"
                 log_message "================================================================================="
                 rm -f .es_version
@@ -645,6 +647,9 @@ function check_docker() {
     APP_VERSION=$(echo $APP_VERSION | sed "s/\"//g")
     APP_VER=(${APP_VERSION//./ })
     if [ -x "/usr/bin/docker" ]; then
+        if ! $(docker info > /dev/null 2>&1) ; then
+            check_group
+        fi
         INSTALLED_VERSION=$(docker info |grep "Server Version" | awk '{print $3}')
     else
         INSTALLED_VERSION="0.0.0"

@@ -159,7 +159,7 @@ function select_version() {
                 if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
                     BUILD=()
                     BUILD=(${S_APP_VERSION//./ })
-                    BUILD=${BUILD[2]}a
+                    BUILD=${BUILD[2]}
                     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
                     echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
                 else
