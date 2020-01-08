@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191227a
+### VER=20200108a
 ####################
 
 ####-----------------
@@ -34,7 +34,7 @@ if [[ $CURRENT_DIR =~ sup  ]]; then
         cd $(dirname $(cd $(dirname $0); pwd))
 else
     if [ ! -d /usr/local/ericomshield ];then
-        cd $(dirname $(find /home/ -name shield-setup.sh 2>/dev/null))
+        cd $(dirname $(find /home/ -name shield-tart.sh 2>/dev/null))
     fi
 fi
 
@@ -187,7 +187,7 @@ mkdir -p $TMPDIR/shield
 echo " Shield Support: Collecting Shield Info ....."
 
 # for k8s
-if [ -f shield-setup.sh ];then 
+if [ -f shield-start.sh ];then 
     if which kubectl > /dev/null 2>&1 ; then
       kubectl get namespaces > $TMPDIR/shield/k8s-namespaces
       kubectl get nodes > $TMPDIR/shield/k8s-nodes
@@ -210,6 +210,7 @@ if [ -f shield-setup.sh ];then
        echo ${LOCALBACKUPPATH} > $TMPDIR/shield/k8s-backup-localPath
        echo ${REMORTBACKUPPATH} > $TMPDIR/shield/k8s-backup-remortPath
     fi
+    cp -r ./ericomshield/  $TMPDIR/shield/ 2>/dev/null
     cp -r ./logs/  $TMPDIR/shield/ 2>/dev/null
     cp ./*.log  $TMPDIR/shield/ 2>/dev/null
     cp ./*.yaml  $TMPDIR/shield/ 2>/dev/null

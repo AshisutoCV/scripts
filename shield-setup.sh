@@ -2,22 +2,33 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191227a
+### VER=20200108a
 ####################
 
-if [ ! -e ./logs/ ];then
-    mkdir logs
-    mv -f ./*.log ./logs/ > /dev/null 2>&1
+ES_PATH="$HOME/ericomshield"
+if [ ! -e $ES_PATH ];then
+    mkdir -p $ES_PATH
+fi
+if [ ! -e ${ES_PATH}/logs/ ];then
+    mkdir -p ${ES_PATH}/logs
+    mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
+    mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
 
-LOGFILE="./logs/install.log"
+
+LOGFILE="${ES_PATH}/logs/install.log"
 CMDFILE="command.txt"
 BRANCH="Rel"
+ERICOMPASS="Ericom123$"
+CURRENT_DIR=$(cd $(dirname $0); pwd)
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
+elif [ -f ${ES_PATH}/.es_branch ]; then
+    BRANCH=$(cat ${ES_PATH}/.es_branch)
 fi
-ERICOMPASS="Ericom123$"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+
 
 function usage() {
     echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
@@ -185,26 +196,37 @@ function select_version() {
     CHART_VERSION=""
     if which helm >/dev/null 2>&1 ;then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
-        VERSION_DEPLOYED=`echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g"`
+        VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     elif [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
+    elif [ -f "$ES_PATH/.es_version" ]; then
+        VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ]; then
         log_message "現在インストールされているバージョン: N/A"
     else
-        log_message "現在インストールされているバージョン: Rel-$VERSION_DEPLOYED"
+        BUILD=()
+        BUILD=(${VERSION_DEPLOYED//./ })
+        BUILD=${BUILD[2]}
+        GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+        log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
 
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
         S_APP_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $2 }')
+
         if [ "$CHART_VERSION" == "NA" ]; then
             log_message "現在ご利用可能なリリース前先行利用バージョンはありません。"
             fin 1
         else
-            echo -n "リリース前先行利用バージョン Rel-${S_APP_VERSION} をセットアップします。[Y/n]:"
+            BUILD=()
+            BUILD=(${S_APP_VERSION//./ })
+            BUILD=${BUILD[2]}
+            GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+            echo -n "リリース前先行利用バージョン ${GIT_BRANCH}_Build:${BUILD} をセットアップします。[Y/n]:"
             read ANSWER
             echo "pre-use: $S_APP_VERSION" >> $LOGFILE
             echo "ANSWER: $ANSWER" >> $LOGFILE
@@ -241,7 +263,15 @@ function select_version() {
                 m=$(( $n / 2 ))
                 S_APP_VERSION=$i
                 vers_a[$m]=$S_APP_VERSION
-                echo "$m: Rel-$S_APP_VERSION"
+                if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
+                    BUILD=()
+                    BUILD=(${S_APP_VERSION//./ })
+                    BUILD=${BUILD[2]}a
+                    GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+                    echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                else
+                    echo "$m: Rel-$S_APP_VERSION" 
+                fi
             else
                 if [ $n = 1 ]; then
                     m=1
@@ -271,10 +301,35 @@ function select_version() {
 
     if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev"  ]; then
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
+        BUILD=()
+        BUILD=(${S_APP_VERSION//./ })
+        CHKBRANCH=${BUILD[0]}${BUILD[1]}
+        BUILD=${BUILD[2]}
+        GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+
+        log_message "${GIT_BRANCH}_Build:${BUILD} をセットアップします。"
+    else
+        log_message "Rel-${S_APP_VERSION} をセットアップします。"
     fi
 
-    log_message "Rel-${S_APP_VERSION} をセットアップします。"
+    change_dir
+
     echo ${S_APP_VERSION} > .es_version
+}
+
+function change_dir(){
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    CHKBRANCH=${BUILD[0]}${BUILD[1]}
+    if [[ $CHKBRANCH -lt 1911 ]];then
+        log_message "pwd: $(pwd)"        
+    else
+        log_message "[start] change dir"
+        log_message "pwd: $(pwd)"        
+        cd ${ES_PATH}
+        log_message "pwd: $(pwd)"        
+        log_message "[end] change dir"
+    fi
 }
 
 function check_group() {
@@ -283,7 +338,7 @@ function check_group() {
     for GROUP in $(groups $USER | cut -d: -f2)
     do
         if [ "docker" == "$GROUP" ]; then
-            if [ ! $(docker info) >/dev/null 2>&1 ]; then
+            if ! $(docker info > /dev/null 2>&1) ; then
                 log_message "================================================================================="
                 log_message "一度ログオフした後、ログインをしなおして、スクリプトを再度実行してください。"
                 log_message "================================================================================="
@@ -363,7 +418,10 @@ function add_repo() {
     log_message "[start] add shield repo"
     curl -s -O  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/add-shield-repo.sh
     chmod +x add-shield-repo.sh
-    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\.\/logs\/last_deploy.log"/'  add-shield-repo.sh
+    if [[ $(grep -c ^ES_PATH add-shield-repo.sh) -eq 0 ]];then
+        sed -i -e '/###BH###/a ES_PATH="$HOME/ericomshield"' add-shield-repo.sh 
+    fi
+    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\${ES_PATH}\/logs\/last_deploy.log"/'  add-shield-repo.sh
     sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  add-shield-repo.sh 
     ./add-shield-repo.sh ${BRANCHFLG} -p ${ERICOMPASS} >> $LOGFILE 2>&1
     log_message "[end] add shield repo"
@@ -402,7 +460,9 @@ function deploy_shield() {
 
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
     chmod +x deploy-shield.sh
-
+    if [[ $(grep -c ^ES_PATH deploy-shield.sh) -eq 0 ]];then
+        sed -i -e '/###BH###/a ES_PATH="$HOME/ericomshield"' deploy-shield.sh 
+    fi
     sed -i -e '/^VERSION_REPO/d' deploy-shield.sh
     sed -i -e '/^SET_LABELS=\"/s/yes/no/g' deploy-shield.sh
     sed -i -e '/^BRANCH=/d' deploy-shield.sh
@@ -411,7 +471,7 @@ function deploy_shield() {
     sed -i -e '/helm upgrade --install/s/shield-repo\/shield/shield-repo\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
-    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\.\/logs\/last_deploy.log"/'  deploy-shield.sh
+    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\${ES_PATH}\/logs\/last_deploy.log"/'  deploy-shield.sh
     sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  deploy-shield.sh
     sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
     sed -i -e 's/s\/\\\/usr\\\/share\\\/zoneinfo/s\/.*\\\/usr\\\/share\\\/zoneinfo/' deploy-shield.sh
@@ -633,9 +693,9 @@ function get_scripts() {
     curl -s -OL ${SCRIPTS_URL}/shield-stop.sh
     chmod +x shield-stop.sh
 
-    curl -s -OL ${SCRIPTS_URL}/shield-update.sh
-    chmod +x shield-update.sh
-    
+    curl -s -o ${CURRENT_DIR}/shield-update.sh -L ${SCRIPTS_URL}/shield-update.sh
+    chmod +x ${CURRENT_DIR}/shield-update.sh
+  
     if [ ! -e ./sup/ ];then
         mkdir sup
     fi
@@ -659,14 +719,19 @@ else
     OS="Ubuntu"
 fi
 
+# check args and set flags
+check_args $@
+
+select_version
+
 #read custom_env file
-if [ -f .es_custom_env ]; then
-    CLUSTER_CIDR=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_cidr | awk -F'[: ]' '{print $NF}')
-    DOCKER0=$(cat .es_custom_env | grep -v '^\s*#' | grep docker0 | awk -F'[: ]' '{print $NF}')
-    SERVICE_CLUSTER_IP_RANGE=$(cat .es_custom_env | grep -v '^\s*#' | grep service_cluster_ip_range | awk -F'[: ]' '{print $NF}')
-    CLUSTER_DNS_SERVER=$(cat .es_custom_env | grep -v '^\s*#' | grep cluster_dns_server | awk -F'[: ]' '{print $NF}')
-    MAX_PODS=$(cat .es_custom_env | grep -v '^\s*#' | grep max-pods | awk -F'[: ]' '{print $NF}')
-    DOCKER_VER=$(cat .es_custom_env | grep -v '^\s*#' | grep docker_version | awk -F'[: ]' '{print $NF}')
+if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
+    CLUSTER_CIDR=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep cluster_cidr | awk -F'[: ]' '{print $NF}')
+    DOCKER0=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep docker0 | awk -F'[: ]' '{print $NF}')
+    SERVICE_CLUSTER_IP_RANGE=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep service_cluster_ip_range | awk -F'[: ]' '{print $NF}')
+    CLUSTER_DNS_SERVER=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep cluster_dns_server | awk -F'[: ]' '{print $NF}')
+    MAX_PODS=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep max-pods | awk -F'[: ]' '{print $NF}')
+    DOCKER_VER=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep docker_version | awk -F'[: ]' '{print $NF}')
 fi
 
 #read ra files
@@ -675,11 +740,6 @@ if [ -f .ra_rancherurl ] || [ -f .ra_clusterid ] || [ -f .ra_apitoken ];then
     CLUSTERID=$(cat .ra_clusterid)
     APITOKEN=$(cat .ra_apitoken)
 fi
-
-# check args and set flags
-check_args $@
-
-select_version
 
 export BRANCH
 echo $BRANCH > .es_branch
@@ -1386,7 +1446,10 @@ fi
 
 # Get kubectl config
 log_message "[start] Get kubectl config"
-touch  ~/.kube/config
+if [ ! -d  ${HOME}/.kube ];then
+    mkdir -p ${HOME}/.kube
+fi
+touch  ${HOME}/.kube/config
 echo 'waiting....'
 sleep 30
 
@@ -1739,5 +1802,3 @@ echo ""
 echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
 echo ""
 fin 0
-
-

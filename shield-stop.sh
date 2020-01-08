@@ -2,18 +2,26 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191206a
+### VER=20200108a
 ####################
 
-if [ ! -e ./logs/ ];then
-    mkdir logs
-    mv -f ./*.log ./logs/ > /dev/null 2>&1
+ES_PATH="$HOME/ericomshield"
+if [ ! -e $ES_PATH ];then
+    mkdir -p $ES_PATH
+fi
+if [ ! -e ${ES_PATH}/logs/ ];then
+    mkdir -p ${ES_PATH}/logs
+    mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
+    mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
 
-LOGFILE="./logs/stop-start.log"
+LOGFILE="${ES_PATH}/logs/stop-start.log"
 BRANCH="Staging"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
+fi
+if [ -f .es_version ]; then
+    GITVER=$(cat .es_version)
 fi
 
 export BRANCH
@@ -33,7 +41,7 @@ function stop_shield() {
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
 
     chmod +x delete-shield.sh
-    if [[ $((1911 - ${BRANCH:4:2}${BRANCH:7:2})) -gt 0 ]];then
+    if [[ $((1911 - ${GITVER:0:2}${GITVER:3:2})) -gt 0 ]];then
         sed -i -e '/Are you sure you want to delete the deployment/d' delete-shield.sh
         sed -i -e '/case/d' delete-shield.sh
         sed -i -e '/yes/d' delete-shield.sh
