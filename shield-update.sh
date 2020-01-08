@@ -265,7 +265,7 @@ function fin() {
 
 function get_scripts() {
     log_message "[start] get install scripts"
-    cp -fp ${CURRENT_DIR}/shield-setup.sh ${CURRENT_DIR}/shield-setup.sh_backup
+    #cp -fp ${CURRENT_DIR}/shield-setup.sh ${CURRENT_DIR}/shield-setup.sh_backup
     curl -s -o ${CURRENT_DIR}/shield-setup.sh -L ${SCRIPTS_URL}/shield-setup.sh
     chmod +x ${CURRENT_DIR}/shield-setup.sh
     cp -fp configure-sysctl-values.sh configure-sysctl-values.sh_backup
