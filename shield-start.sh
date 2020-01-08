@@ -2,15 +2,20 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191227a
+### VER=20191227a-dev
 ####################
 
-if [ ! -e ./logs/ ];then
-    mkdir logs
-    mv -f ./*.log ./logs/ > /dev/null 2>&1
+ES_PATH="$HOME/ericomshield"
+if [ ! -e $ES_PATH ];then
+    mkdir -p $ES_PATH
+fi
+if [ ! -e ${ES_PATH}/logs/ ];then
+    mkdir -p ${ES_PATH}/logs
+    mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
+    mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
 
-LOGFILE="./logs/stop-start.log"
+LOGFILE="${ES_PATH}/logs/stop-start.log"
 BRANCH="Staging"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -33,6 +38,9 @@ function deploy_shield() {
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
     chmod +x deploy-shield.sh
 
+    if [[ $(grep -c ^ES_PATH deploy-shield.sh) -eq 0 ]];then
+        sed -i -e '/###BH###/a ES_PATH="$HOME/ericomshield"' deploy-shield.sh 
+    fi
     sed -i -e '/^VERSION_REPO/d' deploy-shield.sh
     sed -i -e '/^SET_LABELS=\"/s/yes/no/g' deploy-shield.sh
     sed -i -e '/^BRANCH=/d' deploy-shield.sh
@@ -41,7 +49,7 @@ function deploy_shield() {
     sed -i -e '/helm upgrade --install/s/shield-repo\/shield/shield-repo\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
-    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\.\/logs\/last_deploy.log"/'  deploy-shield.sh
+    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\${ES_PATH}\/logs\/last_deploy.log"/'  deploy-shield.sh
     sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  deploy-shield.sh
     sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
     sed -i -e 's/s\/\\\/usr\\\/share\\\/zoneinfo/s\/.*\\\/usr\\\/share\\\/zoneinfo/' deploy-shield.sh

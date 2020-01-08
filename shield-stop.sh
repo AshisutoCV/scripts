@@ -5,12 +5,17 @@
 ### VER=20191206a
 ####################
 
-if [ ! -e ./logs/ ];then
-    mkdir logs
-    mv -f ./*.log ./logs/ > /dev/null 2>&1
+ES_PATH="$HOME/ericomshield"
+if [ ! -e $ES_PATH ];then
+    mkdir -p $ES_PATH
+fi
+if [ ! -e ${ES_PATH}/logs/ ];then
+    mkdir -p ${ES_PATH}/logs
+    mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
+    mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
 
-LOGFILE="./logs/stop-start.log"
+LOGFILE="${ES_PATH}/logs/stop-start.log"
 BRANCH="Staging"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)

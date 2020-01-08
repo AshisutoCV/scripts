@@ -21,7 +21,8 @@ CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -199,6 +200,8 @@ function select_version() {
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     elif [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
+    elif [ -f "$ES_PATH/.es_version" ]; then
+        VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ]; then
@@ -311,6 +314,9 @@ function select_version() {
 }
 
 function change_dir(){
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    CHKBRANCH=${BUILD[0]}${BUILD[1]}
     if [[ $CHKBRANCH -lt 1911 ]];then
         log_message "pwd: $(pwd)"        
     else
@@ -408,7 +414,10 @@ function add_repo() {
     log_message "[start] add shield repo"
     curl -s -O  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/add-shield-repo.sh
     chmod +x add-shield-repo.sh
-    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\.\/logs\/last_deploy.log"/'  add-shield-repo.sh
+    if [[ $(grep -c ^ES_PATH add-shield-repo.sh) -eq 0 ]];then
+        sed -i -e '/###BH###/a ES_PATH="$HOME/ericomshield"' add-shield-repo.sh 
+    fi
+    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\${ES_PATH}\/logs\/last_deploy.log"/'  add-shield-repo.sh
     sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  add-shield-repo.sh 
     ./add-shield-repo.sh ${BRANCHFLG} -p ${ERICOMPASS} >> $LOGFILE 2>&1
     log_message "[end] add shield repo"
@@ -447,7 +456,9 @@ function deploy_shield() {
 
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
     chmod +x deploy-shield.sh
-
+    if [[ $(grep -c ^ES_PATH deploy-shield.sh) -eq 0 ]];then
+        sed -i -e '/###BH###/a ES_PATH="$HOME/ericomshield"' deploy-shield.sh 
+    fi
     sed -i -e '/^VERSION_REPO/d' deploy-shield.sh
     sed -i -e '/^SET_LABELS=\"/s/yes/no/g' deploy-shield.sh
     sed -i -e '/^BRANCH=/d' deploy-shield.sh
@@ -456,7 +467,7 @@ function deploy_shield() {
     sed -i -e '/helm upgrade --install/s/shield-repo\/shield/shield-repo\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
     sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
-    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\.\/logs\/last_deploy.log"/'  deploy-shield.sh
+    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\${ES_PATH}\/logs\/last_deploy.log"/'  deploy-shield.sh
     sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  deploy-shield.sh
     sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
     sed -i -e 's/s\/\\\/usr\\\/share\\\/zoneinfo/s\/.*\\\/usr\\\/share\\\/zoneinfo/' deploy-shield.sh

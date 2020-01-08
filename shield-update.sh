@@ -20,7 +20,9 @@ LOGFILE="${ES_PATH}/logs/update.log"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -95,6 +97,8 @@ function select_version() {
         VERSION_DEPLOYED=`echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g"`
     elif [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
+    elif [ -f "$ES_PATH/.es_version" ]; then
+        VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ]; then
@@ -203,6 +207,9 @@ function select_version() {
 }
 
 function change_dir(){
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    CHKBRANCH=${BUILD[0]}${BUILD[1]}
     if [[ $CHKBRANCH -lt 1911 ]];then
         log_message "pwd: $(pwd)"        
     else
@@ -212,12 +219,14 @@ function change_dir(){
         find ${CURRENT_DIR} -maxdepth 1 -name .es_\* -not -name .es_custom_env | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
         find ${CURRENT_DIR} -maxdepth 1 -name .ra_\* | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
         find ${CURRENT_DIR} -maxdepth 1 -name \*.yaml\* | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
-        mv -f ./sup ${ES_PATH}/ > /dev/null 2>&1
+        mv -f ${CURRENT_DIR}/command.txt ${ES_PATH}/ > /dev/null 2>&1
+        mv -f ${CURRENT_DIR}/sup ${ES_PATH}/ > /dev/null 2>&1
         cd ${ES_PATH}
         log_message "pwd: $(pwd)"        
         log_message "[end] change dir"
     fi
 }
+
 function mv_rancher_store(){
     if [[ $CHKBRANCH -lt 1911 ]];then
         :        
@@ -364,11 +373,11 @@ function check_yaml() {
 
 function exec_update(){
     if [ $dev_flg -eq 1 ]; then
-        /bin/bash ./shield-setup.sh --update --version ${S_APP_VERSION} --Dev
+        /bin/bash $CURRENT_DIR/shield-setup.sh --update --version ${S_APP_VERSION} --Dev
     elif [ $stg_flg -eq 1 ]; then
-        /bin/bash ./shield-setup.sh --update --version ${S_APP_VERSION} --Staging
+        /bin/bash $CURRENT_DIR/shield-setup.sh --update --version ${S_APP_VERSION} --Staging
     else
-        /bin/bash ./shield-setup.sh --update --version ${S_APP_VERSION}
+        /bin/bash $CURRENT_DIR/shield-setup.sh --update --version ${S_APP_VERSION}
     fi
 }
 
@@ -381,7 +390,7 @@ check_args $@
 
 export BRANCH
 
-if [ ! -f .es_update ]; then
+if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
     select_version
 
     export BRANCH
@@ -410,8 +419,12 @@ else
                     ;;
             esac
     done
-
-    S_APP_VERSION=$(cat .es_update)
+    if [ -f .es_update ];then
+        S_APP_VERSION=$(cat .es_update)
+    else
+        S_APP_VERSION=$(cat ${ES_PATH}/.es_update)
+    fi
+    change_dir
     rm -f .es_update
     ./shield-stop.sh
     mv_rancher_store

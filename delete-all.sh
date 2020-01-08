@@ -26,8 +26,11 @@ for dir in $cleanupdirs; do
     sudo rm -rf $dir
 done
 
-sudo rm -rf rancher-store
+mv -f ericomshield/logs ./
 sudo rm -rf ericomshield
+mkdir ericomshield
+mv -f logs ./ericomshield/
+sudo rm -rf rancher-store
 sudo rm -rf .kube
 sudo rm -rf sup
 rm -f .ra_*
