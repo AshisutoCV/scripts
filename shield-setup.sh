@@ -21,8 +21,7 @@ CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
