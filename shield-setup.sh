@@ -645,6 +645,9 @@ function check_docker() {
     APP_VERSION=$(echo $APP_VERSION | sed "s/\"//g")
     APP_VER=(${APP_VERSION//./ })
     if [ -x "/usr/bin/docker" ]; then
+        if ! $(docker info > /dev/null 2>&1) ; then
+            check_group
+        fi
         INSTALLED_VERSION=$(docker info |grep "Server Version" | awk '{print $3}')
     else
         INSTALLED_VERSION="0.0.0"
