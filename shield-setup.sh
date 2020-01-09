@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200108a
+### VER=20200109a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -21,6 +21,7 @@ CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
+cd $CURRENT_DIR
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 if [ -f .es_branch ]; then
@@ -417,12 +418,16 @@ function add_repo() {
     else
         BRANCHFLG=""
     fi
+    REPO=$(echo $GIT_BRANCH | tr '[:upper:]' '[:lower:]')
+    REPO=${REPO//[-.]/}
+    export REPO
     log_message "[start] add shield repo"
     curl -s -O  https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/add-shield-repo.sh
     chmod +x add-shield-repo.sh
     if [[ $(grep -c ^ES_PATH add-shield-repo.sh) -eq 0 ]];then
         sed -i -e '/###BH###/a ES_PATH="$HOME/ericomshield"' add-shield-repo.sh 
     fi
+    sed -i -e "/^SHIELD_REPO=/s/\/.*/\/${REPO}\"/"  add-shield-repo.sh
     sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\${ES_PATH}\/logs\/last_deploy.log"/'  add-shield-repo.sh
     sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  add-shield-repo.sh 
     ./add-shield-repo.sh ${BRANCHFLG} -p ${ERICOMPASS} >> $LOGFILE 2>&1

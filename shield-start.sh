@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200108a
+### VER=20200109a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -16,6 +16,9 @@ if [ ! -e ${ES_PATH}/logs/ ];then
 fi
 
 LOGFILE="${ES_PATH}/logs/stop-start.log"
+CURRENT_DIR=$(cd $(dirname $0); pwd)
+cd $CURRENT_DIR
+
 BRANCH="Staging"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)

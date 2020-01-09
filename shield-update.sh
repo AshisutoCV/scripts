@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200108a
+### VER=20200109a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -20,6 +20,7 @@ LOGFILE="${ES_PATH}/logs/update.log"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
+cd $CURRENT_DIR
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 

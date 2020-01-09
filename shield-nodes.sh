@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191227a
+### VER=20200109a
 ####################
 
 if [ ! -e ./logs/ ];then
@@ -12,6 +12,9 @@ fi
 
 LOGFILE="./logs/nodes.log"
 CMDFILE="command.txt"
+CURRENT_DIR=$(cd $(dirname $0); pwd)
+cd $CURRENT_DIR
+
 BRANCH="Rel"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
