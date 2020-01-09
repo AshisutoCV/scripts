@@ -1,5 +1,26 @@
 # Changelog
 
+## [VER=20200109a] - 2020/01/09
+
+### 変更
+#### shield-update.sh
+* 実行PATHがカレントでない場合をケア
+
+#### shield-setup.sh
+* 実行PATHがカレントでない場合をケア
+* add-shield-repo.shのSHIELD_REPOの変更ミスに影響されないように対処。
+
+#### shield-stop.sh
+* 実行PATHがカレントでない場合をケア
+
+#### shield-start.sh
+* 実行PATHがカレントでない場合をケア
+
+#### shield-nodes.sh
+* 実行PATHがカレントでない場合をケア
+
+--------------------------------------------------------------
+
 ## [VER=20200108a] - 2020/01/08
 
 ### 変更
