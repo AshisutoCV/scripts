@@ -1,9 +1,9 @@
+#!/bin/bash
+
 ####################
 ### K.K. Ashisuto
 ### VER=20191008a
 ####################
-
-#!/bin/bash
 
 CONSUL_BACKUP_POD=$(kubectl get pods --namespace=management | grep consul-backup | awk {'print $1'})
 
