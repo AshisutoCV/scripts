@@ -1,5 +1,7 @@
 # Version List
 ***
+## backup-restore.sh
+* [20200115a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200115a---20200115)
 
 ## shield-setup.sh
 * [20200109a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200109a---20200109)
