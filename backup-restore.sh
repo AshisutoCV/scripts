@@ -19,22 +19,26 @@ export DISPLAY=dummy:0
 function usage() {
     echo ""
     echo "USAGE: "
-    echo "    $0 backup [-mng|-b] <IP Address> " 
+    echo "    $0 backup [-mng|-b] <IP Address> [-p <ericom user's password>] [-s]"  
     echo "    $0 backup [-mng|-b] <IP Address#1>,<IP Address #2>... " 
     echo "    $0 backup [-a]"
     echo ""
-    echo "    $0 restore [-mng|-b] <IP Address> " 
+    echo "    $0 restore [-mng|-b] <IP Address> [-p <ericom user's password>] [-s]" 
     echo "    $0 restore [-mng|-b] <IP Address#1>,<IP Address #2>... " 
     echo ""
     echo "  ---------- "
     echo " ex.) $0 backup -mng 192.168.100.11"
     echo "      $0 backup -b 192.168.100.21,192.168.100.22"
     echo "      $0 backup -mng 192.168.100.11 -b 192.168.100.21,192.168.100.22"
+    echo "      $0 backup -mng 192.168.100.11 -b 192.168.100.21,192.168.100.22 -p password -s"
+    echo "      $0 backup -mng 192.168.100.11 -b 192.168.100.21,192.168.100.22 -s"
+    echo "      $0 backup -a -p password -s"
     echo "      $0 backup -a"
     echo ""
     echo "      $0 restore -mng 192.168.100.11"
     echo "      $0 restore -b 192.168.100.21,192.168.100.22"
     echo "      $0 restore -mng 192.168.100.11,192.168.100.12,192.168.100.13 -b 192.168.100.21,192.168.100.22"
+    echo "      $0 restore -mng 192.168.100.11,192.168.100.12,192.168.100.13 -b 192.168.100.21,192.168.100.22 -p password -s"
     exit 0
 }
 
