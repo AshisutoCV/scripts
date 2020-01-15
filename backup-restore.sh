@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200114a
+### VER=20200115a
 ####################
 
 # 変数
@@ -162,31 +162,59 @@ function check_args(){
     echo "    ////////////////////////////////" >> $LOGFILE
 }
 
+# 引数のIPアドレスを配列に格納(ホスト名可)
 function set_ip_arr(){
     MNG_ARR=( $(echo $MNG_HOSTS | tr -s ',' ' ') )
     BRO_ARR=( $(echo $BRO_HOSTS | tr -s ',' ' ') )
     ERR_FLG=0
+
+    # Manager について
     for i in "${MNG_ARR[@]}" 
     do
+        # 引数で渡されたものがIPアドレスの形かどうかを確認
         check_ip $i
-        if [ $(sudo docker node inspect -f "{{ .Spec.Role }} {{ .Status.Addr }} {{ .Description.Hostname }}" $(docker node ls -q) | grep manager | grep -c $i) -eq 0 ]; then
+
+        # バックアップ時は -mngで渡されたアドレスがManagerのものかどうか確認
+        # リストア時は 既にクラスタに参加済みではいかどうかを確認
+        MANAGER_CNT=$(sudo docker node inspect -f "{{ .Spec.Role }} {{ .Status.Addr }} {{ .Description.Hostname }}" $(docker node ls -q) | grep manager | grep -c $i)
+        if [ $BACKUP_FLG -eq 1 ] && [ $MANAGER_CNT -eq 0 ]; then
             log_message "!!! ERROR: ${IP} is not Manager."
             ERR_FLG=1
+        elif [ $RESTORE_FLG -eq 1 ] && [ $MANAGER_CNT -gt 0 ] ; then
+            if [ $ALL_FLG -eq 0 ] ; then 
+                log_message "!!! ERROR: ${IP} is Alredy Exist."
+                ERR_FLG=1
+            elif [ $ALL_FLG -eq 1 ] && [ "$i" != "$MY_IP" ]; then
+                log_message "!!! ERROR: ${IP} is Alredy Exist."
+                ERR_FLG=1
+            fi              
         fi
     done
+
+    # Workerについて
     for i in "${BRO_ARR[@]}" 
     do
+        # 引数で渡されたものがIPアドレスの形かどうかを確認
         check_ip $i
-        if [ $(sudo docker node inspect -f "{{ .Spec.Role }} {{ .Status.Addr }} {{ .Description.Hostname }}" $(docker node ls -q) | grep worker | grep -c $i) -eq 0 ]; then
+
+        # バックアップ時は -bで渡されたアドレスがWorkerのものかどうか確認
+        # リストア時は 既にクラスタに参加済みではいかどうかを確認
+        WORKER_CNT=$(sudo docker node inspect -f "{{ .Spec.Role }} {{ .Status.Addr }} {{ .Description.Hostname }}" $(docker node ls -q) | grep worker | grep -c $i)
+        if [ $BACKUP_FLG -eq 1 ] && [ $WORKER_CNT -eq 0 ]; then
             log_message "!!! ERROR: ${IP} is not Worker."
+            ERR_FLG=1
+        elif [ $RESTORE_FLG -eq 1 ] && [ $WORKER_CNT -gt 0 ]; then
+            log_message "!!! ERROR: ${IP} is Alredy Exist."
             ERR_FLG=1
         fi
     done
 
+    # Errorがあった場合に終了
     if [ $ERR_FLG -eq 1 ]; then
         fin 1
     fi
 
+    # 引数として渡された対象ノード数を記録
     MNG_ARG_CNT=${#MNG_ARR[*]}
     BRO_ARG_CNT=${#BRO_ARR[*]}
     echo "    MNG_ARG_CNT: $MNG_ARG_CNT" >> $LOGFILE
@@ -194,19 +222,25 @@ function set_ip_arr(){
 
 }
 
+# IPアドレスの形式かどうかを確認
+# 違う場合は警告を出すが処理は続行
+# IPアドレスでない場合、バックアップ時はクラスタのノードリストにホスト名があるかどうかを確認。
 function check_ip(){
     IP=$1
     IP_CHECK=$(echo ${IP} | grep -E  "^(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
 
     if [ ! "${IP_CHECK}" ] ; then
         log_message "!!! WARNING: ${IP} is not IP Address."
-        if [ $(docker node ls | grep -c ${IP}) -eq 0 ];then
-            log_message "!!! ERROR: ${IP} dose not Exist in node list."
-            fin 1
+        if [ $BACKUP_FLG -eq 1 ]; then
+            if [ $(docker node ls | grep -c ${IP}) -eq 0 ];then
+                log_message "!!! ERROR: ${IP} dose not Exist in node list."
+                fin 1
+            fi
         fi
     fi
 }
 
+# 自分自身をクラスタから離脱させるために、他のManagerノードのアドレスをセット
 function alt_mng_ip(){
     ALT_MNG_ARR=( $(docker node inspect -f "{{ .Spec.Role }} {{ .Status.Addr }} {{ .Status.State }}" $(docker node ls -q) | grep manager | grep -v down | awk '{print $2}') )
     for i in "${ALT_MNG_ARR[@]}"
@@ -219,6 +253,7 @@ function alt_mng_ip(){
     echo "    ALT_MNG: $ALT_MNG" >> $LOGFILE
 }
 
+# 全てのノードを離脱させるための対象アドレスをセット
 function all_ip_set(){
     MNG_ARR=( $(docker node inspect -f "{{ .Spec.Role }} {{ .Status.Addr }}" $(docker node ls -q) | grep manager | awk '{print $2}') )
     BRO_ARR=( $(docker node inspect -f "{{ .Spec.Role }} {{ .Status.Addr }}" $(docker node ls -q) | grep worker | awk '{print $2}') )
@@ -229,8 +264,7 @@ function all_ip_set(){
     echo "    BRO_ARG_CNT: $BRO_ARG_CNT" >> $LOGFILE
 }
 
-
-
+# ノードに付与されたラベルを確認
 # function check_labels(){
 #     log_message "-----------------------------------------------------------------------"
 #     docker node inspect -f "{{ .Spec.Role }} {{ .Status.Addr }} {{ .Status.State }} {{ .Spec.Labels }}" $(docker node ls -q) | grep manager | tee -a  $LOGFILE
@@ -238,12 +272,19 @@ function all_ip_set(){
 #     log_message "-----------------------------------------------------------------------"
 # }
 
+# 対象ノードにSSHでリモートコマンドを実行させる
+# リモートでの標準出力はTXTに
 function exec_ssh(){
     SSH_HOST=$1
     REMOTE_CMD=$2
-    exec setsid ssh -t $SSH_OP $SSH_USER@$SSH_HOST $REMOTE_CMD 2>&1 | tee -a >> $LOGFILE
+    RET_EXEC=""
+    rm -f tmp_exec.txt
+    exec setsid ssh -t $SSH_OP $SSH_USER@$SSH_HOST $REMOTE_CMD 2>&1 | tee -a >> $LOGFILE tmp_exec.txt
+    RET_EXEC=$(cat tmp_exec.txt | grep -v "Warning")
+    rm -f tmp_exec.txt
 }
 
+# 対象ノードのホスト名を確認するため、SSHでリモートhostnameコマンドを実行させる
 function exec_ssh2(){
     SSH_HOST=$1
     REMOTE_CMD=$2
@@ -262,10 +303,12 @@ if ((EUID != 0)); then
     exit
 fi
 
+# ヘルプ表示
 if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
     usage
 fi
 
+# 代替Managerでのステータス確認呼び出し処理
 if [ $# -eq 1 ] && [ "$1" == "check_nodes" ]; then
     check_nodes
     exit 0
@@ -287,8 +330,10 @@ log_message "ScriptName: ${0##*/}"
 log_message "ScriptVER: $(cat $0 | grep "### VER=" | grep -v grep )"
 log_message "------------------------------------"
 
+# 自IPの取得
 MY_IP="$(ip route get 8.8.8.8 | awk -F"src " 'NR==1{split($2,a," ");print a[1]}')"
 
+# 引数確認
 check_args $@
 
 # -pによるパスワードが指定されていない場合、ericom ユーザ password を入力
@@ -314,8 +359,14 @@ fi
 
 export PASSWORD
 
+
 # バックアップの場合、対象ノードをleave する。
 if [ $BACKUP_FLG -eq 1 ] ; then
+
+    # 作業初期のクラスタノードのIPを取得しておく。（最後のメッセージ表示用）
+    all_ip_set
+    ALL_MNG_IP=$(echo "${MNG_ARR[*]}" | tr -s ' ' ',')
+    ALL_BRO_IP=$(echo "${BRO_ARR[*]}" | tr -s ' ' ',')
 
     # クラスタ情報が確認できない場合
     if [[ $(docker node ls 2>&1 | grep -c "This node is not a swarm manager.") -eq 1 ]] ; then
@@ -358,7 +409,7 @@ if [ $BACKUP_FLG -eq 1 ] ; then
         set_ip_arr
     fi
 
-    # 対象ノードの確認
+    # 対象ノードの確認表示
     log_message "次のノードをクラスタから除外します。"
     if [ $MNG_ARG_CNT -ge 1 ]; then
         log_message "  Manager:"
@@ -403,11 +454,16 @@ if [ $BACKUP_FLG -eq 1 ] ; then
     for i in "${BRO_ARR[@]}"
     do
         log_message "  Leave $i"
+        # 離脱
         log_message "    Leaving $i"
         exec_ssh $i "echo $PASSWORD | sudo -S docker swarm leave -f"
         exec_ssh2 $i "hostname"
+        # ステータスがDownになるのを待つ(rm出来ない)
         status_check $NODE_HOSTNAME "Down"
+        # ノードを削除
+        log_message "    Removing $i"
         docker node rm $(docker node ls | grep $NODE_HOSTNAME | cut -d ' ' -f 1) >> $LOGFILE 2>&1
+        log_message "      Done"
     done
 
     # Managerノード
@@ -415,7 +471,7 @@ if [ $BACKUP_FLG -eq 1 ] ; then
     for i in "${MNG_ARR[@]}"
     do
         # 自分自身は最後に
-        if [ "$i" == "$MY_IP" ] ;then 
+        if [ "$i" == "$MY_IP" ] || [ "$i" == "${HOSTNAME}" ] ;then 
             MY_FLG=1
             continue
         fi
@@ -423,55 +479,106 @@ if [ $BACKUP_FLG -eq 1 ] ; then
         log_message "  Leave $i"
         check_nodes > /dev/null
         exec_ssh2 $i "hostname"
+        # 対象ノードのホスト名がクラスタのノードリストに無い場合はスキップ
         if [ $(docker node ls | grep -c $NODE_HOSTNAME) -eq 0 ];then
             log_message "!!! WARNING: $NODE_HOSTNAME dose not exist. Skip."
             continue
         fi
+        # まずは降格
         log_message "    Demoting $NODE_HOSTNAME"
         docker node demote $(docker node ls | grep $NODE_HOSTNAME | cut -d ' ' -f 1)  >> $LOGFILE  2>&1
+        # 続いて離脱
         log_message "    Leaveing $i"
         exec_ssh $i "echo $PASSWORD | sudo -S docker swarm leave -f"
+        # ステータスがDownになるのを待つ(rm出来ない)
         status_check $NODE_HOSTNAME "Down"
-        log_message "   Removing $i"
+        # ノードを削除
+        log_message "    Removing $i"
         docker node rm $(docker node ls | grep $NODE_HOSTNAME | cut -d ' ' -f 1) >> $LOGFILE 2>&1
-        log_message "     Done"
+        log_message "      Done"
     done
 
     # 対象に自分のIPが含まれている場合
     if [ $MY_FLG -eq 1 ] ; then
         check_nodes > /dev/null
         # 自分が最後の有効なManagerノードの場合
-        if [ $ALLIVE_MNG_CNT -eq 1 ]; then
+        if [ $ALLIVE_MNG_CNT -eq 1 ] && [ $ALL_FLG -eq 0 ] ; then
+            log_message " INFO: All Managers will be leaving."
+            if [ $SILENT_FLG -eq 0 ] ; then
+                while :
+                do
+                    echo "  最後のManagerノードが離脱します。Workerが残っている場合、それらも離脱させます。"
+                    echo -n "  本当に進めてよろしいですか？ [y/N]: "
+                        read -r ANSWER
+                        echo "    ANSWER: $ANSWER" >> $LOGFILE            
+                        case $ANSWER in
+                            "Y" | "y" | "yse" | "Yes" | "YES" )
+                                break
+                                ;;
+                            "" | "n" | "N" | "no" | "No" | "NO" )
+                                log_message "[Stop] Backup pre-processing. "
+                                check_nodes
+                                fin 0
+                                ;;
+                            * )
+                                echo "YまたはNで答えて下さい。"
+                                ;;
+                        esac
+                done
+                ALL_FLG=1
+            fi
+            # 残っているノードのIPを再セット
+            all_ip_set
+            # Browserを離脱
+            for i in "${BRO_ARR[@]}"
+            do
+                log_message "  Leave $i"
+                # 離脱
+                log_message "    Leaving $i"
+                exec_ssh $i "echo $PASSWORD | sudo -S docker swarm leave -f"
+                exec_ssh2 $i "hostname"
+                # ステータスがDownになるのを待つ(rm出来ない)
+                status_check $NODE_HOSTNAME "Down"
+                # ノードを削除
+                docker node rm $(docker node ls | grep $NODE_HOSTNAME | cut -d ' ' -f 1) >> $LOGFILE 2>&1
+            done  
+            # 自分自身をLeave         
             log_message "  Leave $MY_IP"
             log_message "    Leaveing myself $MY_IP"
-            docker swarm leave -f
+            docker swarm leave -f >> $LOGFILE 2>&1
             log_message "     Done"
-        else
+        elif [ $ALLIVE_MNG_CNT -ne 1 ] && [ $ALL_FLG -eq 0 ] ; then
+            # 他のManagerからコマンドを代替実行させる
             alt_mng_ip
             log_message "  Leave $MY_IP"
             if [ $(docker node ls | grep -c ${HOSTNAME}) -eq 0 ];then
                 log_message "!!! WARNING: ${HOSTNAME} dose not exist. Skip."
             else
+                # 自分自身をリモートから降格
                 log_message "    Demoting myself $MY_IP"
                 exec_ssh $ALT_MNG "echo $PASSWORD | sudo -S docker node demote ${HOSTNAME}"
+                # 自分自身を離脱
                 log_message "    Leaveing myself $MY_IP"
                 docker swarm leave -f >> $LOGFILE 2>&1
+                # 自分自身のステータスがDownになるのを待つ(rm出来ない)：リモートから
                 exec_ssh $ALT_MNG "echo $PASSWORD | sudo -S $MY_PATH status_check ${HOSTNAME} Down"       
                 log_message "     Done"
-                log_message "   Removing $MY_IP"
+                # 自分自身をリモートから削除
+                log_message "    Removing $MY_IP"
                 exec_ssh $ALT_MNG "echo $PASSWORD | sudo -S docker node rm ${HOSTNAME}"
-                log_message "     Done"
-                # Leave 後のリスト表示
+                log_message "      Done"
+                # Leave 後のリスト表示：リモートから
                 exec_ssh $ALT_MNG "echo $PASSWORD | sudo -S $MY_PATH check_nodes"            
             fi
+        # -aによる処理の場合は自分自身を最後にleave
+        elif [ $ALL_FLG -eq 1 ] ; then
+            log_message "  Leave $MY_IP"
+            log_message "    Leaveing myself $MY_IP"
+            docker swarm leave -f >> $LOGFILE 2>&1
+            log_message "     Done"
         fi
-    # -aによる処理の場合は自分自身を最後にleave
-    elif [ $ALL_FLG -eq 1 ] ;then
-        log_message "    Leaveing myself $MY_IP"
-        docker swarm leave -f
-        log_message "     Done"
     else
-        # Leave 後のリスト表示(自分がManagerの場合に実行可能)
+        # Leave 後のリスト表示(自分が最後のManagerの場合に実行可能)
         check_nodes
     fi
     
@@ -479,20 +586,27 @@ if [ $BACKUP_FLG -eq 1 ] ; then
     log_message "[End] Backup pre-processing. "
     log_message ""
     log_message "対象ノードをシャットダウンし、バックアップを取得してください。"
+
+    # リストア時に実行するコマンドを提示して終了
     SHOW_ARG=""
-    if [ $MNG_ARG_CNT -ge 1 ]; then
-        SHOW_ARG="-mng $MNG_HOSTS"
-    fi
-    if [ $BRO_ARG_CNT -ge 1 ]; then
-        SHOW_ARG="$SHOW_ARG -b $BRO_HOSTS"
+    if [ $ALL_FLG -eq 0 ]; then
+        if [ $MNG_ARG_CNT -ge 1 ]; then
+            SHOW_ARG="-mng $MNG_HOSTS"
+        fi
+        if [ $BRO_ARG_CNT -ge 1 ]; then
+            SHOW_ARG="$SHOW_ARG -b $BRO_HOSTS"
+        fi
+    elif [ $ALL_FLG -eq 1 ]; then
+        SHOW_ARG="-mng $ALL_MNG_IP -b $ALL_BRO_IP"
     fi
     log_message "再起動後、sudo $0 restore $SHOW_ARG コマンドによりクラスタに再参加させてください。"
     fin 0
 
+# リストアの場合
 elif [ $RESTORE_FLG -eq 1 ] ; then
 
     log_message "[Start] Restore processing. "
-    # クラスタ情報が確認できない場合
+    # クラスタ情報が確認できない場合（全リストアの場合）
     if [[ $(docker node ls 2>&1 | grep -c "This node is not a swarm manager.") -eq 1 ]] ; then
         log_message " INFO: This node is not swarm Manager."             
         if [ $SILENT_FLG -eq 0 ]; then
@@ -520,6 +634,7 @@ elif [ $RESTORE_FLG -eq 1 ] ; then
         ALL_FLG=1
     fi
 
+    # 全リストアの場合はManagerが居ないので自分がManagerとなる。
     if [ $ALL_FLG -eq 1 ] ; then
         log_message "  Force initializing."
         docker swarm init --force-new-cluster >> $LOGFILE 
@@ -528,9 +643,10 @@ elif [ $RESTORE_FLG -eq 1 ] ; then
     # IPアドレス配列セット
     set_ip_arr
 
-    # 対象ノードの確認
+    # 対象ノードの確認表示
     log_message "次のノードをクラスタに再参加させます。"
     if [ $MNG_ARG_CNT -ge 1 ]; then
+        # Join用コマンドの格納
         JOIN_MNG=$(docker swarm join-token manager | grep join)
         echo "    JOIN_MNG: $JOIN_MNG" >> $LOGFILE
         log_message "  Manager:"
@@ -540,6 +656,7 @@ elif [ $RESTORE_FLG -eq 1 ] ; then
         done
     fi
     if [ $BRO_ARG_CNT -ge 1 ]; then
+        # Join用コマンドの格納
         JOIN_BRO=$(docker swarm join-token worker | grep join)
         echo "    JOIN_BRO: $JOIN_BRO" >> $LOGFILE
         log_message "  Browser:"
@@ -577,8 +694,16 @@ elif [ $RESTORE_FLG -eq 1 ] ; then
     for i in "${BRO_ARR[@]}"
     do
         log_message "  Joining $i"
+        # Joinの実行
         exec_ssh $i "echo $PASSWORD | sudo -S $JOIN_BRO"
+        # 前回離脱していないWorker？強制離脱して再参加
+        if [ $(echo $RET_EXEC | grep -c "This node is already part of a swarm") -eq 1 ];then
+            log_message "!!! WARNING: This node is already part of a swarm. Re-joining!"
+            exec_ssh $i "echo $PASSWORD | sudo -S docker swarm leave -f"
+            exec_ssh $i "echo $PASSWORD | sudo -S $JOIN_BRO"
+        fi
         exec_ssh2 $i "hostname"
+        # ラベル付け
         log_message "    Adding labels"
         $ES_PATH/nodes.sh --add-label $NODE_HOSTNAME browser >> $LOGFILE 2>&1
         log_message "      Done"
@@ -588,7 +713,7 @@ elif [ $RESTORE_FLG -eq 1 ] ; then
     MY_FLG=0
     for i in "${MNG_ARR[@]}"
     do
-        # 自分自身はラベルだけ
+        # 自分自身はラベルだけ(全リストアの場合も自分はManagerとなっている)
         if [ "$i" == "$MY_IP" ] ;then 
             log_message "  Joining myself $i"
             log_message "    Adding labels"
@@ -596,9 +721,11 @@ elif [ $RESTORE_FLG -eq 1 ] ; then
             $ES_PATH/nodes.sh --add-label $HOSTNAME shield_core >> $LOGFILE 2>&1
             log_message "      Done"
         else
+            # Joinコマンドの実行
             log_message "  Joining $i"
             exec_ssh $i "echo $PASSWORD | sudo -S $JOIN_MNG"
             exec_ssh2 $i "hostname"
+            # ラベル付け
             log_message "    Adding labels"
             $ES_PATH/nodes.sh --add-label $NODE_HOSTNAME management >> $LOGFILE 2>&1
             $ES_PATH/nodes.sh --add-label $NODE_HOSTNAME shield_core >> $LOGFILE 2>&1
@@ -611,6 +738,11 @@ elif [ $RESTORE_FLG -eq 1 ] ; then
     $ES_PATH/status.sh -n
     #終了
     log_message "[End] Restore processing. "
+    log_message ""
+
+    if [ $ALL_FLG -eq 1 ]; then
+        log_message "sudo $ES_PATH/start.sh を実行し、Shieldを再開させてください。"
+    fi
     fin 0
 
 fi
