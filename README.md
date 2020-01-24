@@ -16,6 +16,8 @@
 	* バックアップディレクトリに存在するjsonファイルを使ったリストア
 * delete-all.sh
 	* 実行ノード上での全てを削除
+* shield-status.sh
+    * Workload ステータス確認
 
 ### 公開バージョン定義ファイル
 * k8s-pre-rel-ver.txt
@@ -37,7 +39,9 @@
 	* ノード事前チェック用(メーカー製)
 * updater.sh
 	* updateスクリプトの更新用？(メーカー製) ※使ってないはず。
-
+* backup-restore.sh
+    * バックアップ前のクラスタ離脱と、リストア時の再参加用スクリプト。
+    
 ### 公開バージョン定義ファイル
 * pre-rel-ver.txt
 	* pre-use用
