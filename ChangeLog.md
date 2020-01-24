@@ -1,5 +1,15 @@
 # Changelog
 
+## [VER=20200124a] - 2020/01/24
+
+### 追加
+#### shield-status.sh
+* (k8s) workloadがActiveかどうかの確認を行うスクリプトを追加。
+
+### 変更
+#### shield-setup.sh
+* shield-status.shをGETするように変更。
+
 ## [VER=20200115a] - 2020/01/15
 
 ### 追加

@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200109a
+### VER=20200124a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -702,6 +702,9 @@ function get_scripts() {
 
     curl -s -OL ${SCRIPTS_URL}/shield-stop.sh
     chmod +x shield-stop.sh
+
+    curl -s -OL ${SCRIPTS_URL}/shield-status.sh
+    chmod +x shield-status.sh
 
     curl -s -o ${CURRENT_DIR}/shield-update.sh -L ${SCRIPTS_URL}/shield-update.sh
     chmod +x ${CURRENT_DIR}/shield-update.sh
