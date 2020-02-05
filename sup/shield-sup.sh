@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200108a
+### VER=20200205a
 ####################
 
 ####-----------------
@@ -19,6 +19,12 @@ if ((EUID != 0)); then
     echo "sudo" $0
     exit
 fi
+
+ES_PATH="$HOME/ericomshield"
+if [ ! -e $ES_PATH ];then
+    mkdir -p $ES_PATH/sup
+fi
+
 
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
@@ -327,12 +333,14 @@ if [[ getlog_flg -eq 1 ]];then
     YESTERDAY=$(env TZ=${TTZ} date --date "1 day ago" +%Y-%m-%d)
     TMPDIR=$(mktemp -d)
     mkdir -p $TMPDIR/getlogs
+
+    cd $ES_PATH/sup
     if [ -f getlog.sh ];then
         if [ ! -f getlog.sh_backup ];then
             mv getlog.sh getlog.sh_backup
         fi
-        curl -sOL ${SCRIPTS_URL}/sup/getlog.sh 
     fi
+    curl -sOL ${SCRIPTS_URL}/sup/getlog.sh 
     chmod +x getlog.sh
     for L in allsystemstats applications connectioninfo connections errors feedback file-download file-preview file-sanitization file-transfer raw reports scalebrowser systemalert systemtest systemmsage
     do

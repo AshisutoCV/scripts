@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20191227a
+### VER=20200205a
 ####################
 
 ####-----------------
@@ -173,8 +173,19 @@ for e in ${TARGET_LOGs[@]}; do
     let i++
 done
 
+ELASTIC_PORT="9100"
 if which kubectl > /dev/null 2>&1 ; then
-    RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
+    kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9100/" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error.  elasticserachのポートが特定できません。"
+            exit 1
+        else
+            ELASTIC_PORT="9200"
+        fi
+    fi
+    RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:${ELASTIC_PORT}/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
         {
           "version": true,
           "from": 0,
@@ -214,7 +225,17 @@ if which kubectl > /dev/null 2>&1 ; then
     )
 else
     ELKCONTAINER=$(sudo docker ps |grep shield-elk | cut -d" " -f 1)
-    RET=$(sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XGET "http://localhost:9200/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
+    sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XGET "http://localhost:9100/" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+            sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XGET "http://localhost:9200/" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error.  elasticserachのポートが特定できません。"
+            exit 1
+        else
+            ELASTIC_PORT="9200"
+        fi
+    fi
+    RET=$(sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XGET "http://localhost:${ELASTIC_PORT}/${TARGET}/_search?scroll=1m" -H 'Content-Type: application/json' -d'
         {
           "version": true,
           "from": 0,
@@ -260,13 +281,13 @@ while [[ $next_flg -eq 1 ]]
 do
     if [[ ${first_scroll} -ne 1 ]];then
         if which kubectl > /dev/null 2>&1 ; then
-            RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+            RET=$(kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XGET "http://localhost:${ELASTIC_PORT}/_search/scroll" -H 'Content-Type: application/json' -d'
             {
                 "scroll": "1m",
                 "scroll_id" : '${SCROLL_ID}'
             }')
         else
-            RET=$(sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XGET "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+            RET=$(sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XGET "http://localhost:${ELASTIC_PORT}/_search/scroll" -H 'Content-Type: application/json' -d'
             {
                 "scroll": "1m",
                 "scroll_id" : '${SCROLL_ID}'
@@ -282,12 +303,12 @@ do
         if  [[ ${#RET} -eq 0 ]];then
             next_flg=0
             if which kubectl > /dev/null 2>&1 ; then
-                kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XDELETE "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+                kubectl exec -it --namespace=elk elasticsearch-master-0 -- /bin/curl -XDELETE "http://localhost:${ELASTIC_PORT}/_search/scroll" -H 'Content-Type: application/json' -d'
                 {
                     "scroll_id" : '${SCROLL_ID}'
                 }' >/dev/null
             else
-                sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XDELETE "http://localhost:9200/_search/scroll" -H 'Content-Type: application/json' -d'
+                sudo docker exec -it ${ELKCONTAINER}  /usr/bin/curl -XDELETE "http://localhost:${ELASTIC_PORT}/_search/scroll" -H 'Content-Type: application/json' -d'
                 {
                     "scroll_id" : '${SCROLL_ID}'
                 }' >/dev/null
