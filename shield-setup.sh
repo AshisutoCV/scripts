@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200206b
+### VER=20200206c
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -1014,8 +1014,12 @@ else
                   "type": "kubeletService",
                   "clusterDnsServer": "'$CLUSTER_DNS_SERVER'",
                   "extraArgs": {
-                     "max-pods": "'$MAX_PODS'"
-                  }
+                     "max-pods": "'$MAX_PODS'",
+                     "eviction-hard": "'memory.available\<0.2Gi,nodefs.available\<10%'",
+                     "kube-reserved": "'cpu=1,memory=1Gi'",
+                     "kube-reserved-cgroup": "'/system'",
+                     "system-reserved": "'cpu=1,memory=0.5Gi'",
+                     "system-reserved-cgroup": "'/system'"                  }
                 },
                 "etcd": {
                   "snapshot": false,
@@ -1486,7 +1490,7 @@ sed -i -e 's/sudo/sudo env PATH=$PATH/' install-helm.sh
 if which helm > /dev/null 2>&1 ; then
     log_message "[info] already installed helm"
     log_message "[start] install helm "
-    ./install-helm.sh -c >> $LOGFILE 2>&1
+    ./install-helm.sh -f -c >> $LOGFILE 2>&1
     log_message "[end] install helm "
 else
     log_message "[start] install helm "
