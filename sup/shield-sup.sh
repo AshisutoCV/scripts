@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200205a
+### VER=20200206a
 ####################
 
 ####-----------------
@@ -209,7 +209,7 @@ if [ -f shield-start.sh ];then
     if [ -f custom-management.yaml ]; then
        LOCALBACKUPPATH=$(grep [^#]localPath custom-management.yaml | cut -d : -f 2)
        REMORTBACKUPPATH=$(grep [^#]remortPath custom-management.yaml | cut -d : -f 2)
-       if [[ "${LOCALBACKUPPATH}" -eq "" ]]; then
+       if [[ "${LOCALBACKUPPATH}" == "" ]]; then
             LOCALBACKUPPATH="/home/ericom/"
        fi
        cp -r ${LOCALBACKUPPATH}backup/  $TMPDIR/shield/ 2>/dev/null
