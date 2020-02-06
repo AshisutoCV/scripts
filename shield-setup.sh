@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200124a
+### VER=20200206a
 ####################
 
 ES_PATH="$HOME/ericomshield"
