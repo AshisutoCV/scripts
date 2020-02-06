@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200124a
+### VER=20200206a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -1014,7 +1014,12 @@ else
                   "type": "kubeletService",
                   "clusterDnsServer": "'$CLUSTER_DNS_SERVER'",
                   "extraArgs": {
-                     "max-pods": "'$MAX_PODS'"
+                     "max-pods": "'$MAX_PODS'",
+                     "eviction-hard": "'memory.available<0.2Gi,nodefs.available<10%'",
+                     "kube-reserved": "'cpu=1,memory=1Gi'",
+                     "kube-reserved-cgroup": "'/system'",
+                     "system-reserved": "'cpu=1,memory=0.5Gi'",
+                     "system-reserved-cgroup": "'/system'"
                   }
                 },
                 "etcd": {

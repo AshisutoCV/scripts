@@ -2,8 +2,11 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200108a
+### VER=20200206a
 ####################
+
+ES_PATH="$HOME/ericomshield"
+cd $HOME
 
 if which helm ; then
     kubectl -n kube-system delete deployment tiller-deploy
@@ -26,12 +29,22 @@ for dir in $cleanupdirs; do
     sudo rm -rf $dir
 done
 
-mv -f ericomshield/logs ./
-sudo rm -rf ericomshield
-mkdir ericomshield
-mv -f logs ./ericomshield/
-sudo rm -rf rancher-store
+
+if [ -d ${ES_PATH} ]; then
+    mv -f ${ES_PATH}/logs ${HOME}
+    sudo rm -rf ${ES_PATH}
+    mkdir -p ${ES_PATH}
+    mv -f logs ${ES_PATH}/
+    USERNAME=$(ls -ld  ${ES_PATH} | awk '{print $3}')
+    GROUPNAME=$(ls -ld  ${ES_PATH} | awk '{print $4}')
+    chown ${USERNAME}:${GROUPNAME} ${ES_PATH}
+    chown ${USERNAME}:${GROUPNAME} ${ES_PATH}/logs
+fi
+
 sudo rm -rf .kube
+
+# for old ver
+sudo rm -rf rancher-store
 sudo rm -rf sup
 rm -f .ra_*
 rm -f .es_version
