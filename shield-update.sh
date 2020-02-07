@@ -250,6 +250,19 @@ function mv_rancher_store(){
             RANCHERURL=$(cat .ra_rancherurl)
             while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
             log_message "[end] move rancher-store"
+        else
+            log_message "[start] restart rancher server"
+            log_message "[start] stop rancher server"
+            docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
+            log_message "[start] run rancher"
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            chmod +x run-rancher.sh
+            ./run-rancher.sh | tee -a $LOGFILE
+            log_message "[end] run rancher"
+            log_message "[waiting] launched rancher"
+            RANCHERURL=$(cat .ra_rancherurl)
+            while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
+            log_message "[end] restert rancher server"
         fi
     fi
 }
