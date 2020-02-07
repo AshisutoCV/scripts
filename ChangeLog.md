@@ -1,5 +1,30 @@
 # Changelog
 
+## [VER=20200207a] - 2020/02/07
+
+### 変更
+#### shield-setup.sh
+* shield-statusによる確認メッセージ表示
+* helmのupdateに対応
+
+#### shield-update.sh
+* helmのupdateに対応
+* rancherのupdateに対応
+
+#### shield-start.sh
+* shield-statusによる確認メッセージ表示
+
+#### shield-status.sh
+* workload未Active時の表示変更
+
+#### shield-sup.sh
+* getlogの呼び出し時レポート指定の追加
+
+#### getlog.sh
+* レポート指定の一部でtypo修正
+
+--------------------------------------------------------------
+
 ## [VER=20200206c] - 2020/02/06
 
 ### 変更
@@ -25,6 +50,9 @@
 
 #### shield-setup.sh
 * クラスタ作成パラメタとしてkubelet,systemのリザーブを設定。
+
+#### delete-all.sh
+* 誤って(?)sudoによる実行を行った場合、ericomshieldディレクトリのownerがrootになる問題に対応
 
 --------------------------------------------------------------
 
