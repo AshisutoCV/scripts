@@ -234,7 +234,7 @@ function change_dir(){
 
 function mv_rancher_store(){
     if [[ $CHKBRANCH -lt 1911 ]];then
-        :        
+        : 
     else
         if [ -d ${CURRENT_DIR}/rancher-store ];then
             log_message "[start] move rancher-store"
