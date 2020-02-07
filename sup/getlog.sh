@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200205a
+### VER=20200207a
 ####################
 
 ####-----------------
@@ -33,10 +33,11 @@ usage() {
    echo "                           - systemtest"
    echo "                           - errors"
    echo "                           - feedback"
+   echo "                           - phishing (k8sのみ)"
    echo "                           - reports (k8sのみ)"
    echo "                           - allsystemstats (swarmのみ)"
    echo "                           - connectioninfo (swarmのみ)"
-   echo "                           - scalebrowser　(swarmのみ)"
+   echo "                           - scalebrowser (swarmのみ)"
    echo "                           - raw (swarmのみ)"
    echo "    --target_date (-D)  : 取得対象日。(YYYY-MM-DD)。 省略した場合は本日。"
    echo "    --target_time (-T)  : 取得対象時刻。開始時刻-終了時刻(HHMM-HHMM)。 省略した場合24時間。(0000-2359)"

@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200206a
+### VER=20200207a
 ####################
 
 ####-----------------
@@ -342,7 +342,7 @@ if [[ getlog_flg -eq 1 ]];then
     fi
     curl -sOL ${SCRIPTS_URL}/sup/getlog.sh 
     chmod +x getlog.sh
-    for L in allsystemstats applications connectioninfo connections errors feedback file-download file-preview file-sanitization file-transfer raw reports scalebrowser systemalert systemtest systemmsage
+    for L in connections applications file-sanitization file-transfer file-preview file-download systemusage systemalert systemtest errors feedback phishing reports allsystemstats connectioninfo scalebrowser raw
     do
         ./getlog.sh -L $L -O $TMPDIR/getlogs
         ./getlog.sh -L $L -D ${YESTERDAY} -O $TMPDIR/getlogs
