@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200116a
+### VER=20200207a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -119,5 +119,9 @@ echo ""
 if [ $NONACTIVE -eq 0 ]; then
         echo "All workloads are Active !"
 else
+        echo "----------------------------------------------------------"
+        echo $(echo "${STATELIST[@]}" | jq -c . |  grep -v "active")
+        echo "----------------------------------------------------------"
         echo "$NONACTIVE workload are not Active."
+        echo "----------------------------------------------------------"
 fi

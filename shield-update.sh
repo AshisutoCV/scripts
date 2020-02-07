@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200109a
+### VER=20200207a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -264,7 +264,7 @@ function log_message() {
 }
 
 function fin() {
-    log_message "###### DONE ############################################################"
+    log_message "###### DONE (update)############################################################"
     exit $1
 }
 
@@ -339,7 +339,7 @@ function get_yaml() {
 
         for difffile in $(ls diff_*.yaml)
         do
-            echo ${difffile}
+            echo ${ES_PATH}/${difffile}
         done
     else
         echo "yamlファイルに更新はありませんでした。そのまま再度　$0 ${ALL_ARGS} を再実行してください。"
@@ -387,7 +387,7 @@ function exec_update(){
 }
 
 ######START#####
-log_message "###### START ###########################################################"
+log_message "###### START (update)###########################################################"
 
 # check args and set flags
 ALL_ARGS="$@"

@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200109a
+### VER=20200207a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -153,7 +153,9 @@ move_to_project
 log_message "[end] Start Shield"
 
 echo ""
-echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
+echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
+echo "          ${ES_PATH}/shield-status.sh 実行し、"
+echo "          全てのワークロードが Acriveになることをご確認ください。"
 echo ""
 
 fin 0

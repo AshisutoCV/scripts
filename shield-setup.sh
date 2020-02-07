@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200206c
+### VER=20200207a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -773,6 +773,11 @@ if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
     #if [ $deploy_flg -eq 1 ]; then
     move_to_project
     #fi
+    echo ""
+    echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
+    echo "          ${ES_PATH}/shield-status.sh 実行し、"
+    echo "          全てのワークロードが Acriveになることをご確認ください。"
+    echo ""
     fin 0
 fi
 
@@ -1816,6 +1821,8 @@ deploy_shield
 move_to_project
 
 echo ""
-echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
+echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
+echo "          ${ES_PATH}/shield-status.sh 実行し、"
+echo "          全てのワークロードが Acriveになることをご確認ください。"
 echo ""
 fin 0
