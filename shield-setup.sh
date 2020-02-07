@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200206c
+### VER=20200207a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -524,6 +524,25 @@ function deploy_shield() {
     log_message "[end] deploy shield"
 }
 
+function install_helm() {
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-helm.sh
+    chmod +x install-helm.sh
+    sed -i -e 's/sudo/sudo env PATH=$PATH/' install-helm.sh
+    if which helm > /dev/null 2>&1 ; then
+        log_message "[info] already installed helm"
+        log_message "[start] install helm "
+        ./install-helm.sh -f -c >> $LOGFILE 2>&1
+        log_message "[end] install helm "
+    else
+        log_message "[start] install helm "
+        ./install-helm.sh >> $LOGFILE 2>&1
+        if ! which helm > /dev/null 2>&1 ; then
+            failed_to_install "install helm"
+        fi
+        log_message "[end] install helm "
+    fi
+}
+
 function log_message() {
     local PREV_RET_CODE=$?
     echo "$@"
@@ -763,16 +782,17 @@ get_scripts
 
 #update or deploy
 if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
-    #if [ $update_flg -eq 1 ];then
-    #log_message "[start] stopping shield"
-    #       bash ./shield-stop.sh
-    #log_message "[end] stopping shield"
-    #fi
+    #install_docker
+    #install_kubectl
+    install_helm
     add_repo
     deploy_shield
-    #if [ $deploy_flg -eq 1 ]; then
     move_to_project
-    #fi
+    echo ""
+    echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
+    echo "          ${ES_PATH}/shield-status.sh 実行し、"
+    echo "          全てのワークロードが Acriveになることをご確認ください。"
+    echo ""
     fin 0
 fi
 
@@ -1484,22 +1504,7 @@ log_message "$(kubectl version)"
 
 
 # install helm
-curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-helm.sh
-chmod +x install-helm.sh
-sed -i -e 's/sudo/sudo env PATH=$PATH/' install-helm.sh
-if which helm > /dev/null 2>&1 ; then
-    log_message "[info] already installed helm"
-    log_message "[start] install helm "
-    ./install-helm.sh -f -c >> $LOGFILE 2>&1
-    log_message "[end] install helm "
-else
-    log_message "[start] install helm "
-    ./install-helm.sh >> $LOGFILE 2>&1
-    if ! which helm > /dev/null 2>&1 ; then
-        failed_to_install "install helm"
-    fi
-    log_message "[end] install helm "
-fi
+install_helm
 
 # get System project id
 log_message "[start] get System project id"
@@ -1816,6 +1821,8 @@ deploy_shield
 move_to_project
 
 echo ""
-echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、全てのワークロードが Acriveになることをご確認ください。"
+echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
+echo "          ${ES_PATH}/shield-status.sh 実行し、"
+echo "          全てのワークロードが Acriveになることをご確認ください。"
 echo ""
 fin 0

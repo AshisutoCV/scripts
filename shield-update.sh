@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200109a
+### VER=20200207a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -234,7 +234,7 @@ function change_dir(){
 
 function mv_rancher_store(){
     if [[ $CHKBRANCH -lt 1911 ]];then
-        :        
+        : 
     else
         if [ -d ${CURRENT_DIR}/rancher-store ];then
             log_message "[start] move rancher-store"
@@ -250,6 +250,19 @@ function mv_rancher_store(){
             RANCHERURL=$(cat .ra_rancherurl)
             while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
             log_message "[end] move rancher-store"
+        else
+            log_message "[start] restart rancher server"
+            log_message "[start] stop rancher server"
+            docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
+            log_message "[start] run rancher"
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            chmod +x run-rancher.sh
+            ./run-rancher.sh | tee -a $LOGFILE
+            log_message "[end] run rancher"
+            log_message "[waiting] launched rancher"
+            RANCHERURL=$(cat .ra_rancherurl)
+            while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
+            log_message "[end] restert rancher server"
         fi
     fi
 }
@@ -264,7 +277,7 @@ function log_message() {
 }
 
 function fin() {
-    log_message "###### DONE ############################################################"
+    log_message "###### DONE (update)############################################################"
     exit $1
 }
 
@@ -339,7 +352,7 @@ function get_yaml() {
 
         for difffile in $(ls diff_*.yaml)
         do
-            echo ${difffile}
+            echo ${ES_PATH}/${difffile}
         done
     else
         echo "yamlファイルに更新はありませんでした。そのまま再度　$0 ${ALL_ARGS} を再実行してください。"
@@ -387,7 +400,7 @@ function exec_update(){
 }
 
 ######START#####
-log_message "###### START ###########################################################"
+log_message "###### START (update)###########################################################"
 
 # check args and set flags
 ALL_ARGS="$@"
