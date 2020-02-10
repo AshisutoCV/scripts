@@ -366,13 +366,14 @@ function get_yaml() {
 
 function check_yaml() {
     mng_anti_flg=$(cat custom-management.yaml_backup | grep -v "#" | grep antiAffinity | grep -c hard)
-    if [[ $mng_anti_flg -eq 1 ]];then
+    if [[ $mng_anti_flg -ge 1 ]];then
         sed -i -e '/#.*antiAffinity/s/#//g' custom-management.yaml
     fi
 
     farm_anti_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep antiAffinity | grep -c hard)   
-    if [[ $farm_anti_flg -eq 1 ]];then
+    if [[ $farm_anti_flg -ge 1 ]];then
         sed -i -e '/#.*antiAffinity/s/#//g' custom-farm.yaml
+        sed -i -e '0,/^ antiAffinity/ s/^ antiAffinity/  antiAffinity/' custom-farm.yaml
     fi
 
     spell_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep DISABLE_SPELL_CHECK | grep -c true)
