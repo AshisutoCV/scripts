@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200109a
+### VER=20200210a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -62,7 +62,7 @@ function stop_shield() {
         ./delete-shield.sh | tee -a $LOGFILE
     else
         sed -i -e 's/Uninstalling/Stopping/' delete-shield.sh
-        ./delete-shield.sh -s | tee -a $LOGFILE
+        ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
     fi
 
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
