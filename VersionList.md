@@ -2,6 +2,7 @@
 ***
 
 ## shield-status.sh
+* [20200210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200210a---20200210)
 * [20200207a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200207a---20200207)
 * [20200124a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200124a---20200124)
 
@@ -9,6 +10,7 @@
 * [20200115a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200115a---20200115)
 
 ## shield-setup.sh
+* [20200210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200210a---20200210)
 * [20200207a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200207a---20200207)
 * [20200206c](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200206c---20200206)
 * [20200206b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200206b---20200206)
@@ -19,6 +21,7 @@
 * [20191218c](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191218c---20191218)
 
 ## shield-update.sh
+* [20200210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200210a---20200210)
 * [20200207a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200207a---20200207)
 * [20200109a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200109a---20200109)
 * [20200108a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200108a---20200108)
@@ -35,6 +38,7 @@
 * [20191101b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191101b---20191101)
 
 ## shield-stop.sh
+* [20200210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200210a---20200210)
 * [20200109a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200109a---20200109)
 * [20200108a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200108a---20200108)
 * [20191206a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191206a---20191206)

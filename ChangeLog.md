@@ -1,5 +1,24 @@
 # Changelog
 
+## [VER=20200210a] - 2020/02/10
+
+### 変更
+#### shield-setup.sh
+* clean-rancher-agent.sh をDLコマンドに追加。
+* updateの直接呼び出しを抑止
+* antiAffinityのコメントアウト調整
+
+#### shield-update.sh
+* antiAffinityのコメントアウト調整
+
+#### shield-status.sh
+* workload未Active時の表示変更(改善)
+
+#### shield-stop.sh
+* 停止済みで実行した際のエラー表示抑止
+
+--------------------------------------------------------------
+
 ## [VER=20200207a] - 2020/02/07
 
 ### 変更
