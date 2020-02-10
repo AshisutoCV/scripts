@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200207a
+### VER=20200210a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -92,16 +92,18 @@ function check_args(){
 
 function select_version() {
     CHART_VERSION=""
+    VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ;then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
-        VERSION_DEPLOYED=`echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g"`
-    elif [ -f ".es_version" ]; then
+        VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
+    fi
+    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [ -f "$ES_PATH/.es_version" ]; then
+    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ]; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
-    if [ -z $VERSION_DEPLOYED ]; then
+    if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]]; then
         log_message "現在インストールされているバージョン: N/A"
     else
         BUILD=()
@@ -366,13 +368,13 @@ function get_yaml() {
 
 function check_yaml() {
     mng_anti_flg=$(cat custom-management.yaml_backup | grep -v "#" | grep antiAffinity | grep -c hard)
-    if [[ $mng_anti_flg -eq 1 ]];then
-        sed -i -e '/#.*antiAffinity/s/#//g' custom-management.yaml
+    if [[ $mng_anti_flg -ge 1 ]];then
+        sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-management.yaml
     fi
 
     farm_anti_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep antiAffinity | grep -c hard)   
-    if [[ $farm_anti_flg -eq 1 ]];then
-        sed -i -e '/#.*antiAffinity/s/#//g' custom-farm.yaml
+    if [[ $farm_anti_flg -ge 1 ]];then
+        sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-farm.yam
     fi
 
     spell_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep DISABLE_SPELL_CHECK | grep -c true)

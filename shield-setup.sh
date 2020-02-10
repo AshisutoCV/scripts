@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200207a
+### VER=20200210a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -32,10 +32,9 @@ fi
 
 
 function usage() {
-    echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
+    echo "USAGE: $0 [--pre-use] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
     echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
     echo "                        ※ただし、先行利用バージョンについては、一切のサポートがございません。"
-    echo "    --update          : Shield のバージョンを変更できます。"
     echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
     echo "    --spell-check-on  : ブラウザのスペルチェック機能をONの状態でセットアップします。"
     echo "                        ※日本語環境ではメモリリークの原因になるためデフォルトOFFです。"
@@ -67,6 +66,7 @@ function check_args(){
     yamlget_flg=0
     spell_flg=0
     ses_limit_flg=0
+    elk_snap_flg=0
     uninstall_flg=0
     deleteall_flg=0
     S_APP_VERSION=""
@@ -195,16 +195,18 @@ function check_args(){
 
 function select_version() {
     CHART_VERSION=""
+    VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ;then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
-    elif [ -f ".es_version" ]; then
+    fi
+    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [ -f "$ES_PATH/.es_version" ]; then
+    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ]; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
-    if [ -z $VERSION_DEPLOYED ]; then
+    if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]]; then
         log_message "現在インストールされているバージョン: N/A"
     else
         BUILD=()
@@ -440,8 +442,8 @@ function check_ha() {
 
     if [[ $NUM_MNG -eq 3 ]];then
         if [ -f custom-management.yaml ]; then
-             if [[ $(grep -c antiAffinity custom-management.yaml) -eq 1 ]];then
-                 sed -i -e '/#.*antiAffinity/s/#//g' custom-management.yaml
+             if [[ $(grep -c antiAffinity custom-management.yaml) -ge 1 ]];then
+                 sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-management.yaml 
              else
                  sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-management.yaml
              fi
@@ -451,8 +453,8 @@ function check_ha() {
     fi
     if [[ $NUM_FARM -eq 3 ]];then
         if [ -f custom-farm.yaml ]; then
-             if [[ $(grep -c antiAffinity custom-farm.yaml) -eq 1 ]];then
-                 sed -i -e '/#.*antiAffinity/s/#//g' custom-farm.yaml
+             if [[ $(grep -c antiAffinity custom-farm.yaml) -ge 1 ]];then
+                 sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-farm.yaml 
              else
                  sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-farm.yaml
              fi
@@ -503,6 +505,10 @@ function deploy_shield() {
     if [ $ses_limit_flg -ne 1 ]; then
         sed -i -e 's/^#shield-proxy/shield-proxy/' custom-proxy.yaml
         sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
+    fi
+    if [ $elk_snap_flg -ne 1 ]; then
+        sed -i -e '/^\s.*fullSnapshotSchedule/s/^/#/g' custom-values-elk.yaml
+        sed -i -e '/^\s.*dailySnapshotSchedule/s/^/#/g' custom-values-elk.yaml
     fi
 
     if [ $deploy_flg -eq 1 ]; then
@@ -753,6 +759,15 @@ fi
 
 # check args and set flags
 check_args $@
+
+# update_flg parent check
+if [ $update_flg -eq 1 ];then
+    PARENTCMD=$(ps -o args= $PPID)
+    if [[ ! ${PARENTCMD} =~ shield-update.sh ]]; then
+        log_message "--update は直接利用できません。 shield-update.sh をご利用ください。"
+        fin 1
+    fi
+fi
 
 select_version
 
@@ -1151,6 +1166,11 @@ else
              echo 'そして、'
              echo '(【必要に応じて】 下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "chmod +x clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
@@ -1173,8 +1193,6 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
@@ -1183,6 +1201,11 @@ else
              echo 'または、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Cluster Management単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "chmod +x clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
@@ -1205,8 +1228,6 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
@@ -1237,8 +1258,6 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
@@ -1253,6 +1272,11 @@ else
              echo 'そして、'  | tee -a $CMDFILE
              echo '(【必要に応じて】 下記コマンドを他の Cluster Management単体 ノードで実行してください。)'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "chmod +x clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
@@ -1275,8 +1299,6 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
@@ -1308,14 +1330,17 @@ else
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              ;;
         "3") DOCKERRUNCMD=""
              echo '下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。'  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "chmod +x clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
@@ -1339,8 +1364,6 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
@@ -1349,6 +1372,11 @@ else
              echo 'または、'  | tee -a $CMDFILE
              echo '下記コマンドを Cluster Management単体 ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "chmod +x clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
@@ -1371,8 +1399,6 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
@@ -1403,8 +1429,6 @@ else
                  echo ""  | tee -a $CMDFILE
              fi
              echo './install-docker.sh'  | tee -a $CMDFILE
-             echo ""  | tee -a $CMDFILE
-             echo 'sudo usermod -aG docker "$USER"'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE

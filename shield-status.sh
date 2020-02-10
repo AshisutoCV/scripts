@@ -2,21 +2,14 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200207a
+### VER=20200210a
 ####################
 
 ES_PATH="$HOME/ericomshield"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
-if [ ! -e ${ES_PATH}/logs/ ];then
-    mkdir -p ${ES_PATH}/logs
-    mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
-    mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
-fi
 
-
-LOGFILE="${ES_PATH}/logs/status.log"
 BRANCH="Rel"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
@@ -28,7 +21,6 @@ elif [ -f ${ES_PATH}/.es_branch ]; then
     BRANCH=$(cat ${ES_PATH}/.es_branch)
 fi
 
-
 function usage() {
     echo "USAGE: $0 "
     exit 0
@@ -38,40 +30,13 @@ if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
     usage
 fi
 
-function change_dir(){
-    BUILD=()
-    BUILD=(${S_APP_VERSION//./ })
-    CHKBRANCH=${BUILD[0]}${BUILD[1]}
-    if [[ $CHKBRANCH -lt 1911 ]];then
-        log_message "pwd: $(pwd)"
-    else
-        log_message "[start] change dir"
-        log_message "pwd: $(pwd)"
-        cd ${ES_PATH}
-        log_message "pwd: $(pwd)"
-        log_message "[end] change dir"
-    fi
-}
-
-function log_message() {
-    local PREV_RET_CODE=$?
-    echo "$@"
-    echo "$(LC_ALL=C date): $@" >>"$LOGFILE"
-    if ((PREV_RET_CODE != 0)); then
-        return 1
-    fi
-    return 0
-}
-
-
-
 
 ######START#####
 
 #read ra files
 if [ ! -f .ra_rancherurl ] || [ ! -f .ra_clusterid ] || [ ! -f .ra_apitoken ];then
-    log_message ".raファイルがありません。"
-    fin 1
+    echo ".raファイルがありません。"
+    exit 1
 else
     RANCHERURL=$(cat .ra_rancherurl)
     CLUSTERID=$(cat .ra_clusterid)
@@ -95,8 +60,16 @@ do
     WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/cluster/${CLUSTERID}/namespaces/${NAMESPACE}/yaml" \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
-        | jq -c ' .items[] | [ .kind, .metadata.namespace,.metadata.name ]' | grep -v Service | grep -v ConfigMap))
+        | jq -c ' .items[] | [ .kind, .metadata.namespace,.metadata.name ]' | grep -v Service | grep -v ConfigMap)) || {
+        echo "Not deploy ${NAMESPACE}."
+        ERR_FLG=1
+    }
 done
+
+if [[ $ERR_FLG -eq 1 ]];then
+    echo "exit."
+    exit 1
+fi
 
 #echo $WORKLOADS
 
@@ -112,7 +85,7 @@ do
         | jq -c '[ .namespaceId, .name, .state ] '))
 done
 
-echo "${STATELIST[@]}" | jq -c
+echo "${STATELIST[@]}" | jq -c . | grep "active"
 NONACTIVE=$(echo "${STATELIST[@]}" | jq -c . |  grep -c -v "active")
 
 echo ""
@@ -120,7 +93,7 @@ if [ $NONACTIVE -eq 0 ]; then
         echo "All workloads are Active !"
 else
         echo "----------------------------------------------------------"
-        echo $(echo "${STATELIST[@]}" | jq -c . |  grep -v "active")
+        echo "${STATELIST[@]}" | jq -c . |  grep -v "active"
         echo "----------------------------------------------------------"
         echo "$NONACTIVE workload are not Active."
         echo "----------------------------------------------------------"
