@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200210a-dev
+### VER=20200210a-devv
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -196,16 +196,18 @@ function check_args(){
 
 function select_version() {
     CHART_VERSION=""
+    VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ;then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
-    elif [ -f ".es_version" ]; then
+    fi
+    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ]; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [ -f "$ES_PATH/.es_version" ]; then
+    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ]; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
-    if [ -z $VERSION_DEPLOYED ]; then
+    if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]]; then
         log_message "現在インストールされているバージョン: N/A"
     else
         BUILD=()
@@ -761,8 +763,8 @@ check_args $@
 
 # update_flg parent check
 if [ $update_flg -eq 1 ];then
-    PARENTCMD=$(ps -o comm= $PPID)
-    if [[ ${PARENTCMD} != "shield-update.sh" ]]; then
+    PARENTCMD=$(ps -o args= $PPID)
+    if [[ ! ${PARENTCMD} =~ shield-update.sh ]]; then
         log_message "--update は直接利用できません。 shield-update.sh をご利用ください。"
         fin 1
     fi
