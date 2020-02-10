@@ -32,7 +32,7 @@ fi
 
 
 function usage() {
-    echo "USAGE: $0 [--pre-use] [--update] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
+    echo "USAGE: $0 [--pre-use] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all]"
     echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
     echo "                        ※ただし、先行利用バージョンについては、一切のサポートがございません。"
     echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
@@ -752,6 +752,15 @@ fi
 
 # check args and set flags
 check_args $@
+
+# update_flg parent check
+if [ $update_flg -eq 1 ];then
+    PARENTCMD=$(ps -o comm= $PPID)
+    if [[ ${PARENTCMD} != "shield-update.sh" ]]; then
+        log_message "--update は直接利用できません。 shield-update.sh をご利用ください。"
+        fin 1
+    fi
+fi
 
 select_version
 
