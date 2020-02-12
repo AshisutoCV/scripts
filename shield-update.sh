@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200210a
+### VER=20200212a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -15,7 +15,7 @@ if [ ! -e ${ES_PATH}/logs/ ];then
     mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
 
-
+elk_snap_flg=0
 LOGFILE="${ES_PATH}/logs/update.log"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
@@ -387,6 +387,11 @@ function check_yaml() {
     if [ $ses_limit_flg -eq 1 ]; then
         sed -i -e 's/^#shield-proxy/shield-proxy/' custom-proxy.yaml
         sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
+    fi
+    if [ $elk_snap_flg -ne 1 ]; then
+        sed -i -e '/^\s.*management\:/s/^/#/g' custom-values-elk.yaml
+        sed -i -e '/^\s.*fullSnapshotSchedule/s/^/#/g' custom-values-elk.yaml
+        sed -i -e '/^\s.*dailySnapshotSchedule/s/^/#/g' custom-values-elk.yaml
     fi
 }
 
