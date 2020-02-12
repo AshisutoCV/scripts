@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200210a
+### VER=20200212a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -507,6 +507,7 @@ function deploy_shield() {
         sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
     fi
     if [ $elk_snap_flg -ne 1 ]; then
+        sed -i -e '/^\s.*management\:/s/^/#/g' custom-values-elk.yaml
         sed -i -e '/^\s.*fullSnapshotSchedule/s/^/#/g' custom-values-elk.yaml
         sed -i -e '/^\s.*dailySnapshotSchedule/s/^/#/g' custom-values-elk.yaml
     fi
@@ -1043,7 +1044,12 @@ else
                 "kubeController": {
                   "clusterCidr": "'$CLUSTER_CIDR'",
                   "serviceClusterIpRange": "'$SERVICE_CLUSTER_IP_RANGE'",
-                  "type": "kubeControllerService"
+                  "type": "kubeControllerService",
+                  "extraArgs": {
+                    "node-monitor-grace-period": "10s",
+                    "node-monitor-period": "10s",
+                    "pod-eviction-timeout": "30s"
+                  }
                 },
                 "kubelet": {
                   "type": "kubeletService",
@@ -1054,7 +1060,8 @@ else
                      "kube-reserved": "'cpu=1,memory=1Gi'",
                      "kube-reserved-cgroup": "'/system'",
                      "system-reserved": "'cpu=1,memory=0.5Gi'",
-                     "system-reserved-cgroup": "'/system'"                  }
+                     "system-reserved-cgroup": "'/system'"
+                  }
                 },
                 "etcd": {
                   "snapshot": false,
