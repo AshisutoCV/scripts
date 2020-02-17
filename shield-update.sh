@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200212a
+### VER=20200217a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -374,7 +374,7 @@ function check_yaml() {
 
     farm_anti_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep antiAffinity | grep -c hard)   
     if [[ $farm_anti_flg -ge 1 ]];then
-        sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-farm.yam
+        sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-farm.yaml
     fi
 
     spell_flg=$(cat custom-farm.yaml_backup | grep -v "#" | grep DISABLE_SPELL_CHECK | grep -c true)
