@@ -452,7 +452,7 @@ function check_ha() {
              fi
         fi
     elif [[ $NUM_MNG -eq 1 ]];then
-             sed -i -e '/^\s.*antiAffinity/s/^/#/g' custom-management.yaml
+             sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-management.yaml
     fi
     if [[ $NUM_FARM -eq 3 ]];then
         if [ -f custom-farm.yaml ]; then
@@ -463,7 +463,7 @@ function check_ha() {
              fi
         fi
     elif [[ $NUM_MNG -eq 1 ]];then
-             sed -i -e '/^\s.*antiAffinity/s/^/#/g' custom-farm.yaml
+             sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-farm.yaml
     fi
 }
 
@@ -509,10 +509,8 @@ function deploy_shield() {
         sed -i -e 's/^#shield-proxy/shield-proxy/' custom-proxy.yaml
         sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
     fi
-    if [ $elk_snap_flg -ne 1 ]; then
-        sed -i -e '/^\s.*management\:/s/^/#/g' custom-values-elk.yaml
-        sed -i -e '/^\s.*fullSnapshotSchedule/s/^/#/g' custom-values-elk.yaml
-        sed -i -e '/^\s.*dailySnapshotSchedule/s/^/#/g' custom-values-elk.yaml
+    if [ $elk_snap_flg -eq 1 ]; then
+        sed -i -e '/#.*enableSnapshots/s/^.*#.*enableSnapshots/    enableSnapshots/g' custom-values-elk.yaml
     fi
 
     if [ $deploy_flg -eq 1 ]; then

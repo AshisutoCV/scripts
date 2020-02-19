@@ -391,10 +391,8 @@ function check_yaml() {
         sed -i -e 's/^#shield-proxy/shield-proxy/' custom-proxy.yaml
         sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
     fi
-    if [ $elk_snap_flg -ne 1 ]; then
-        sed -i -e '/^\s.*management\:/s/^/#/g' custom-values-elk.yaml
-        sed -i -e '/^\s.*fullSnapshotSchedule/s/^/#/g' custom-values-elk.yaml
-        sed -i -e '/^\s.*dailySnapshotSchedule/s/^/#/g' custom-values-elk.yaml
+    if [ $elk_snap_flg -eq 1 ]; then
+        sed -i -e '/#.*enableSnapshots/s/^.*#.*enableSnapshots/    enableSnapshots/g' custom-values-elk.yaml
     fi
 }
 
