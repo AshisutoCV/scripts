@@ -1,5 +1,42 @@
 # Changelog
 
+## [VER=20200219a] - 2020/02/19
+
+### 変更
+#### shield-setup.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+* elk snapshotとantiafinityのコメント処理修正
+* deploy前のsystem Projectステータス確認の追加
+
+#### shield-status.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+* system Projectステータス確認の追加
+
+#### shield-start.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+* deploy前のsystem Projectステータス確認の追加
+
+#### shield-nodes.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+
+#### shield-restore.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+
+#### shield-update.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+* elk snapshotとantiafinityのコメント処理修正
+
+#### shield-stop.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+
+#### shield-sup.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+
+#### getlog.sh
+* HOMEおよびKUBECONFIGのexportを追加(UbuntuとCentOSでのsudo差分保護)
+
+--------------------------------------------------------------
+
 ## [VER=20200217a] - 2020/02/17
 
 ### 変更
