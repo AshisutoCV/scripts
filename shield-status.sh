@@ -27,11 +27,28 @@ fi
 function usage() {
     echo "USAGE: $0 "
     exit 0
+    ### for Develop only
+    # [--system] [-q]
+    ##
 }
 
-if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
-    usage
-fi
+system_flg=0
+quiet_flg=0
+args=""
+
+for i in `seq 1 ${#}`
+do
+    if [ "$1" == "--system" ]; then
+        system_flg=1
+    elif [ "$1" == "--quiet" ] || [ "$1" == "-q" ] ; then
+        quiet_flg=1
+    elif [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+        usage
+    else
+        args="${args} ${1}"
+    fi
+    shift
+done
 
 
 ######START#####
@@ -46,16 +63,23 @@ else
     APITOKEN=$(cat .ra_apitoken)
 fi
 
-DEFPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=Default" \
+if [[ system_flg -ne 1 ]];then
+    PROJECTNAME="Default"
+    if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
+        NAMESPACES="management proxy elk farm-services"
+    else
+        NAMESPACES="management proxy elk farm-services common"
+    fi
+else
+    PROJECTNAME="System"
+    NAMESPACES="cattle-system ingress-nginx kube-system"
+fi
+PROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
     -H 'content-type: application/json' \
     -H "Authorization: Bearer $APITOKEN" \
     | jq -r '.data[].id')
 
-if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
-    NAMESPACES="management proxy elk farm-services"
-else
-    NAMESPACES="management proxy elk farm-services common"
-fi
+
 
 WORKLOADS=()
 for NAMESPACE in $NAMESPACES
@@ -64,13 +88,17 @@ do
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
         | jq -c ' .items[] | [ .kind, .metadata.namespace,.metadata.name ]' | grep -v Service | grep -v ConfigMap)) || {
-        echo "Not deploy ${NAMESPACE}."
+        if [[ $quiet_flg -ne 1 ]]; then
+            echo "Not deploy ${NAMESPACE}."
+        fi
         ERR_FLG=1
     }
 done
 
 if [[ $ERR_FLG -eq 1 ]];then
-    echo "exit."
+    if [[ $quiet_flg -ne 1 ]]; then
+        echo "exit."
+    fi
     exit 1
 fi
 
@@ -82,22 +110,30 @@ do
         KIND=$(echo $WORKLOAD | jq -c .[0] | sed -e s/\"//g)
         SPACE=$(echo $WORKLOAD | jq -c .[1] | sed -e s/\"//g)
         NAME=$(echo $WORKLOAD | jq -c .[2] | sed -e s/\"//g)
-        STATELIST+=($(curl -s -k "${RANCHERURL}/v3/project/${DEFPROJECTID}/workloads/${KIND,,}:${SPACE,,}:${NAME,,}" \
+        STATELIST+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads/${KIND,,}:${SPACE,,}:${NAME,,}" \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
         | jq -c '[ .namespaceId, .name, .state ] '))
 done
 
-echo "${STATELIST[@]}" | jq -c . | grep "active"
+if [[ $quiet_flg -ne 1 ]]; then
+    echo "${STATELIST[@]}" | jq -c . | grep "active"
+    echo ""
+fi
 NONACTIVE=$(echo "${STATELIST[@]}" | jq -c . |  grep -c -v "active")
 
-echo ""
 if [ $NONACTIVE -eq 0 ]; then
+    if [[ $quiet_flg -ne 1 ]]; then
         echo "All workloads are Active !"
+    fi
+        exit 0
 else
+    if [[ $quiet_flg -ne 1 ]]; then
         echo "----------------------------------------------------------"
         echo "${STATELIST[@]}" | jq -c . |  grep -v "active"
         echo "----------------------------------------------------------"
         echo "$NONACTIVE workload are not Active."
         echo "----------------------------------------------------------"
+    fi
+    exit 10
 fi
