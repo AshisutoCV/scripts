@@ -2,8 +2,11 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200212a
+### VER=20200219a
 ####################
+
+export HOME=$(eval echo ~${SUDO_USER})
+export KUBECONFIG=${HOME}/.kube/config
 
 ES_PATH="$HOME/ericomshield"
 if [ ! -e $ES_PATH ];then
@@ -449,7 +452,7 @@ function check_ha() {
              fi
         fi
     elif [[ $NUM_MNG -eq 1 ]];then
-             sed -i -e '/^\s.*antiAffinity/s/^/#/g' custom-management.yaml
+             sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-management.yaml
     fi
     if [[ $NUM_FARM -eq 3 ]];then
         if [ -f custom-farm.yaml ]; then
@@ -460,7 +463,7 @@ function check_ha() {
              fi
         fi
     elif [[ $NUM_MNG -eq 1 ]];then
-             sed -i -e '/^\s.*antiAffinity/s/^/#/g' custom-farm.yaml
+             sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-farm.yaml
     fi
 }
 
@@ -506,10 +509,8 @@ function deploy_shield() {
         sed -i -e 's/^#shield-proxy/shield-proxy/' custom-proxy.yaml
         sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
     fi
-    if [ $elk_snap_flg -ne 1 ]; then
-        sed -i -e '/^\s.*management\:/s/^/#/g' custom-values-elk.yaml
-        sed -i -e '/^\s.*fullSnapshotSchedule/s/^/#/g' custom-values-elk.yaml
-        sed -i -e '/^\s.*dailySnapshotSchedule/s/^/#/g' custom-values-elk.yaml
+    if [ $elk_snap_flg -eq 1 ]; then
+        sed -i -e '/#.*enableSnapshots/s/^.*#.*enableSnapshots/    enableSnapshots/g' custom-values-elk.yaml
     fi
 
     if [ $deploy_flg -eq 1 ]; then
@@ -1844,6 +1845,21 @@ do
         fi
     done
 done
+
+#check_system_project
+log_message "[start] Waiting System Project is Actived"
+while :
+do
+    for i in 1 2 3 
+    do
+        ${ES_PATH}/shield-status.sh --system -q
+        export RET${i}=$?
+    done
+    if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
+        break
+    fi
+done
+log_message "[end] Waiting System Project is Actived"
 
 # deploy shield
 deploy_shield

@@ -2,8 +2,11 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200207a
+### VER=20200219a
 ####################
+
+export HOME=$(eval echo ~${SUDO_USER})
+export KUBECONFIG=${HOME}/.kube/config
 
 ES_PATH="$HOME/ericomshield"
 if [ ! -e $ES_PATH ];then
@@ -144,6 +147,20 @@ fi
 
 
 S_APP_VERSION=$(cat .es_version)
+
+log_message "[start] Waiting System Project is Actived"
+while :
+do
+    for i in 1 2 3 
+    do
+        ${ES_PATH}/shield-status.sh --system -q
+        export RET${i}=$?
+    done
+    if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
+        break
+    fi
+done
+log_message "[end] Waiting System Project is Actived"
 
 log_message "[start] Start Shield"
 

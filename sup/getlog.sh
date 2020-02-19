@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200207a
+### VER=20200219a
 ####################
 
 ####-----------------
@@ -10,12 +10,14 @@
 TTZ="Asia/Tokyo"    # 検索日時の入力において、入力値をどのTZとして扱うか。
 ####-----------------
 
-
 SIZE=10000 
 if [[ ! -z ${TZ} ]];then
     SIZE=100
     nTZ=$(env TZ=${TZ} date +%z | sed -e s/00$/:00/)
 fi
+
+export HOME=$(eval echo ~${SUDO_USER})
+export KUBECONFIG=${HOME}/.kube/config
 
 usage() {
    echo "$0 [target log] (target date) (target time) (get filed) (output_dir)"

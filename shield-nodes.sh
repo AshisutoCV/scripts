@@ -2,8 +2,11 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200109a
+### VER=20200219a
 ####################
+
+export HOME=$(eval echo ~${SUDO_USER})
+export KUBECONFIG=${HOME}/.kube/config
 
 if [ ! -e ./logs/ ];then
     mkdir logs
