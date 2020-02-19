@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200207a
+### VER=20200219a
 ####################
 
 ####-----------------
@@ -19,6 +19,9 @@ if ((EUID != 0)); then
     echo "sudo" $0
     exit
 fi
+
+export HOME=$(eval echo ~${SUDO_USER})
+export KUBECONFIG=${HOME}/.kube/config
 
 ES_PATH="$HOME/ericomshield"
 if [ ! -e $ES_PATH ];then

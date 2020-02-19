@@ -2,8 +2,11 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200217a
+### VER=20200219a
 ####################
+
+export HOME=$(eval echo ~${SUDO_USER})
+export KUBECONFIG=${HOME}/.kube/config
 
 ES_PATH="$HOME/ericomshield"
 if [ ! -e $ES_PATH ];then
