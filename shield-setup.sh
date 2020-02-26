@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200219a
+### VER=20200226a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -828,6 +828,7 @@ if [[ $OS == "Ubuntu" ]]; then
     if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
         sudo add-apt-repository universe
     fi
+    sudo apt-mark unhold docker-ce | tee -a $LOGFILE
     sudo apt-get update -qq
     sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
 fi
@@ -843,7 +844,6 @@ fi
 log_message "[start] install docker"
 curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-docker.sh
 chmod +x install-docker.sh
-
 check_docker
 
 log_message "[end] install docker"
@@ -1852,7 +1852,7 @@ while :
 do
     for i in 1 2 3 
     do
-        ${ES_PATH}/shield-status.sh --system -q
+        ./shield-status.sh --system -q
         export RET${i}=$?
     done
     if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
@@ -1869,7 +1869,7 @@ move_to_project
 
 echo ""
 echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
-echo "          ${ES_PATH}/shield-status.sh 実行し、"
+echo "          $(pwd)/shield-status.sh 実行し、"
 echo "          全てのワークロードが Acriveになることをご確認ください。"
 echo ""
 fin 0
