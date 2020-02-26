@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200219a
+### VER=20200226a
 ####################
 
 ####-----------------
@@ -294,10 +294,10 @@ if [[ varlog_flg -eq 1 ]];then
         docker ps --format "{{.Names}}" | xargs -I {} bash -c "sudo docker logs {} > $TMPDIR/dockerlogs/{}.log 2>&1"
     fi
     echo " Preparing the tar file: /tmp/varlog_${FILENAME}.tar.zg "
-    tar --exclude='journal' -cf /tmp/varlog_${FILENAME}.tar -C /var/log/ .
+    tar --exclude='journal' -chf /tmp/varlog_${FILENAME}.tar -C /var/log/ . --warning=no-file-changed --warning=no-file-removed --warning=no-file-shrank
     # for swarm
     if [ -d /usr/local/ericomshield/ ]; then
-        tar -rf /tmp/varlog_${FILENAME}.tar -C $TMPDIR dockerlogs
+        tar -chf /tmp/varlog_${FILENAME}.tar -C $TMPDIR dockerlogs --warning=no-file-changed --warning=no-file-removed --warning=no-file-shrank
     fi
     gzip /tmp/varlog_${FILENAME}.tar
     rm -rf ${TMPDIR}
