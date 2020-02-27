@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200219a
+### VER=20200227a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -87,7 +87,7 @@ do
     WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/cluster/${CLUSTERID}/namespaces/${NAMESPACE}/yaml" \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
-        | jq -c ' .items[] | [ .kind, .metadata.namespace,.metadata.name ]' | grep -v Service | grep -v ConfigMap)) || {
+        | jq -c ' .items[] | [ .kind, .metadata.namespace,.metadata.name ]' > /dev/null | grep -v Service | grep -v ConfigMap)) || {
         if [[ $quiet_flg -ne 1 ]]; then
             echo "Not deploy ${NAMESPACE}."
         fi
