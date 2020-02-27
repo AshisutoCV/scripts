@@ -2,6 +2,7 @@
 ***
 
 ## shield-status.sh
+* [20200227b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200227b---20200227)
 * [20200227a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200227a---20200227)
 * [20200219a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200219a---20200219)
 * [20200210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200210a---20200210)
