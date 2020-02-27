@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200219a
+### VER=20200227a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -153,7 +153,7 @@ while :
 do
     for i in 1 2 3 
     do
-        ${ES_PATH}/shield-status.sh --system -q
+        ./shield-status.sh --system -q
         export RET${i}=$?
     done
     if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
@@ -171,7 +171,7 @@ log_message "[end] Start Shield"
 
 echo ""
 echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
-echo "          ${ES_PATH}/shield-status.sh 実行し、"
+echo "          $(pwd)/shield-status.sh 実行し、"
 echo "          全てのワークロードが Acriveになることをご確認ください。"
 echo ""
 
