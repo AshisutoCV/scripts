@@ -61,10 +61,14 @@ rm -f *_backup
 rm -f add-shield-repo.sh
 rm -f clean-rancher-agent.sh
 rm -f configure-sysctl-values.sh
-rm -f delete-all.sh
 rm -f delete-shield.sh
 rm -f deploy-shield.sh
 rm -f install-docker.sh
 rm -f install-helm.sh
 rm -f install-kubectl.sh
 rm -f run-rancher.sh
+# parent check
+PARENTCMD=$(ps -o args= $PPID)
+if [[ ${PARENTCMD} =~ shield-setup.sh ]]; then
+    rm -f delete-all.sh
+fi
