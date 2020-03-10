@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200206a
+### VER=20200310a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -13,9 +13,13 @@ if which helm ; then
     kubectl delete clusterrolebinding tiller
     kubectl -n kube-system delete serviceaccount tiller
 fi
-
-docker rm -f $(docker ps -qa)
+docker stop -f $(docker ps -q)
 while [ $(sudo docker ps | grep -v CONTAINER | wc -l) -ne 0 ]
+do
+    sleep 1
+done
+docker rm -f $(docker ps -qa)
+while [ $(sudo docker ps -a| grep -v CONTAINER | wc -l) -ne 0 ]
 do
     sleep 1
 done
