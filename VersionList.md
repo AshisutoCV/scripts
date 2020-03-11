@@ -54,6 +54,7 @@
 * [20191003a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191003a---20191003)
 
 ## shield-sup.sh
+* [20200311a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200311a---20200311)
 * [20200226a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200226a---20200226)
 * [20200219a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200219a---20200219)
 * [20200207a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200207a---20200207)

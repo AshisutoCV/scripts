@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200226a
+### VER=20200311a
 ####################
 
 ####-----------------
@@ -226,6 +226,14 @@ if [ -f shield-start.sh ];then
     cp ./.es*  $TMPDIR/shield/ 2>/dev/null
     cp ./.ra*  $TMPDIR/shield/ 2>/dev/null
     cp ./*.sh  $TMPDIR/shield/ 2>/dev/null
+
+    #/var/lib/docker/containers log
+    mkdir -p $TMPDIR/varlibdokcer-logs
+    for TARGET in `ls /var/lib/docker/containers`
+    do
+            NAME=$(cat /var/lib/docker/containers/${TARGET}/config.v2.json | jq .Name | sed -e s/\"//g | sed -e s"/\///")
+            cp /var/lib/docker/containers/${TARGET}/${TARGET}-json.log $TMPDIR/varlibdokcer-logs/${NAME}-json.log
+    done
 fi
 
 # for swarm
