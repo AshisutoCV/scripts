@@ -47,6 +47,7 @@
 * [20191007a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191007a---20191007)
 
 ## delete-all.sh
+* [20200311a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200311a---20200311)
 * [20200206a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200206a---20200206)
 * [20200108a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200108a---20200108)
 * [20191216a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191216a---20191216)
