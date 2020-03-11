@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200310a
+### VER=20200311a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -28,6 +28,7 @@ docker volume prune -f
 sudo rm -rf /var/lib/docker
 sudo systemctl restart docker
 
+cat /proc/mounts | grep /var/lib/kubelet/pods/ | awk '{print $2}' | sudo xargs -I{} umount {}
 cleanupdirs="/etc/ceph /etc/cni /etc/kubernetes /opt/cni /opt/rke /run/secrets/kubernetes.io /run/calico /var/run/calico /run/flannel /var/run/flannel /var/lib/calico /var/lib/etcd /var/lib/cni /var/lib/kubelet /var/lib/rancher/rke/log"
 for dir in $cleanupdirs; do
     sudo rm -rf $dir
