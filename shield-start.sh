@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200227a
+### VER=20200313a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -34,9 +34,28 @@ function usage() {
     exit 0
 }
 
-if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
-    usage
+#namespace_flg=0
+for i in `seq 1 ${#}`
+do
+    if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+        usage
+#    elif [ "$1" == "--namespace" ] || [ "$1" == "-n" ] ; then
+#        shift
+#        $TARGET_NAME="$1"
+#        namespace_flg=1
+    else
+        args="${args} ${1}"
+    fi
+    shift
+done
+
+if [ ! -z ${args} ]; then
+    log_message "${args} は不正な引数です。"
+    fin 1
 fi
+
+
+
 
 function deploy_shield() {
     log_message "[start] deploy shield"
@@ -59,6 +78,7 @@ function deploy_shield() {
     sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  deploy-shield.sh
     sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
     sed -i -e 's/s\/\\\/usr\\\/share\\\/zoneinfo/s\/.*\\\/usr\\\/share\\\/zoneinfo/' deploy-shield.sh
+    sed -i -e "s/| tee -a/\>\>/g" deploy-shield.sh
     VERSION_REPO=$S_APP_VERSION
     export VERSION_REPO
 
@@ -66,7 +86,7 @@ function deploy_shield() {
     ./deploy-shield.sh | tee -a $LOGFILE
     log_message "[end] deploieng shield"
 
-    #curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
 
     log_message "[end] deploy shield"
 }
@@ -145,7 +165,6 @@ else
     failed_to_start "read ra files"
 fi
 
-
 S_APP_VERSION=$(cat .es_version)
 
 log_message "[start] Waiting System Project is Actived"
@@ -166,6 +185,25 @@ log_message "[start] Start Shield"
 
 deploy_shield
 move_to_project
+
+log_message "[start] Waiting All namespaces are Deploied"
+for i in 1 2 3 4
+do
+    ./shield-status.sh -q
+    export nRET${i}=$?
+    if [[ ${i} -eq 4 ]] && [[ nRET${i} -eq 99 ]];then
+        failed_to_start "deploy namespaces"
+    fi
+    if [[ nRET${i} -eq 99 ]];then
+        log_message "[re-start] Start ReDeploy. ${i}"
+        deploy_shield
+        move_to_project
+        continue
+    else
+        break
+    fi
+done
+log_message "[end] Waiting All namespaces are Deploied"
 
 log_message "[end] Start Shield"
 

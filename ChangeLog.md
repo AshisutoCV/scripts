@@ -1,5 +1,28 @@
 # Changelog
 
+## [VER=20200313a] - 2020/03/13
+
+### 変更
+#### shield-sup.sh
+* /var/lib/docker/containers配下のjsonログを取得対象に追加。
+
+#### delete-all.sh
+* delete-all単体での実行時は自分自身の削除をしないように変更。
+* /var/lib/kubelet/pods/配下の削除が出来なくなる問題を修正
+
+#### shield-setup.sh
+* deployが失敗する場合、startを再実行してケア(主にUpdate時)
+* deploy時の標準出力を廃止。
+
+#### shield-start.sh
+* deployが失敗する場合、startを再実行してケア
+* deploy時の標準出力を廃止。
+
+#### shield-status.sh
+* setup/startの修正に伴う微調整
+
+--------------------------------------------------------------
+
 ## [VER=20200227b] - 2020/02/27
 
 ### 変更

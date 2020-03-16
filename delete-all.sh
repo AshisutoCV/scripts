@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200206a
+### VER=20200313a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -13,9 +13,13 @@ if which helm ; then
     kubectl delete clusterrolebinding tiller
     kubectl -n kube-system delete serviceaccount tiller
 fi
-
-docker rm -f $(docker ps -qa)
+docker stop $(docker ps -q)
 while [ $(sudo docker ps | grep -v CONTAINER | wc -l) -ne 0 ]
+do
+    sleep 1
+done
+docker rm -f $(docker ps -qa)
+while [ $(sudo docker ps -a| grep -v CONTAINER | wc -l) -ne 0 ]
 do
     sleep 1
 done
@@ -24,6 +28,7 @@ docker volume prune -f
 sudo rm -rf /var/lib/docker
 sudo systemctl restart docker
 
+cat /proc/mounts | grep /var/lib/kubelet/pods/ | awk '{print $2}' | sudo xargs -I{} umount {}
 cleanupdirs="/etc/ceph /etc/cni /etc/kubernetes /opt/cni /opt/rke /run/secrets/kubernetes.io /run/calico /var/run/calico /run/flannel /var/run/flannel /var/lib/calico /var/lib/etcd /var/lib/cni /var/lib/kubelet /var/lib/rancher/rke/log"
 for dir in $cleanupdirs; do
     sudo rm -rf $dir
@@ -61,10 +66,14 @@ rm -f *_backup
 rm -f add-shield-repo.sh
 rm -f clean-rancher-agent.sh
 rm -f configure-sysctl-values.sh
-rm -f delete-all.sh
 rm -f delete-shield.sh
 rm -f deploy-shield.sh
 rm -f install-docker.sh
 rm -f install-helm.sh
 rm -f install-kubectl.sh
 rm -f run-rancher.sh
+# parent check
+PARENTCMD=$(ps -o args= $PPID)
+if [[ ${PARENTCMD} =~ shield-setup.sh ]]; then
+    rm -f delete-all.sh
+fi
