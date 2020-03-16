@@ -28,10 +28,7 @@ if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH/sup
 fi
 
-
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
-
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 
 usage() {
    echo "$0 [-y]"
