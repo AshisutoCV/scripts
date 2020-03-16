@@ -1,6 +1,6 @@
 # Changelog
 
-## [VER=20200311a] - 2020/03/11
+## [VER=20200313a] - 2020/03/13
 
 ### 変更
 #### shield-sup.sh
@@ -9,6 +9,17 @@
 #### delete-all.sh
 * delete-all単体での実行時は自分自身の削除をしないように変更。
 * /var/lib/kubelet/pods/配下の削除が出来なくなる問題を修正
+
+#### shield-setup.sh
+* deployが失敗する場合、startを再実行してケア(主にUpdate時)
+* deploy時の標準出力を廃止。
+
+#### shield-start.sh
+* deployが失敗する場合、startを再実行してケア
+* deploy時の標準出力を廃止。
+
+#### shield-status.sh
+* setup/startの修正に伴う微調整
 
 --------------------------------------------------------------
 

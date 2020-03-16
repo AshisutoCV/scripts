@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200226a
+### VER=20200313a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -25,7 +25,8 @@ BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -487,6 +488,7 @@ function deploy_shield() {
     sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  deploy-shield.sh
     sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
     sed -i -e 's/s\/\\\/usr\\\/share\\\/zoneinfo/s\/.*\\\/usr\\\/share\\\/zoneinfo/' deploy-shield.sh
+    sed -i -e "s/| tee -a/\>\>/g" deploy-shield.sh
 
     if [ ! -f custom-farm.yaml ] || [ $yamlget_flg -eq 1 ]; then
         curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-farm.yaml
@@ -527,7 +529,7 @@ function deploy_shield() {
     ./deploy-shield.sh | tee -a $LOGFILE
     log_message "[end] deploieng shield"
 
-    #curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
 
     log_message "[end] deploy shield"
 }
@@ -563,15 +565,19 @@ function log_message() {
 
 function failed_to_install() {
     log_message "An error occurred during the installation: $1, exiting"
-    log_message "[start] rollback"
     if [ "$2" == "es" ]; then
+        log_message "[start] rollback"
         uninstall_shield
+        log_message "[end] rollback"
     elif [ "$2" == "all" ]; then
+        log_message "[start] rollback"
         delete_all
+        log_message "[end] rollback"
     elif [ "$2" == "ver" ]; then
+        log_message "[start] rollback"
         delete_ver
+        log_message "[end] rollback"
     fi
-    log_message "[end] rollback"
     fin 1
 }
 
@@ -748,6 +754,35 @@ function get_scripts() {
     log_message "[end] get operation scripts"
 }
 
+function check_start() {
+    log_message "[start] Waiting All namespaces are Deploied"
+    for i in 1 2 3 4
+    do
+        ./shield-status.sh -q
+        export nRET${i}=$?
+        if [[ ${i} -eq 4 ]] && [[ nRET${i} -eq 99 ]];then
+                echo ""
+                echo "【※確認※】 展開に失敗しました。 ${ES_PATH}/shield-start.sh 実行し、"            
+                echo "          全てのワークロードが 展開されることをご確認ください。"
+            failed_to_install "deploy namespaces"
+        fi
+        if [[ nRET${i} -eq 99 ]];then
+            log_message "[re-start] Start ReDeploy. ${i}"
+            deploy_shield
+            move_to_project
+            continue
+        else
+            break
+        fi
+    done
+    log_message "[end] Waiting All namespaces are Deploied"
+
+    echo ""
+    echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
+    echo "          ${ES_PATH}/shield-status.sh 実行し、"
+    echo "          全てのワークロードが Acriveになることをご確認ください。"
+    echo ""
+}
 
 ######START#####
 log_message "###### START ###########################################################"
@@ -805,11 +840,7 @@ if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
     add_repo
     deploy_shield
     move_to_project
-    echo ""
-    echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
-    echo "          ${ES_PATH}/shield-status.sh 実行し、"
-    echo "          全てのワークロードが Acriveになることをご確認ください。"
-    echo ""
+    check_start
     fin 0
 fi
 
@@ -1867,9 +1898,5 @@ deploy_shield
 # get Default project id
 move_to_project
 
-echo ""
-echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
-echo "          $(pwd)/shield-status.sh 実行し、"
-echo "          全てのワークロードが Acriveになることをご確認ください。"
-echo ""
+check_start
 fin 0

@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200227b
+### VER=20200313a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -16,7 +16,8 @@ fi
 BRANCH="Rel"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -82,6 +83,7 @@ PROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
 
 
 WORKLOADS=()
+#ERR_NSs=()
 for NAMESPACE in $NAMESPACES
 do
     WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/cluster/${CLUSTERID}/namespaces/${NAMESPACE}/yaml" \
@@ -92,6 +94,7 @@ do
             echo "Not deploy ${NAMESPACE}."
         fi
         ERR_FLG=1
+        #ERR_NSs+="$NAMESPACE"
     }
 done
 
@@ -99,10 +102,8 @@ if [[ $ERR_FLG -eq 1 ]];then
     if [[ $quiet_flg -ne 1 ]]; then
         echo "exit."
     fi
-    exit 1
+    exit 99
 fi
-
-#echo $WORKLOADS
 
 STATELIST=()
 for WORKLOAD in "${WORKLOADS[@]}"

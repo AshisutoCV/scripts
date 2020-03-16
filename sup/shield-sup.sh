@@ -5,7 +5,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200311a
+### VER=20200313a
 ####################
 
 ####-----------------
@@ -29,7 +29,8 @@ if [ ! -e $ES_PATH ];then
 fi
 
 
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 
 
 usage() {
