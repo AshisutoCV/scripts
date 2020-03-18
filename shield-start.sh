@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200313a
+### VER=20200318a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -151,7 +151,70 @@ function move_to_project() {
     log_message "[end] Move namespases to Default project"
 }
 
+function change_resource() {
+    log_message "[start] change remort browser resource"
+    kubectl get cm -n farm-services shield-farm-services-remote-browser-spec -o yaml > remote-browser-spec.yaml
+    cp -f remote-browser-spec.yaml remote-browser-spec.yaml_bak
+    cat remote-browser-spec.yaml | sed -e '/^    .*/'d | sed -e '/^data:/d' | sed -e '/^  remote-browser-spec.json.*/d' > remote-browser-spec.yaml_tmp1
+    kubectl get cm -n farm-services shield-farm-services-remote-browser-spec -o json |jq -r '.data."remote-browser-spec.json" | . ' | \
+      jq -r ".spec.template.spec.containers[].resources.requests.memory|=\"$BR_REQ_MEM\"" | \
+      jq -r ".spec.template.spec.containers[].resources.requests.cpu|=\"$BR_REQ_CPU\"" | \
+      jq -r ".spec.template.spec.containers[].resources.limits.memory|=\"$BR_LIMIT_MEM\"" | \
+      jq -r ".spec.template.spec.containers[].resources.limits.cpu|=\"$BR_LIMIT_CPU\"" | \
+    sed -e s'/"/\\"/g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' > remote-browser-spec.yaml_tmp2
+    cat <(echo -n '"') remote-browser-spec.yaml_tmp2  <(echo -n '"') > remote-browser-spec.yaml_tmp3
+    cat remote-browser-spec.yaml_tmp1 <(echo data:) <(echo -n "  remote-browser-spec.json: ") remote-browser-spec.yaml_tmp3 > remote-browser-spec.yaml
+    rm -f remote-browser-spec.yaml_tmp*
+    kubectl replace -f remote-browser-spec.yaml
+    kubectl delete jobs -n farm-services --all
+    log_message "[end] change remort browser resource"
+}
 
+function check_start() {
+    log_message "[start] Waiting All namespaces are Deploied"
+    for i in 1 2 3 4
+    do
+        ./shield-status.sh -q
+        export nRET${i}=$?
+        if [[ ${i} -eq 4 ]] && [[ nRET${i} -eq 99 ]];then
+                echo ""
+                echo "【※確認※】 展開に失敗しました。 ${ES_PATH}/shield-start.sh 実行し、"            
+                echo "          全てのワークロードが 展開されることをご確認ください。"
+            failed_to_start "deploy namespaces"
+        fi
+        if [[ nRET${i} -eq 99 ]];then
+            log_message "[re-start] Start ReDeploy. ${i}"
+            deploy_shield
+            move_to_project
+            continue
+        else
+            break
+        fi
+    done
+    log_message "[end] Waiting All namespaces are Deploied"
+
+    if [[ ! -z $BR_REQ_MEM ]] || [[ ! -z $BR_REQ_CPU ]] || [[ ! -z $BR_LIMIT_MEM ]] || [[ ! -z $BR_LIMIT_CPU ]];then
+        if [ -z $BR_REQ_MEM ]; then BR_REQ_MEM="200Mi"; fi
+        if [ -z $BR_REQ_CPU ]; then BR_REQ_CPU="200m"; fi
+        if [ -z $BR_LIMIT_MEM ]; then BR_LIMIT_MEM="1280Mi"; fi
+        if [ -z $BR_LIMIT_CPU ]; then BR_LIMIT_CPU="1"; fi
+        echo "///// resources /////////////////////" >> $LOGFILE
+        echo "BR_REQ_MEM: $BR_REQ_MEM" >> $LOGFILE
+        echo "BR_REQ_CPU: $BR_REQ_CPU" >> $LOGFILE
+        echo "BR_LIMIT_MEM: $BR_LIMIT_MEM" >> $LOGFILE
+        echo "BR_LIMIT_CPU: $BR_LIMIT_CPU" >> $LOGFILE
+        echo "///// resources /////////////////////" >> $LOGFILE
+        change_resource
+    fi
+
+    log_message "[end] Start Shield"
+
+    echo ""
+    echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
+    echo "          ${ES_PATH}/shield-status.sh 実行し、"
+    echo "          全てのワークロードが Acriveになることをご確認ください。"
+    echo ""
+}
 
 
 log_message "###### START ###########################################################"
@@ -163,6 +226,14 @@ if [ -f .ra_rancherurl ] && [ -f .ra_clusterid ] && [ -f .ra_apitoken ];then
     APITOKEN=$(cat .ra_apitoken)
 else
     failed_to_start "read ra files"
+fi
+
+#read custom_env file
+if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
+    BR_REQ_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_req_mem | awk -F'[: ]' '{print $NF}')
+    BR_REQ_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_req_cpu | awk -F'[: ]' '{print $NF}')
+    BR_LIMIT_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_limit_mem | awk -F'[: ]' '{print $NF}')
+    BR_LIMIT_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_limit_cpu | awk -F'[: ]' '{print $NF}')
 fi
 
 S_APP_VERSION=$(cat .es_version)
@@ -185,33 +256,7 @@ log_message "[start] Start Shield"
 
 deploy_shield
 move_to_project
-
-log_message "[start] Waiting All namespaces are Deploied"
-for i in 1 2 3 4
-do
-    ./shield-status.sh -q
-    export nRET${i}=$?
-    if [[ ${i} -eq 4 ]] && [[ nRET${i} -eq 99 ]];then
-        failed_to_start "deploy namespaces"
-    fi
-    if [[ nRET${i} -eq 99 ]];then
-        log_message "[re-start] Start ReDeploy. ${i}"
-        deploy_shield
-        move_to_project
-        continue
-    else
-        break
-    fi
-done
-log_message "[end] Waiting All namespaces are Deploied"
-
-log_message "[end] Start Shield"
-
-echo ""
-echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
-echo "          $(pwd)/shield-status.sh 実行し、"
-echo "          全てのワークロードが Acriveになることをご確認ください。"
-echo ""
+check_start
 
 fin 0
 

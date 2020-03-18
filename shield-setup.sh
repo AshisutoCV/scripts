@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200313a
+### VER=20200318a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -533,6 +533,25 @@ function deploy_shield() {
     log_message "[end] deploy shield"
 }
 
+function change_resource() {
+    log_message "[start] change remort browser resource"
+    kubectl get cm -n farm-services shield-farm-services-remote-browser-spec -o yaml > remote-browser-spec.yaml
+    cp -f remote-browser-spec.yaml remote-browser-spec.yaml_bak
+    cat remote-browser-spec.yaml | sed -e '/^    .*/'d | sed -e '/^data:/d' | sed -e '/^  remote-browser-spec.json.*/d' > remote-browser-spec.yaml_tmp1
+    kubectl get cm -n farm-services shield-farm-services-remote-browser-spec -o json |jq -r '.data."remote-browser-spec.json" | . ' | \
+      jq -r ".spec.template.spec.containers[].resources.requests.memory|=\"$BR_REQ_MEM\"" | \
+      jq -r ".spec.template.spec.containers[].resources.requests.cpu|=\"$BR_REQ_CPU\"" | \
+      jq -r ".spec.template.spec.containers[].resources.limits.memory|=\"$BR_LIMIT_MEM\"" | \
+      jq -r ".spec.template.spec.containers[].resources.limits.cpu|=\"$BR_LIMIT_CPU\"" | \
+    sed -e s'/"/\\"/g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' > remote-browser-spec.yaml_tmp2
+    cat <(echo -n '"') remote-browser-spec.yaml_tmp2  <(echo -n '"') > remote-browser-spec.yaml_tmp3
+    cat remote-browser-spec.yaml_tmp1 <(echo data:) <(echo -n "  remote-browser-spec.json: ") remote-browser-spec.yaml_tmp3 > remote-browser-spec.yaml
+    rm -f remote-browser-spec.yaml_tmp*
+    kubectl replace -f remote-browser-spec.yaml
+    kubectl delete jobs -n farm-services --all
+    log_message "[end] change remort browser resource"
+}
+
 function install_helm() {
     curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/install-helm.sh
     chmod +x install-helm.sh
@@ -776,6 +795,20 @@ function check_start() {
     done
     log_message "[end] Waiting All namespaces are Deploied"
 
+    if [[ ! -z $BR_REQ_MEM ]] || [[ ! -z $BR_REQ_CPU ]] || [[ ! -z $BR_LIMIT_MEM ]] || [[ ! -z $BR_LIMIT_CPU ]];then
+        if [ -z $BR_REQ_MEM ]; then BR_REQ_MEM="200Mi"; fi
+        if [ -z $BR_REQ_CPU ]; then BR_REQ_CPU="200m"; fi
+        if [ -z $BR_LIMIT_MEM ]; then BR_LIMIT_MEM="1280Mi"; fi
+        if [ -z $BR_LIMIT_CPU ]; then BR_LIMIT_CPU="1"; fi
+        echo "///// resources /////////////////////" >> $LOGFILE
+        echo "BR_REQ_MEM: $BR_REQ_MEM" >> $LOGFILE
+        echo "BR_REQ_CPU: $BR_REQ_CPU" >> $LOGFILE
+        echo "BR_LIMIT_MEM: $BR_LIMIT_MEM" >> $LOGFILE
+        echo "BR_LIMIT_CPU: $BR_LIMIT_CPU" >> $LOGFILE
+        echo "///// resources /////////////////////" >> $LOGFILE
+        change_resource
+    fi
+
     echo ""
     echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
     echo "          ${ES_PATH}/shield-status.sh 実行し、"
@@ -815,6 +848,14 @@ if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
     CLUSTER_DNS_SERVER=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep cluster_dns_server | awk -F'[: ]' '{print $NF}')
     MAX_PODS=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep max-pods | awk -F'[: ]' '{print $NF}')
     DOCKER_VER=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep docker_version | awk -F'[: ]' '{print $NF}')
+    BR_REQ_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_req_mem | awk -F'[: ]' '{print $NF}')
+    BR_REQ_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_req_cpu | awk -F'[: ]' '{print $NF}')
+    BR_LIMIT_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_limit_mem | awk -F'[: ]' '{print $NF}')
+    BR_LIMIT_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_limit_cpu | awk -F'[: ]' '{print $NF}')
+    KUBE_RESERVED_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep kube_reserved_cpu | awk -F'[: ]' '{print $NF}')
+    KUBE_RESERVED_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep kube_reserved_mem | awk -F'[: ]' '{print $NF}')
+    SYS_RESERVED_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep sys_reserved_cpu | awk -F'[: ]' '{print $NF}')
+    SYS_RESERVED_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep sys_reserved_mem | awk -F'[: ]' '{print $NF}')
 fi
 
 #read ra files
@@ -1024,11 +1065,19 @@ else
     if [ -z $SERVICE_CLUSTER_IP_RANGE ]; then SERVICE_CLUSTER_IP_RANGE="10.43.0.0/16"; fi
     if [ -z $CLUSTER_DNS_SERVER ]; then CLUSTER_DNS_SERVER="10.43.0.10"; fi
     if [ -z $MAX_PODS ]; then MAX_PODS="110"; fi
+    if [ -z $KUBE_RESERVED_CPU ]; then KUBE_RESERVED_CPU="1"; fi
+    if [ -z $KUBE_RESERVED_MEM ]; then KUBE_RESERVED_MEM="1Gi"; fi
+    if [ -z $SYS_RESERVED_CPU ]; then SYS_RESERVED_CPU="1"; fi
+    if [ -z $SYS_RESERVED_MEM ]; then SYS_RESERVED_MEM="0.5Gi"; fi
 
     echo "CLUSTER_CIDR: $CLUSTER_CIDR" >> $LOGFILE
     echo "SERVICE_CLUSTER_IP_RANGE: $SERVICE_CLUSTER_IP_RANGE" >> $LOGFILE
     echo "CLUSTER_DNS_SERVER: $CLUSTER_DNS_SERVER" >> $LOGFILE
     echo "MAX_PODS: $MAX_PODS" >> $LOGFILE
+    echo "KUBE_RESERVED_CPU: $KUBE_RESERVED_CPU" >> $LOGFILE
+    echo "KUBE_RESERVED_MEM: $KUBE_RESERVED_MEM" >> $LOGFILE
+    echo "SYS_RESERVED_CPU: $SYS_RESERVED_CPU" >> $LOGFILE
+    echo "SYS_RESERVED_MEM: $SYS_RESERVED_MEM" >> $LOGFILE
 
     CLUSTERRESPONSE=$(curl -s -k "${RANCHERURL}/v3/cluster" \
         -H 'content-type: application/json' \
@@ -1088,9 +1137,9 @@ else
                   "extraArgs": {
                      "max-pods": "'$MAX_PODS'",
                      "eviction-hard": "'memory.available\<0.2Gi,nodefs.available\<10%'",
-                     "kube-reserved": "'cpu=1,memory=1Gi'",
+                     "kube-reserved": "'cpu="$KUBE_RESERVED_CPU",memory="$KUBE_RESERVED_MEM"'",
                      "kube-reserved-cgroup": "'/system'",
-                     "system-reserved": "'cpu=1,memory=0.5Gi'",
+                     "system-reserved": "'cpu="$SYS_RESERVED_CPU",memory="$SYS_RESERVED_MEM"'",
                      "system-reserved-cgroup": "'/system'"
                   }
                 },
@@ -1898,4 +1947,5 @@ deploy_shield
 move_to_project
 
 check_start
+
 fin 0
