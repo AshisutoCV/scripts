@@ -4,3 +4,11 @@
 #cluster_dns_server: 10.43.0.10
 #max-pods: 110
 #docker_version: 18.09.8
+#br_req_mem: 150Mi
+#br_req_cpu: 200m
+#br_limit_mem: 1280Mi
+#br_limit_cpu: 1
+#kube_reserved_cpu: 1
+#kube_reserved_mem: 1Gi
+#sys_reserved_cpu: 1
+#sys_reserved_mem: 0.5Gi
