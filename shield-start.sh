@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200318a
+### VER=20200403a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -20,6 +20,8 @@ fi
 
 LOGFILE="${ES_PATH}/logs/stop-start.log"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
+PARENT_DIR=$(dirname $(cd $(dirname $0); pwd))
+
 cd $CURRENT_DIR
 
 BRANCH="Staging"
@@ -229,11 +231,16 @@ else
 fi
 
 #read custom_env file
-if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
+if [ -f ${CURRENT_DIR}/.es_custom_env ] ; then
     BR_REQ_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_req_mem | awk -F'[: ]' '{print $NF}')
     BR_REQ_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_req_cpu | awk -F'[: ]' '{print $NF}')
     BR_LIMIT_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_limit_mem | awk -F'[: ]' '{print $NF}')
     BR_LIMIT_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_limit_cpu | awk -F'[: ]' '{print $NF}')
+elif [ -f ${PARENT_DIR}/.es_custom_env ];then
+    BR_REQ_MEM=$(cat ${PARENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_req_mem | awk -F'[: ]' '{print $NF}')
+    BR_REQ_CPU=$(cat ${PARENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_req_cpu | awk -F'[: ]' '{print $NF}')
+    BR_LIMIT_MEM=$(cat ${PARENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_limit_mem | awk -F'[: ]' '{print $NF}')
+    BR_LIMIT_CPU=$(cat ${PARENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep br_limit_cpu | awk -F'[: ]' '{print $NF}')
 fi
 
 S_APP_VERSION=$(cat .es_version)
