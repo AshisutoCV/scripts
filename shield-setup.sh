@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200318a
+### VER=20200424a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -1494,6 +1494,11 @@ else
              echo 'そして'  | tee -a $CMDFILE
              echo '下記コマンドを WORKER単体 ノードで実行してください。'  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
+             echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "chmod +x clean-rancher-agent.sh"  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
              echo "curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"  | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
@@ -1570,6 +1575,27 @@ while :
 done
 log_message "[end] Exec docker command "
 echo ""
+
+
+while :
+do
+echo ""
+echo "================================================================================="
+echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開き、"
+echo '追加したノードが全てActiveになっていることを確認してください。'
+echo -n '先に進んでもよろしいですか？ [y/N]:'
+    read ANSWER
+    case $ANSWER in
+        "Y" | "y" | "yse" | "Yes" | "YES" )
+            break
+            ;;
+        "" | "n" | "N" | "no" | "No" | "NO" )
+            ;;
+        * )
+            echo "YまたはNで答えて下さい。"
+            ;;
+    esac
+done
 
 
 # install kubectl
