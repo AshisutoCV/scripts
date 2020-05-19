@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200219a
+### VER=20200516a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -44,6 +44,18 @@ if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
     usage
 fi
 
+if [ -f ${ES_PATH}/.es_offline ] ;then
+    offline_flg=1
+    REGISTRY_OVA=$(cat ${ES_PATH}/.es_offline)
+    REGISTRY_OVA_IP=${REGISTRY_OVA%%:*}
+    REGISTRY_OVA_PORT=${REGISTRY_OVA##*:}
+    SCRIPTS_URL_ES="http://$REGISTRY_OVA_IP/ericomshield"
+    SCRIPTS_URL="http://$REGISTRY_OVA_IP/scripts"
+    export ES_OFFLINE_REGISTRY="$REGISTRY_OVA"
+else
+    offline_flg=0
+fi
+
 function check_args(){
     pre_flg=0
     args=""
@@ -79,6 +91,12 @@ function check_args(){
     echo "args: $args" >> $LOGFILE
     echo "dev_flg: $dev_flg" >> $LOGFILE
     echo "stg_flg: $stg_flg" >> $LOGFILE
+    echo "offline_flg: $deleteall_flg" >> $LOGFILE
+    echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
+    echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
+    echo "REGISTRY_OVA_PORT: $REGISTRY_OVA_PORT" >> $LOGFILE
+    echo "SCRIPTS_URL_ES: $SCRIPTS_URL_ES" >> $LOGFILE
+    echo "SCRIPTS_URL: $SCRIPTS_URL" >> $LOGFILE
     echo "////////////////////////////////" >> $LOGFILE
 
     if [ $dev_flg -eq 1 ] ; then
@@ -93,19 +111,20 @@ function check_args(){
 }
 
 function select_version() {
+    ### attention common setup&update ###
     CHART_VERSION=""
     VERSION_DEPLOYED=""
-    if which helm >/dev/null 2>&1 ;then
+    if which helm >/dev/null 2>&1 ; then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     fi
-    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ]; then
+    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ]; then
+    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
-    if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]]; then
+    if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]] ; then
         log_message "現在インストールされているバージョン: N/A"
     else
         BUILD=()
@@ -119,6 +138,7 @@ function select_version() {
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
         S_APP_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $2 }')
+
         if [ "$CHART_VERSION" == "NA" ]; then
             log_message "現在ご利用可能なリリース前先行利用バージョンはありません。"
             fin 1
@@ -139,6 +159,9 @@ function select_version() {
                     ;;
             esac
         fi
+    elif [ $ver_flg -eq 1 ] ; then
+            CHART=(${S_APP_VERSION//./ })
+            CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
     else
         declare -A vers_c
         declare -A vers_a
@@ -211,7 +234,7 @@ function select_version() {
     fi
 
     change_dir
-    
+
     echo ${S_APP_VERSION} > .es_version
 }
 
@@ -246,7 +269,11 @@ function mv_rancher_store(){
             docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
             mv -f ${CURRENT_DIR}/rancher-store ${ES_PATH}/
             log_message "[start] run rancher"
-            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            if [[ $offline_flg -eq 0 ]]; then
+                curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            else
+                curl -s -OL ${SCRIPTS_URL_ES}/run-rancher.sh
+            fi
             chmod +x run-rancher.sh
             ./run-rancher.sh | tee -a $LOGFILE
             log_message "[end] run rancher"
@@ -259,7 +286,11 @@ function mv_rancher_store(){
             log_message "[start] stop rancher server"
             docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
             log_message "[start] run rancher"
-            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            if [[ $offline_flg -eq 0 ]]; then
+                curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            else
+                curl -s -OL ${SCRIPTS_URL_ES}/run-rancher.sh
+            fi
             chmod +x run-rancher.sh
             ./run-rancher.sh | tee -a $LOGFILE
             log_message "[end] run rancher"
@@ -287,11 +318,14 @@ function fin() {
 
 function get_scripts() {
     log_message "[start] get install scripts"
-    #cp -fp ${CURRENT_DIR}/shield-setup.sh ${CURRENT_DIR}/shield-setup.sh_backup
     curl -s -o ${CURRENT_DIR}/shield-setup.sh -L ${SCRIPTS_URL}/shield-setup.sh
     chmod +x ${CURRENT_DIR}/shield-setup.sh
     cp -fp configure-sysctl-values.sh configure-sysctl-values.sh_backup
-    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh
+    if [[ $offline_flg -eq 0 ]]; then
+        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh
+    else
+        curl -s -OL ${SCRIPTS_URL_ES}/configure-sysctl-values.sh
+    fi
     chmod +x configure-sysctl-values.sh
     log_message "[end] get install scripts"
 }
@@ -337,7 +371,11 @@ function get_yaml() {
     for yamlfile in "${COMPONENTS[@]}"
     do
         cp -fp custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup
-        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-${yamlfile}.yaml
+        if [[ $offline_flg -eq 0 ]];then
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-${yamlfile}.yaml
+        else
+            curl -s -OL ${SCRIPTS_URL_ES}/custom-${yamlfile}.yaml
+        fi
     done
     log_message "[end] get yaml files"
     

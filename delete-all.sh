@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200313a
+### VER=2020516a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -47,6 +47,8 @@ if [ -d ${ES_PATH} ]; then
 fi
 
 sudo rm -rf .kube
+sudo rm -rf .rancher
+sudo rm -rf /home/ericom/shield
 
 # for old ver
 sudo rm -rf rancher-store

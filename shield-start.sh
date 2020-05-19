@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200403a
+### VER=20200516a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -24,10 +24,21 @@ PARENT_DIR=$(dirname $(cd $(dirname $0); pwd))
 
 cd $CURRENT_DIR
 
-BRANCH="Staging"
+BRANCH="master"
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 fi
+if [ -f ${ES_PATH}/.es_offline ] ;then
+    offline_flg=1
+else
+    offline_flg=0
+fi
+
+
+deploy_flg=0
+spell_flg=0
+ses_limit_flg=0
+elk_snap_flg=0
 
 export BRANCH
 
@@ -56,43 +67,6 @@ if [ ! -z ${args} ]; then
     fin 1
 fi
 
-
-
-
-function deploy_shield() {
-    log_message "[start] deploy shield"
-
-    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
-    chmod +x deploy-shield.sh
-
-    if [[ $(grep -c ^ES_PATH deploy-shield.sh) -eq 0 ]];then
-        sed -i -e '/###BH###/a ES_PATH="$HOME/ericomshield"' deploy-shield.sh 
-    fi
-    sed -i -e '/^VERSION_REPO/d' deploy-shield.sh
-    sed -i -e '/^SET_LABELS=\"/s/yes/no/g' deploy-shield.sh
-    sed -i -e '/^BRANCH=/d' deploy-shield.sh
-    sed -i -e '/^helm search/d' deploy-shield.sh
-    sed -i -e '/helm upgrade --install/s/SHIELD_REPO\/shield/SHIELD_REPO\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
-    sed -i -e '/helm upgrade --install/s/shield-repo\/shield/shield-repo\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
-    sed -i -e '/VERSION_DEPLOYED/s/\$9/\$10/g' deploy-shield.sh
-    sed -i -e '/VERSION_DEPLOYED/s/helm list shield/helm list shield-management/g' deploy-shield.sh
-    sed -i -e '/^LOGFILE/s/=.*last_deploy.log.*/="\${ES_PATH}\/logs\/last_deploy.log"/'  deploy-shield.sh
-    sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  deploy-shield.sh
-    sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
-    sed -i -e 's/s\/\\\/usr\\\/share\\\/zoneinfo/s\/.*\\\/usr\\\/share\\\/zoneinfo/' deploy-shield.sh
-    sed -i -e "s/| tee -a/\>\>/g" deploy-shield.sh
-    VERSION_REPO=$S_APP_VERSION
-    export VERSION_REPO
-
-    log_message "[start] deploieng shield"
-    ./deploy-shield.sh | tee -a $LOGFILE
-    log_message "[end] deploieng shield"
-
-    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
-
-    log_message "[end] deploy shield"
-}
-
 function log_message() {
     local PREV_RET_CODE=$?
     echo "$@"
@@ -113,8 +87,76 @@ function fin() {
     exit $1
 }
 
+function check_ha(){
+    #dummy
+    echo "" >/dev/null
+}
+
+function deploy_shield() {
+    ### attention common setup&start ###
+    log_message "[start] deploy shield"
+    if [[ $offline_flg -eq 0 ]]; then
+        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/deploy-shield.sh
+        chmod +x deploy-shield.sh
+    fi
+    sed -i -e '/helm upgrade --install/s/SHIELD_REPO\/shield/SHIELD_REPO\/shield --version \${VERSION_REPO}/g' deploy-shield.sh
+    sed -i -e '/^LAST_DEPLOY_LOGFILE/s/\$ES_PATH\/last_deploy.log/\$ES_PATH\/logs\/last_deploy.log/'  deploy-shield.sh
+    sed -i -e '/^LOGFILE/s/\$ES_PATH\/ericomshield.log/\$ES_PATH\/logs\/ericomshield.log/'  deploy-shield.sh
+    sed -i -e '/^BRANCH=/s/BRANCH=/#BRANCH=/'  deploy-shield.sh
+    sed -i -e 's/TZ=":/TZ="/g' deploy-shield.sh
+    sed -i -e "s/| tee -a/\>\>/g" deploy-shield.sh
+    sed -i -e 's/^exit 0/#exit 0/g' deploy-shield.sh
+
+    if [[ $offline_flg -eq 0 ]]; then
+        if [ ! -f custom-farm.yaml ] || [ $yamlget_flg -eq 1 ]; then
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-farm.yaml
+        fi
+        if [ ! -f custom-management.yaml ] || [ $yamlget_flg -eq 1 ]; then
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-management.yaml
+        fi
+        if [ ! -f custom-proxy.yaml ] || [ $yamlget_flg -eq 1 ]; then
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-proxy.yaml
+        fi
+        if [ ! -f custom-values-elk.yaml ] || [ $yamlget_flg -eq 1 ]; then
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-values-elk.yaml
+        fi
+    fi
+
+    if [ $spell_flg -ne 1 ]; then
+        sed -i -e 's/^#farm-services/farm-services/' custom-farm.yaml
+        sed -i -e 's/^#.*DISABLE_SPELL_CHECK/  DISABLE_SPELL_CHECK/' custom-farm.yaml
+    fi
+    if [ $ses_limit_flg -ne 1 ]; then
+        sed -i -e 's/^#shield-proxy/shield-proxy/' custom-proxy.yaml
+        sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
+    fi
+    if [ $elk_snap_flg -eq 1 ]; then
+        sed -i -e '/#.*enableSnapshots/s/^.*#.*enableSnapshots/    enableSnapshots/g' custom-values-elk.yaml
+    fi
+
+    if [ $deploy_flg -eq 1 ]; then
+        sed -i -e '/Up to date/{n;n;s/exit/\: #exit/}' deploy-shield.sh
+    fi
+
+    VERSION_REPO=$S_APP_VERSION
+    export VERSION_REPO
+
+    # check number of management and farm
+    check_ha
+
+    log_message "[start] deploieng shield"
+    if [[ $offline_flg -eq 0 ]];then
+        ./deploy-shield.sh | tee -a $LOGFILE
+    else
+        ./deploy-shield.sh -L . | tee -a $LOGFILE
+    fi
+    log_message "[end] deploieng shield"
+
+    log_message "[end] deploy shield"
+}
 
 function move_to_project() {
+    ### attention common setup&start ###
     if [ ! -f .ra_rancherurl ] || [ ! -f .ra_clusterid ] || [ ! -f .ra_apitoken ];then
         log_message ".raファイルがありません。"
         failed_to_install "move_to_project" "all"
@@ -129,7 +171,6 @@ function move_to_project() {
 
     # move namespases to Default project
     log_message "[start] Move namespases to Default project"
-
 
     if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
@@ -153,26 +194,8 @@ function move_to_project() {
     log_message "[end] Move namespases to Default project"
 }
 
-function change_resource() {
-    log_message "[start] change remort browser resource"
-    kubectl get cm -n farm-services shield-farm-services-remote-browser-spec -o yaml > remote-browser-spec.yaml
-    cp -f remote-browser-spec.yaml remote-browser-spec.yaml_bak
-    cat remote-browser-spec.yaml | sed -e '/^    .*/'d | sed -e '/^data:/d' | sed -e '/^  remote-browser-spec.json.*/d' > remote-browser-spec.yaml_tmp1
-    kubectl get cm -n farm-services shield-farm-services-remote-browser-spec -o json |jq -r '.data."remote-browser-spec.json" | . ' | \
-      jq -r ".spec.template.spec.containers[].resources.requests.memory|=\"$BR_REQ_MEM\"" | \
-      jq -r ".spec.template.spec.containers[].resources.requests.cpu|=\"$BR_REQ_CPU\"" | \
-      jq -r ".spec.template.spec.containers[].resources.limits.memory|=\"$BR_LIMIT_MEM\"" | \
-      jq -r ".spec.template.spec.containers[].resources.limits.cpu|=\"$BR_LIMIT_CPU\"" | \
-    sed -e s'/"/\\"/g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' > remote-browser-spec.yaml_tmp2
-    cat <(echo -n '"') remote-browser-spec.yaml_tmp2  <(echo -n '"') > remote-browser-spec.yaml_tmp3
-    cat remote-browser-spec.yaml_tmp1 <(echo data:) <(echo -n "  remote-browser-spec.json: ") remote-browser-spec.yaml_tmp3 > remote-browser-spec.yaml
-    rm -f remote-browser-spec.yaml_tmp*
-    kubectl replace -f remote-browser-spec.yaml
-    kubectl delete jobs -n farm-services --all
-    log_message "[end] change remort browser resource"
-}
-
 function check_start() {
+    ### attention common setup&start ###
     log_message "[start] Waiting All namespaces are Deploied"
     for i in 1 2 3 4
     do
@@ -182,7 +205,7 @@ function check_start() {
                 echo ""
                 echo "【※確認※】 展開に失敗しました。 ${ES_PATH}/shield-start.sh 実行し、"            
                 echo "          全てのワークロードが 展開されることをご確認ください。"
-            failed_to_start "deploy namespaces"
+            failed_to_install "deploy namespaces"
         fi
         if [[ nRET${i} -eq 99 ]];then
             log_message "[re-start] Start ReDeploy. ${i}"
@@ -209,8 +232,6 @@ function check_start() {
         change_resource
     fi
 
-    log_message "[end] Start Shield"
-
     echo ""
     echo "【※確認※】 Rancher UI　${RANCHERURL} をブラウザで開くか、"
     echo "          ${ES_PATH}/shield-status.sh 実行し、"
@@ -218,6 +239,25 @@ function check_start() {
     echo ""
 }
 
+function change_resource() {
+    ### attention common setup&start ###
+    log_message "[start] change remort browser resource"
+    kubectl get cm -n farm-services shield-farm-services-remote-browser-spec -o yaml > remote-browser-spec.yaml
+    cp -f remote-browser-spec.yaml remote-browser-spec.yaml_bak
+    cat remote-browser-spec.yaml | sed -e '/^    .*/'d | sed -e '/^data:/d' | sed -e '/^  remote-browser-spec.json.*/d' > remote-browser-spec.yaml_tmp1
+    kubectl get cm -n farm-services shield-farm-services-remote-browser-spec -o json |jq -r '.data."remote-browser-spec.json" | . ' | \
+      jq -r ".spec.template.spec.containers[].resources.requests.memory|=\"$BR_REQ_MEM\"" | \
+      jq -r ".spec.template.spec.containers[].resources.requests.cpu|=\"$BR_REQ_CPU\"" | \
+      jq -r ".spec.template.spec.containers[].resources.limits.memory|=\"$BR_LIMIT_MEM\"" | \
+      jq -r ".spec.template.spec.containers[].resources.limits.cpu|=\"$BR_LIMIT_CPU\"" | \
+    sed -e s'/"/\\"/g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' > remote-browser-spec.yaml_tmp2
+    cat <(echo -n '"') remote-browser-spec.yaml_tmp2  <(echo -n '"') > remote-browser-spec.yaml_tmp3
+    cat remote-browser-spec.yaml_tmp1 <(echo data:) <(echo -n "  remote-browser-spec.json: ") remote-browser-spec.yaml_tmp3 > remote-browser-spec.yaml
+    rm -f remote-browser-spec.yaml_tmp*
+    kubectl replace -f remote-browser-spec.yaml
+    kubectl delete jobs -n farm-services --all
+    log_message "[end] change remort browser resource"
+}
 
 log_message "###### START ###########################################################"
 
@@ -266,5 +306,3 @@ move_to_project
 check_start
 
 fin 0
-
-
