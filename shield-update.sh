@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200516a
+### VER=20200520a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -47,6 +47,11 @@ fi
 if [ -f ${ES_PATH}/.es_offline ] ;then
     offline_flg=1
     REGISTRY_OVA=$(cat ${ES_PATH}/.es_offline)
+    REGISTRY_OVA_DOCKER=$(docker info 2>/dev/null | grep :5000 | cut -d' ' -f3)
+    if [ "$REGISTRY_OVA" != "$REGISTRY_OVA_DOCKER" ];then
+        REGISTRY_OVA=$REGISTRY_OVA_DOCKER
+        echo "$REGISTRY_OVA" > ${ES_PATH}/.es_offline
+    fi
     REGISTRY_OVA_IP=${REGISTRY_OVA%%:*}
     REGISTRY_OVA_PORT=${REGISTRY_OVA##*:}
     SCRIPTS_URL_ES="http://$REGISTRY_OVA_IP/ericomshield"
@@ -61,6 +66,7 @@ function check_args(){
     args=""
     dev_flg=0
     stg_flg=0
+    ver_flg=0
     S_APP_VERSION=""
 
     echo "args: $1" >> $LOGFILE
@@ -265,39 +271,39 @@ function mv_rancher_store(){
     else
         if [ -d ${CURRENT_DIR}/rancher-store ];then
             log_message "[start] move rancher-store"
-            log_message "[start] stop rancher server"
+            log_message "[stop] stop rancher server"
             docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
             mv -f ${CURRENT_DIR}/rancher-store ${ES_PATH}/
-            log_message "[start] run rancher"
-            if [[ $offline_flg -eq 0 ]]; then
-                curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
-            else
-                curl -s -OL ${SCRIPTS_URL_ES}/run-rancher.sh
-            fi
-            chmod +x run-rancher.sh
-            ./run-rancher.sh | tee -a $LOGFILE
-            log_message "[end] run rancher"
-            log_message "[waiting] launched rancher"
-            RANCHERURL=$(cat .ra_rancherurl)
-            while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
+            #log_message "[start] run rancher"
+            #if [[ $offline_flg -eq 0 ]]; then
+            #    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            #else
+            #    curl -s -OL ${SCRIPTS_URL_ES}/run-rancher.sh
+            #fi
+            #chmod +x run-rancher.sh
+            #./run-rancher.sh | tee -a $LOGFILE
+            #log_message "[end] run rancher"
+            #log_message "[waiting] launched rancher"
+            #RANCHERURL=$(cat .ra_rancherurl)
+            #while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
             log_message "[end] move rancher-store"
         else
-            log_message "[start] restart rancher server"
-            log_message "[start] stop rancher server"
+            #log_message "[start] restart rancher server"
+            log_message "[stop] stop rancher server"
             docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
-            log_message "[start] run rancher"
-            if [[ $offline_flg -eq 0 ]]; then
-                curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
-            else
-                curl -s -OL ${SCRIPTS_URL_ES}/run-rancher.sh
-            fi
-            chmod +x run-rancher.sh
-            ./run-rancher.sh | tee -a $LOGFILE
-            log_message "[end] run rancher"
-            log_message "[waiting] launched rancher"
-            RANCHERURL=$(cat .ra_rancherurl)
-            while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
-            log_message "[end] restert rancher server"
+            #log_message "[start] run rancher"
+            #if [[ $offline_flg -eq 0 ]]; then
+            #    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            #else
+            #    curl -s -OL ${SCRIPTS_URL_ES}/run-rancher.sh
+            #fi
+            #chmod +x run-rancher.sh
+            #./run-rancher.sh | tee -a $LOGFILE
+            #log_message "[end] run rancher"
+            #log_message "[waiting] launched rancher"
+            #RANCHERURL=$(cat .ra_rancherurl)
+            #while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
+            #log_message "[end] restert rancher server"
         fi
     fi
 }
@@ -338,7 +344,11 @@ function check_sysctl() {
         echo '------------------------------------------------------------'
         echo "(下記を他のノードでも実行してください。)"
         echo ""
-        echo "curl -s -OL https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"
+        if [[ $offline_flg -eq 0 ]]; then
+            echo "curl -s -OL https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"
+        else
+            echo "curl -s -OL ${SCRIPTS_URL_ES}/configure-sysctl-values.sh"
+        fi
         echo 'chmod +x configure-sysctl-values.sh'
         echo 'sudo ./configure-sysctl-values.sh'
         echo ""

@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200516a
+### VER=20200527a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -123,7 +123,7 @@ function check_args(){
     #offline_flg=0
     S_APP_VERSION=""
 
-    echo "args: $1" >> $LOGFILE
+    echo "args: $@" >> $LOGFILE
 
     for i in `seq 1 ${#}`
     do
@@ -143,14 +143,8 @@ function check_args(){
             ses_limit_flg=1
         elif [ "$1" == "--uninstall" ] || [ "$1" == "--Uninstall" ] ; then
             uninstall_flg=1
-        elif [ "$1" == "--offline" ] || [ "$1" == "--Offline" ] || [ "$1" == "--OffLine" ] ; then
+        elif [ "$1" == "--offline" ] || [ "$1" == "--Offline" ] || [ "$1" == "--OffLine" ]; then
             offline_flg=1
-            if [[ -f ${ES_PATH}/.es_offline ]]; then
-                REGISTRY_OVA=$(cat ${ES_PATH}/.es_offline)
-                REGISTRY_OVA_IP=${REGISTRY_OVA%%:*}
-                REGISTRY_OVA_PORT=${REGISTRY_OVA##*:}
-                export ES_OFFLINE_REGISTRY="$REGISTRY_OVA"
-            fi
         elif [ "$1" == "--registry" ] || [ "$1" == "--Registry" ] ; then
             shift
             REGISTRY_OVA="$1"
@@ -176,6 +170,13 @@ function check_args(){
     if [ ! -z ${args} ]; then
         log_message "${args} は不正な引数です。"
         fin 1
+    fi
+
+    if [[ $offline_flg -eq 1 ]] && [[ -f ${ES_PATH}/.es_offline ]]; then
+        REGISTRY_OVA=$(cat ${ES_PATH}/.es_offline)
+        REGISTRY_OVA_IP=${REGISTRY_OVA%%:*}
+        REGISTRY_OVA_PORT=${REGISTRY_OVA##*:}
+        export ES_OFFLINE_REGISTRY="$REGISTRY_OVA"
     fi
 
     echo "///// args /////////////////////" >> $LOGFILE
@@ -259,7 +260,7 @@ function flg_check(){
                         ;;
                 esac
         done
-        #uninstall_shield
+        uninstall_shield
         delete_all
         fin 0
     fi
@@ -648,6 +649,20 @@ function check_group() {
     fi
 
     log_message "[end] check group"
+}
+
+function run_rancher() {
+    if [[ "pong" == $(curl -s -k "${RANCHERURL}/ping") ]]; then
+        log_message "[info] already start rancher"
+    else
+        log_message "[start] run rancher"
+        if [[ $offline_flg -eq 0 ]]; then
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            chmod +x run-rancher.sh
+        fi
+        ./run-rancher.sh | tee -a $LOGFILE
+        log_message "[end] run rancher"
+    fi
 }
 
 function pre_create_cluster() {
@@ -1435,6 +1450,27 @@ function check_ha() {
     fi
 }
 
+function check_system_project() {
+    log_message "[start] Waiting System Project is Actived"
+    while :
+    do
+        for i in 1 2 3 
+        do
+            ./shield-status.sh --system -q
+            export RET${i}=$?
+        done
+        if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
+            break
+        fi
+    done
+    log_message "[end] Waiting System Project is Actived"
+}
+
+function change_metrics-server() {
+    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
+    rancher kubectl patch -n kube-system deployment metrics-server -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","imagePullPolicy":"IfNotPresent"}]}}}}'
+}
+
 function deploy_shield() {
     ### attention common setup&start ###
     log_message "[start] deploy shield"
@@ -1691,15 +1727,19 @@ fi
 # get operation scripts
 get_scripts
 
-#update or deploy
-if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
-    install_helm
-    add_repo
-    deploy_shield
-    move_to_project
-    check_start
-    fin 0
-fi
+#update or deploy NOT offline
+    if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
+        run_rancher
+        install_helm
+        wait_for_tiller
+        if [[ $offline_flg -eq 0 ]]; then
+            add_repo
+        fi
+        deploy_shield
+        move_to_project
+        check_start
+        fin 0
+    fi
 
 # set MY_IP
 choose_network_interface
@@ -1824,17 +1864,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[end] set Rancer URL & ports"
 
     #4.  run-rancher.sh
-    if [[ "pong" == $(curl -s -k "${RANCHERURL}/ping") ]]; then
-        log_message "[info] already start rancher"
-    else
-        log_message "[start] run rancher"
-        if [[ $offline_flg -eq 0 ]]; then
-            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
-            chmod +x run-rancher.sh
-        fi
-        ./run-rancher.sh | tee -a $LOGFILE
-        log_message "[end] run rancher"
-    fi
+    run_rancher
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
@@ -1899,19 +1929,10 @@ fi
 set_node_label
 
 #check_system_project
-log_message "[start] Waiting System Project is Actived"
-while :
-do
-    for i in 1 2 3 
-    do
-        ./shield-status.sh --system -q
-        export RET${i}=$?
-    done
-    if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
-        break
-    fi
-done
-log_message "[end] Waiting System Project is Actived"
+check_system_project
+if [[ $offline_flg -eq 1 ]]; then
+    change_metrics-server
+fi
 
 #6. Deploy Shield
 deploy_shield
