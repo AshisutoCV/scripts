@@ -1,5 +1,22 @@
 # Changelog
 
+## [VER=20200528a] - 2020/05/28
+
+### 変更
+#### shield-setup.sh
+* ログ出力 typo
+* metrics-server patch log追加
+
+### 変更
+#### shield-update.sh
+* ログ出力 typo
+
+### 変更
+#### shield-start.sh
+* metrics-server patch 追加
+
+--------------------------------------------------------------
+
 ## [VER=20200527a] - 2020/05/27
 
 ### 変更

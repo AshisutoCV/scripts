@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200516a
+### VER=20200528a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -259,6 +259,11 @@ function change_resource() {
     log_message "[end] change remort browser resource"
 }
 
+function change_metrics-server() {
+    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
+    rancher kubectl patch -n kube-system deployment metrics-server -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","imagePullPolicy":"IfNotPresent"}]}}}}' | tee -a $LOGFILE
+}
+
 log_message "###### START ###########################################################"
 
 #read ra files
@@ -300,7 +305,7 @@ done
 log_message "[end] Waiting System Project is Actived"
 
 log_message "[start] Start Shield"
-
+change_metrics-server
 deploy_shield
 move_to_project
 check_start

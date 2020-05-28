@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200520a
+### VER=20200528a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -97,7 +97,7 @@ function check_args(){
     echo "args: $args" >> $LOGFILE
     echo "dev_flg: $dev_flg" >> $LOGFILE
     echo "stg_flg: $stg_flg" >> $LOGFILE
-    echo "offline_flg: $deleteall_flg" >> $LOGFILE
+    echo "offline_flg: $offline_flg" >> $LOGFILE
     echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
     echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
     echo "REGISTRY_OVA_PORT: $REGISTRY_OVA_PORT" >> $LOGFILE

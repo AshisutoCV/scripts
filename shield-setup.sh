@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200527a
+### VER=20200528a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -191,7 +191,7 @@ function check_args(){
     echo "spell_flg: $spell_flg" >> $LOGFILE
     echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
     echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
-    echo "offline_flg: $deleteall_flg" >> $LOGFILE
+    echo "offline_flg: $offline_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
     echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
@@ -1468,7 +1468,7 @@ function check_system_project() {
 
 function change_metrics-server() {
     rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
-    rancher kubectl patch -n kube-system deployment metrics-server -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","imagePullPolicy":"IfNotPresent"}]}}}}'
+    rancher kubectl patch -n kube-system deployment metrics-server -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","imagePullPolicy":"IfNotPresent"}]}}}}' | tee -a $LOGFILE
 }
 
 function deploy_shield() {
