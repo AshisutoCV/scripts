@@ -1679,10 +1679,10 @@ echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 
 if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
-    $old_flg=1
+    old_flg=1
     if [[ $offline_flg -eq 0 ]]; then
         log_message "###### for OLD version Re-START ###########################################################"
-        curl -OL ${SCRIPTS_URL}/shield-setup-online-old.sh
+        curl -s -OL ${SCRIPTS_URL}/shield-setup-online-old.sh
         chmod +x shield-setup-online-old.sh
         ./shield-setup-online-old.sh $@ --version $S_APP_VERSION
         fin 0

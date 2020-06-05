@@ -1,4 +1,6 @@
 NAME                    CHART VERSION   APP VERSION     DESCRIPTION
+shield-repo/shield      20.05.649        20.05.649       A Helm chart for installing Ericom Shield for Kubernetes
+shield-repo/shield      20.03.641        20.03.641       A Helm chart for installing Ericom Shield for Kubernetes
 shield-repo/shield      20.03.639        20.03.639       A Helm chart for installing Ericom Shield for Kubernetes
 shield-repo/shield      20.01.622        20.01.622       A Helm chart for installing Ericom Shield for Kubernetes
 shield-repo/shield      19.12.606        19.12.606       A Helm chart for installing Ericom Shield for Kubernetes
