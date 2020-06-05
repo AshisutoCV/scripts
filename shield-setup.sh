@@ -298,9 +298,9 @@ function flg_check(){
 function uninstall_shield() {
     log_message "[start] uninstall shield"
 
-    if [[ $offline_flg -eq 0 ]] && [[ ! -f delete-shield.sh ]]; then
-        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
-        chmod +x delete-shield.sh
+    if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-shield.sh ]]; then
+        curl -s https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh -o ${ES_PATH}/delete-shield.sh
+        chmod +x ${ES_PATH}/delete-shield.sh
     fi
     ${ES_PATH}/delete-shield.sh -s | tee -a $LOGFILE
     rm -f .es_version
@@ -312,9 +312,9 @@ function uninstall_shield() {
 function delete_all() {
     log_message "[start] deletel all object"
 
-    if [[ $offline_flg -eq 0 ]] && [[ ! -f delete-all.sh ]]; then
-        curl -s -OL ${SCRIPTS_URL}/delete-all.sh
-        chmod +x delete-all.sh
+    if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-all.sh ]]; then
+        curl -s -L ${SCRIPTS_URL}/delete-all.sh -o ${ES_PATH}/delete-all.sh
+        chmod +x ${ES_PATH}/delete-all.sh
     fi
     ${ES_PATH}/delete-all.sh | tee -a $LOGFILE
 
