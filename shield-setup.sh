@@ -1462,11 +1462,6 @@ function check_system_project() {
     log_message "[end] Waiting System Project is Actived"
 }
 
-#function change_metrics-server() {
-#    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
-#    rancher kubectl patch -n kube-system deployment metrics-server -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","imagePullPolicy":"IfNotPresent"}]}}}}' | tee -a $LOGFILE
-#}
-
 function deploy_shield() {
     ### attention common setup&start ###
     log_message "[start] deploy shield"
@@ -1901,9 +1896,6 @@ set_node_label
 
 #check_system_project
 check_system_project
-if [[ $offline_flg -eq 1 ]]; then
-    change_metrics-server
-fi
 
 #6. Deploy Shield
 deploy_shield
