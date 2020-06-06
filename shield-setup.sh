@@ -271,7 +271,7 @@ function flg_check(){
     # update_flg parent check
     if [ $update_flg -eq 1 ];then
         PARENTCMD=$(ps -o args= $PPID)
-        if [[ ! ${PARENTCMD} =~ shield-update.sh ]]; then
+        if [[ ! ${PARENTCMD} =~ shield-update.sh ]] && [[ ! ${PARENTCMD} =~ shield-update-online-old.sh ]]; then
             log_message "--update は直接利用できません。 shield-update.sh をご利用ください。"
             fin 1
         fi
@@ -1677,10 +1677,11 @@ if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BR
     old_flg=1
     if [[ $offline_flg -eq 0 ]]; then
         log_message "###### for OLD version Re-START ###########################################################"
-        curl -s -OL ${SCRIPTS_URL}/shield-setup-online-old.sh
-        chmod +x shield-setup-online-old.sh
-        ./shield-setup-online-old.sh $@ --version $S_APP_VERSION
-        fin 0
+        curl -s  -o ${CURRENT_DIR}/shield-setup-online-old.sh -L ${SCRIPTS_URL}/shield-setup-online-old.sh
+        chmod +x ${CURRENT_DIR}/shield-setup-online-old.sh
+        ${CURRENT_DIR}/shield-setup-online-old.sh $@ --version $S_APP_VERSION
+        rm -f ${CURRENT_DIR}/shield-setup-online-old.sh
+        exit 0
     fi
 fi
 
@@ -1699,6 +1700,7 @@ else
     sudo ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" | tee -a $LOGFILE    
 fi
 sudo chown -R $(whoami):$(whoami) ${ES_PATH}
+sudo chown -R $(whoami):$(whoami) ${CURRENT_DIR}/.docker
 chmod +x -R ${ES_PATH}/*.sh
 if [ -d "/tmp/dot" ] &>/dev/null; then
     mv /tmp/dot/.* $ES_PATH

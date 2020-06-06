@@ -316,6 +316,11 @@ function get_scripts() {
         curl -s -OL ${SCRIPTS_URL_ES}/configure-sysctl-values.sh
     fi
     chmod +x configure-sysctl-values.sh
+
+    if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-shield.sh ]]; then
+        curl -s -o ${ES_PATH}/delete-shield.sh -L https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/Rel-20.03/Kube/scripts/shield-setup.sh
+        chmod +x ${ES_PATH}/delete-shield.sh
+    fi
     log_message "[end] get install scripts"
 }
 
@@ -394,9 +399,6 @@ function get_yaml() {
     fi
 
     log_message "[end] check yaml files"
-
-    echo ${S_APP_VERSION} > .es_update
-    fin 0
 }
 
 function check_yaml() {
@@ -447,16 +449,6 @@ check_args $@
 export BRANCH
 log_message "BRANCH: $BRANCH"
 
-if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
-    old_flg=1
-    if [[ $offline_flg -eq 0 ]]; then
-        log_message "###### for OLD version Re-START ###########################################################"
-        curl -s -OL ${SCRIPTS_URL}/shield-update-online-old.sh
-        chmod +x shield-update-online-old.sh
-        ./shield-update-online-old.sh $@ --version $S_APP_VERSION
-        fin 0
-    fi
-fi
 
 if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
     select_version
@@ -469,18 +461,34 @@ if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
         old_flg=1
         if [[ $offline_flg -eq 0 ]]; then
             log_message "###### for OLD version Re-START ###########################################################"
-            curl -s -OL ${SCRIPTS_URL}/shield-update-online-old.sh
-            chmod +x shield-update-online-old.sh
-            ./shield-update-online-old.sh $@ --version $S_APP_VERSION
-            fin 0
+            curl -s -o ${ES_PATH}/shield-update-online-old.sh -L ${SCRIPTS_URL}/shield-update-online-old.sh 
+            chmod +x ${ES_PATH}/shield-update-online-old.sh
+            ${ES_PATH}/shield-update-online-old.sh $@ --version $S_APP_VERSION
+            rm -f ${ES_PATH}/shield-update-online-old.sh
+            exit 0
         fi
     fi
 
     # get install scripts
     get_scripts
     check_sysctl    
-    get_yaml
+    #get_yaml
+    echo ${S_APP_VERSION} > .es_update
+    cd ${CURRENT_DIR}
+    $0 ${ALL_ARGS}
+    fin 0
 else
+    if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
+        old_flg=1
+        if [[ $offline_flg -eq 0 ]]; then
+            log_message "###### for OLD version Re-START ###########################################################"
+            curl -s -o ${ES_PATH}/shield-update-online-old.sh -L ${SCRIPTS_URL}/shield-update-online-old.sh 
+            chmod +x ${ES_PATH}/shield-update-online-old.sh
+            ${ES_PATH}/shield-update-online-old.sh $@ --version $S_APP_VERSION
+            rm -f ${ES_PATH}/shield-update-online-old.sh
+            exit 0
+        fi
+    fi
     while :
     do
         echo ""

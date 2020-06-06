@@ -833,7 +833,7 @@ check_args $@
 # update_flg parent check
 if [ $update_flg -eq 1 ];then
     PARENTCMD=$(ps -o args= $PPID)
-    if [[ ! ${PARENTCMD} =~ shield-update.sh ]]; then
+    if [[ ! ${PARENTCMD} =~ shield-update.sh ]] && [[ ! ${PARENTCMD} =~ shield-update-online-old.sh ]] && [[ ! ${PARENTCMD} =~ shield-setup.sh ]] ; then
         log_message "--update は直接利用できません。 shield-update.sh をご利用ください。"
         fin 1
     fi

@@ -101,19 +101,20 @@ function check_args(){
 }
 
 function select_version() {
+    ### attention common setup&update ###
     CHART_VERSION=""
     VERSION_DEPLOYED=""
-    if which helm >/dev/null 2>&1 ;then
+    if which helm >/dev/null 2>&1 ; then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     fi
-    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ]; then
+    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ]; then
+    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
-    if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]]; then
+    if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]] ; then
         log_message "現在インストールされているバージョン: N/A"
     else
         BUILD=()
@@ -127,6 +128,7 @@ function select_version() {
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
         S_APP_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $2 }')
+
         if [ "$CHART_VERSION" == "NA" ]; then
             log_message "現在ご利用可能なリリース前先行利用バージョンはありません。"
             fin 1
@@ -147,6 +149,9 @@ function select_version() {
                     ;;
             esac
         fi
+    elif [ $ver_flg -eq 1 ] ; then
+            CHART=(${S_APP_VERSION//./ })
+            CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
     else
         declare -A vers_c
         declare -A vers_a
@@ -219,7 +224,7 @@ function select_version() {
     fi
 
     change_dir
-    
+
     echo ${S_APP_VERSION} > .es_version
 }
 
@@ -359,7 +364,7 @@ function get_yaml() {
     done
     
     if [[ $(ls diff_*.yaml 2>/dev/null | wc -l) -ne 0 ]]; then
-        echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、$0 ${ALL_ARGS} を再実行してください。"
+        echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、${CURRENT_DIR}/shield-update.sh を同じ引数で再実行してください。"
         echo "※基本的にはユーザが意図して設定変更した箇所以外は新しいyamlファイルの記述を採用してください。"
 
         for difffile in $(ls diff_*.yaml)
@@ -367,7 +372,7 @@ function get_yaml() {
             echo ${ES_PATH}/${difffile}
         done
     else
-        echo "yamlファイルに更新はありませんでした。そのまま再度　$0 ${ALL_ARGS} を再実行してください。"
+        echo "yamlファイルに更新はありませんでした。そのまま再度　${CURRENT_DIR}/shield-update.sh を同じ引数で再実行してください。"
     fi
 
     log_message "[end] check yaml files"
