@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200219a
+### VER=20200607a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -19,10 +19,14 @@ if [ ! -e ${ES_PATH}/logs/ ];then
 fi
 
 LOGFILE="${ES_PATH}/logs/stop-start.log"
-BRANCH="Staging"
+BRANCH="master"
 GITVER=1912
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
+
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git"
+SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -30,8 +34,20 @@ fi
 if [ -f .es_version ]; then
     GITVER=$(cat .es_version)
 fi
+if [ -f ${ES_PATH}/.es_offline ] ;then
+    offline_flg=1
+else
+    offline_flg=0
+fi
 
 export BRANCH
+
+old_flg=0
+if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
+    old_flg=1
+    SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts"
+fi
+
 
 function usage() {
     echo "USAGE: $0"
@@ -45,9 +61,10 @@ fi
 function stop_shield() {
     log_message "[start] Stop shield"
 
-    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
-
-    chmod +x delete-shield.sh
+    if [[ $offline_flg -eq 0 ]] && [[ $old_flg -eq 1 ]];then
+        curl -s -O ${SCRIPTS_URL_ES}/delete-shield.sh
+        chmod +x delete-shield.sh
+    fi
     if [[ $((1911 - ${GITVER:0:2}${GITVER:3:2})) -gt 0 ]];then
         sed -i -e '/Are you sure you want to delete the deployment/d' delete-shield.sh
         sed -i -e '/case/d' delete-shield.sh
@@ -65,13 +82,18 @@ function stop_shield() {
         ./delete-shield.sh | tee -a $LOGFILE
     else
         sed -i -e 's/Uninstalling/Stopping/' delete-shield.sh
-        ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
+        if [[ $(grep -c 'keep-namespace' delete-shield.sh) -gt 0 ]];then
+            ./delete-shield.sh -s -k 2>>$LOGFILE | tee -a $LOGFILE
+        else
+            ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
+        fi
     fi
 
-    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/delete-shield.sh
-
+    if [[ $offline_flg -eq 0 ]] && [[ $old_flg -eq 1 ]];then
+        curl -s -O ${SCRIPTS_URL_ES}/delete-shield.sh
+    fi
     stop_abnormal_common
-
+    kubectl delete jobs -n farm-services --all >> $LOGFILE
     log_message "[end] Stope shield"
 }
 
@@ -83,6 +105,7 @@ function stop_abnormal_common() {
         kubectl delete namespace "${NAMESPRACE}"
     fi
 }
+
 
 function log_message() {
     local PREV_RET_CODE=$?
@@ -100,10 +123,59 @@ function fin() {
     exit $1
 }
 
+function ln_resolv() {
+    if [[ ! -L /etc/resolv.conf ]];then
+        log_message "[start] Changing to the symbolic link."
+        sudo mv -f /etc/resolv.conf /etc/resolv.conf_org
+        sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+        if [[ $? -eq 0 ]];then
+            log_message "[end] Changing to the symbolic link."
+        else
+            log_message "[WARNNING] Can NOT changined to the symbolic link !!!"
+            while :
+            do
+            echo -n 'Do you want to continue? [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+            done
+        fi
+    else
+        if [[ $(ls -l /etc/resolv.conf | grep -c "/run/systemd/resolve") -eq 1 ]];then
+            log_message "Already changed to the symbolic link."
+        else
+            log_message "[WARNNING] Already changed to the symbolic link. BUT But that is an unexpected PATH."
+            while :
+            do
+            echo -n 'Do you want to continue? [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+            done
+        fi
+    fi
+}
+
 log_message "###### START ###########################################################"
 
 stop_shield
-
+ln_resolv
 fin 0
 
 
