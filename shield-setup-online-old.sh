@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200424a
+### VER=20200607a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -58,6 +58,55 @@ function usage() {
 if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
     usage
 fi
+
+function ln_resolv() {
+    if [[ ! -L /etc/resolv.conf ]];then
+        log_message "[start] Changing to the symbolic link."
+        sudo mv -f /etc/resolv.conf /etc/resolv.conf_org
+        sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+        if [[ $? -eq 0 ]];then
+            log_message "[end] Changing to the symbolic link."
+        else
+            log_message "[WARNNING] Can NOT changined to the symbolic link !!!"
+            while :
+            do
+            echo -n 'Do you want to continue? [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+            done
+        fi
+    else
+        if [[ $(ls -l /etc/resolv.conf | grep -c "/run/systemd/resolve") -eq 1 ]];then
+            log_message "Already changed to the symbolic link."
+        else
+            log_message "[WARNNING] Already changed to the symbolic link. BUT But that is an unexpected PATH."
+            while :
+            do
+            echo -n 'Do you want to continue? [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+            done
+        fi
+    fi
+}
 
 function check_args(){
     pre_flg=0
@@ -826,6 +875,8 @@ if [ -f /etc/redhat-release ]; then
 else
     OS="Ubuntu"
 fi
+
+ln_resolv
 
 # check args and set flags
 check_args $@
