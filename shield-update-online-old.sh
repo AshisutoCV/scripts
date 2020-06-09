@@ -26,7 +26,6 @@ CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git"
-SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -44,23 +43,6 @@ function usage() {
 
 if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
     usage
-fi
-
-if [ -f ${ES_PATH}/.es_offline ] ;then
-    offline_flg=1
-    REGISTRY_OVA=$(cat ${ES_PATH}/.es_offline)
-    REGISTRY_OVA_DOCKER=$(docker info 2>/dev/null | grep :5000 | cut -d' ' -f3)
-    if [ "$REGISTRY_OVA" != "$REGISTRY_OVA_DOCKER" ];then
-        REGISTRY_OVA=$REGISTRY_OVA_DOCKER
-        echo "$REGISTRY_OVA" > ${ES_PATH}/.es_offline
-    fi
-    REGISTRY_OVA_IP=${REGISTRY_OVA%%:*}
-    REGISTRY_OVA_PORT=${REGISTRY_OVA##*:}
-    SCRIPTS_URL_ES="http://$REGISTRY_OVA_IP/ericomshield"
-    SCRIPTS_URL="http://$REGISTRY_OVA_IP/scripts"
-    export ES_OFFLINE_REGISTRY="$REGISTRY_OVA"
-else
-    offline_flg=0
 fi
 
 function check_args(){
@@ -103,14 +85,8 @@ function check_args(){
     echo "args: $args" >> $LOGFILE
     echo "dev_flg: $dev_flg" >> $LOGFILE
     echo "stg_flg: $stg_flg" >> $LOGFILE
-    echo "ver_flg: $ver_flg" >> $LOGFILE
+    echo "ver_flg: $stg_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
-    echo "offline_flg: $offline_flg" >> $LOGFILE
-    echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
-    echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
-    echo "REGISTRY_OVA_PORT: $REGISTRY_OVA_PORT" >> $LOGFILE
-    echo "SCRIPTS_URL_ES: $SCRIPTS_URL_ES" >> $LOGFILE
-    echo "SCRIPTS_URL: $SCRIPTS_URL" >> $LOGFILE
     echo "////////////////////////////////" >> $LOGFILE
 
     if [ $dev_flg -eq 1 ] ; then
@@ -279,14 +255,31 @@ function mv_rancher_store(){
     else
         if [ -d ${CURRENT_DIR}/rancher-store ];then
             log_message "[start] move rancher-store"
-            log_message "[stop] stop rancher server"
+            log_message "[start] stop rancher server"
             docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
             mv -f ${CURRENT_DIR}/rancher-store ${ES_PATH}/
+            log_message "[start] run rancher"
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            chmod +x run-rancher.sh
+            ./run-rancher.sh | tee -a $LOGFILE
+            log_message "[end] run rancher"
+            log_message "[waiting] launched rancher"
+            RANCHERURL=$(cat .ra_rancherurl)
+            while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
             log_message "[end] move rancher-store"
         else
-            #log_message "[start] restart rancher server"
-            log_message "[stop] stop rancher server"
+            log_message "[start] restart rancher server"
+            log_message "[start] stop rancher server"
             docker stop $(docker ps | grep "rancher/rancher" | cut -d" " -f1)
+            log_message "[start] run rancher"
+            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/run-rancher.sh
+            chmod +x run-rancher.sh
+            ./run-rancher.sh | tee -a $LOGFILE
+            log_message "[end] run rancher"
+            log_message "[waiting] launched rancher"
+            RANCHERURL=$(cat .ra_rancherurl)
+            while ! curl -s -k "${RANCHERURL}/ping"; do sleep 3; done
+            log_message "[end] restert rancher server"
         fi
     fi
 }
@@ -307,20 +300,12 @@ function fin() {
 
 function get_scripts() {
     log_message "[start] get install scripts"
+    #cp -fp ${CURRENT_DIR}/shield-setup.sh ${CURRENT_DIR}/shield-setup.sh_backup
     curl -s -o ${CURRENT_DIR}/shield-setup.sh -L ${SCRIPTS_URL}/shield-setup.sh
     chmod +x ${CURRENT_DIR}/shield-setup.sh
     cp -fp configure-sysctl-values.sh configure-sysctl-values.sh_backup
-    if [[ $offline_flg -eq 0 ]]; then
-        curl -s -OL ${SCRIPTS_URL}/configure-sysctl-values.sh
-    else
-        curl -s -OL ${SCRIPTS_URL_ES}/configure-sysctl-values.sh
-    fi
+    curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh
     chmod +x configure-sysctl-values.sh
-
-    if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-shield.sh ]]; then
-        curl -s -o ${ES_PATH}/delete-shield.sh -L https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/Rel-20.03/Kube/scripts/shield-setup.sh
-        chmod +x ${ES_PATH}/delete-shield.sh
-    fi
     log_message "[end] get install scripts"
 }
 
@@ -332,11 +317,7 @@ function check_sysctl() {
         echo '------------------------------------------------------------'
         echo "(下記を他のノードでも実行してください。)"
         echo ""
-        if [[ $offline_flg -eq 0 ]]; then
-            echo "curl -s -OL ${SCRIPTS_URL}/configure-sysctl-values.sh"
-        else
-            echo "curl -s -OL ${SCRIPTS_URL_ES}/configure-sysctl-values.sh"
-        fi
+        echo "curl -s -OL https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/configure-sysctl-values.sh"
         echo 'chmod +x configure-sysctl-values.sh'
         echo 'sudo ./configure-sysctl-values.sh'
         echo ""
@@ -369,11 +350,7 @@ function get_yaml() {
     for yamlfile in "${COMPONENTS[@]}"
     do
         cp -fp custom-${yamlfile}.yaml custom-${yamlfile}.yaml_backup
-        if [[ $offline_flg -eq 0 ]];then
-            curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-${yamlfile}.yaml
-        else
-            curl -s -OL ${SCRIPTS_URL_ES}/custom-${yamlfile}.yaml
-        fi
+        curl -s -O https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts/custom-${yamlfile}.yaml
     done
     log_message "[end] get yaml files"
     
@@ -387,7 +364,7 @@ function get_yaml() {
     done
     
     if [[ $(ls diff_*.yaml 2>/dev/null | wc -l) -ne 0 ]]; then
-        echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、$0 ${ALL_ARGS} を再実行してください。"
+        echo "新しいyamlファイルと既存のファイルに差分がある可能性があります。下記ファイルを確認し、適切に編集後、${CURRENT_DIR}/shield-update.sh を同じ引数で再実行してください。"
         echo "※基本的にはユーザが意図して設定変更した箇所以外は新しいyamlファイルの記述を採用してください。"
 
         for difffile in $(ls diff_*.yaml)
@@ -395,10 +372,13 @@ function get_yaml() {
             echo ${ES_PATH}/${difffile}
         done
     else
-        echo "yamlファイルに更新はありませんでした。そのまま再度　$0 ${ALL_ARGS} を再実行してください。"
+        echo "yamlファイルに更新はありませんでした。そのまま再度　${CURRENT_DIR}/shield-update.sh を同じ引数で再実行してください。"
     fi
 
     log_message "[end] check yaml files"
+
+    echo ${S_APP_VERSION} > .es_update
+    fin 0
 }
 
 function check_yaml() {
@@ -447,8 +427,6 @@ ALL_ARGS="$@"
 check_args $@
 
 export BRANCH
-log_message "BRANCH: $BRANCH"
-
 
 if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
     select_version
@@ -457,38 +435,11 @@ if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
     echo $BRANCH > .es_branch
     log_message "BRANCH: $BRANCH"
 
-    if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
-        old_flg=1
-        if [[ $offline_flg -eq 0 ]]; then
-            log_message "###### for OLD version Re-START ###########################################################"
-            curl -s -o ${ES_PATH}/shield-update-online-old.sh -L ${SCRIPTS_URL}/shield-update-online-old.sh 
-            chmod +x ${ES_PATH}/shield-update-online-old.sh
-            ${ES_PATH}/shield-update-online-old.sh $@ --version $S_APP_VERSION
-            rm -f ${ES_PATH}/shield-update-online-old.sh
-            exit 0
-        fi
-    fi
-
     # get install scripts
     get_scripts
     check_sysctl    
-    #get_yaml
-    echo ${S_APP_VERSION} > .es_update
-    cd ${CURRENT_DIR}
-    $0 ${ALL_ARGS}
-    fin 0
+    get_yaml
 else
-    if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
-        old_flg=1
-        if [[ $offline_flg -eq 0 ]]; then
-            log_message "###### for OLD version Re-START ###########################################################"
-            curl -s -o ${ES_PATH}/shield-update-online-old.sh -L ${SCRIPTS_URL}/shield-update-online-old.sh 
-            chmod +x ${ES_PATH}/shield-update-online-old.sh
-            ${ES_PATH}/shield-update-online-old.sh $@ --version $S_APP_VERSION
-            rm -f ${ES_PATH}/shield-update-online-old.sh
-            exit 0
-        fi
-    fi
     while :
     do
         echo ""
