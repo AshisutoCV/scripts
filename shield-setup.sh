@@ -122,7 +122,7 @@ function ln_resolv() {
                     fin 1
                 else
                     sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
-                    sudo systemclt restart systemd-resolved
+                    sudo systemctl restart systemd-resolved
                     log_message "[INFO] Changed to symlink"
                 fi
             else
@@ -143,7 +143,7 @@ function ln_resolv() {
                     fin 1
                 else
                     sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
-                    sudo systemclt restart systemd-resolved
+                    sudo systemctl restart systemd-resolved
                     log_message "[INFO] Changed to symlink"
                 fi
             else
