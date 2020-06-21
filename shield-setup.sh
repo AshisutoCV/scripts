@@ -121,7 +121,7 @@ function ln_resolv() {
                     log_message "[WARN] /run/systemd/resolve/resolv.conf が local stub になっています。確認してください。"
                     fin 1
                 else
-                    sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolve.conf
+                    sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
                     log_message "[INFO] Changed to symlink"
                 fi
             else
@@ -141,7 +141,7 @@ function ln_resolv() {
                     log_message "[WARN] /run/systemd/resolve/resolv.conf が local stub になっています。確認してください。"
                     fin 1
                 else
-                    sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolve.conf
+                    sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
                     log_message "[INFO] Changed to symlink"
                 fi
             else
