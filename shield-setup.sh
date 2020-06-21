@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200607a
+### VER=20200621a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -110,52 +110,49 @@ function step() {
 }
 
 function ln_resolv() {
+    log_message "[start] Changing to the symbolic link."
     if [[ ! -L /etc/resolv.conf ]];then
-        log_message "[start] Changing to the symbolic link."
-        sudo mv -f /etc/resolv.conf /etc/resolv.conf_org
-        sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
-        if [[ $? -eq 0 ]];then
-            log_message "[end] Changing to the symbolic link."
+        log_message "[WARN]/etc/resolv.conf is NOT symlink"
+        if [[ $(cat /etc/resolv.conf | grep -v '#' | grep -c 127.0.0.53) -ne 0 ]];then
+            log_message "[WARN] nameserver is local stub!"
+            if [[ -f /run/systemd/resolve/resolv.conf ]];then
+                log_message "[INFO] /run/systemd/resolve/resolv.conf exist!"
+                if [[ $(cat /run/systemd/resolve/resolv.conf | grep -v '#' | grep -c 127.0.0.53) -ne 0 ]];then
+                    log_message "[WARN] /run/systemd/resolve/resolv.conf が local stub になっています。確認してください。"
+                    fin 1
+                else
+                    sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolve.conf
+                    log_message "[INFO] Changed to symlink"
+                fi
+            else
+                log_message "[WARN]　/run/systemd/resolve/resolv.conf が存在しません。確認してください。"
+                fin 1
+            fi
         else
-            log_message "[WARNNING] Can NOT changined to the symbolic link !!!"
-            while :
-            do
-            echo -n 'Do you want to continue? [y/N]:'
-                read ANSWER
-                case $ANSWER in
-                    "Y" | "y" | "yse" | "Yes" | "YES" )
-                        break
-                        ;;
-                    "" | "n" | "N" | "no" | "No" | "NO" )
-                        ;;
-                    * )
-                        echo "YまたはNで答えて下さい。"
-                        ;;
-                esac
-            done
+            log_message "[INFO ] nameserver is not local stub! Continue!"
         fi
     else
-        if [[ $(ls -l /etc/resolv.conf | grep -c "/run/systemd/resolve") -eq 1 ]];then
-            log_message "Already changed to the symbolic link."
+        log_message "[WARN]/etc/resolv.conf is symlink"
+        if [[ $(cat /etc/resolv.conf | grep -v '#' | grep -c 127.0.0.53) -ne 0 ]];then
+            log_message "[WARN] nameserver is local stub!"
+            if [[ -f /run/systemd/resolve/resolv.conf ]];then
+                log_message "[INFO] /run/systemd/resolve/resolv.conf exist!"
+                if [[ $(cat /run/systemd/resolve/resolv.conf | grep -v '#' | grep -c 127.0.0.53) -ne 0 ]];then
+                    log_message "[WARN] /run/systemd/resolve/resolv.conf が local stub になっています。確認してください。"
+                    fin 1
+                else
+                    sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolve.conf
+                    log_message "[INFO] Changed to symlink"
+                fi
+            else
+                log_message "/run/systemd/resolve/resolv.conf が存在しません。確認してください。"
+                fin 1
+            fi
         else
-            log_message "[WARNNING] Already changed to the symbolic link. BUT But that is an unexpected PATH."
-            while :
-            do
-            echo -n 'Do you want to continue? [y/N]:'
-                read ANSWER
-                case $ANSWER in
-                    "Y" | "y" | "yse" | "Yes" | "YES" )
-                        break
-                        ;;
-                    "" | "n" | "N" | "no" | "No" | "NO" )
-                        ;;
-                    * )
-                        echo "YまたはNで答えて下さい。"
-                        ;;
-                esac
-            done
+            log_message "[INFO ] nameserver is not local stub! Continue!"
         fi
     fi
+    log_message "[end] Changing to the symbolic link."
 }
 
 function check_args(){
