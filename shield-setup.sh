@@ -124,6 +124,8 @@ function ln_resolv() {
                     sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
                     sudo systemctl restart systemd-resolved
                     log_message "[INFO] Changed to symlink"
+                    log_message "ノードを再起動してから、再度スクリプトを実行してください。"
+                    fin 0
                 fi
             else
                 log_message "[WARN]　/run/systemd/resolve/resolv.conf が存在しません。確認してください。"
@@ -145,6 +147,8 @@ function ln_resolv() {
                     sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
                     sudo systemctl restart systemd-resolved
                     log_message "[INFO] Changed to symlink"
+                    log_message "ノードを再起動してから、再度スクリプトを実行してください。"
+                    fin 0
                 fi
             else
                 log_message "/run/systemd/resolve/resolv.conf が存在しません。確認してください。"

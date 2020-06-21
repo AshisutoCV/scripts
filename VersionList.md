@@ -1,6 +1,9 @@
 # Version List
 ***
 
+## prepare-node.sh
+* [20200621a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200621a---20200621)
+
 ## shield-status.sh
 * [20200313a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200313a---20200313)
 * [20200227b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200227b---20200227)
