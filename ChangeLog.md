@@ -3,6 +3,10 @@
 ## [VER=20200621a] - 2020/06/21
 
 ### 変更
+#### prepare-node.sh
+* k8s対応。resolv.conf対応
+
+### 変更
 #### shield-setup.sh
 * /etc/resolve.conf のリンク修正対応見直し
 

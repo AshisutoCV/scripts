@@ -42,10 +42,10 @@ echo $COMMAND | sudo EDITOR='tee -a' visudo
 
 
 echo '################################################### Changeing sshd_conf #################################'
-sudo sed -i -e '/^PasswordAuthentication/s/no/yes/'
+sudo sed -i -e '/^PasswordAuthentication/s/no/yes/' /etc/ssh/sshd_config
 sudo systemctl restart sshd
-echo '################################################### Done #################################'
 
+echo '################################################### Changing to the symbolic link. /etc/resolv.conf #################################'
     echo "[start] Changing to the symbolic link."
     if [[ ! -L /etc/resolv.conf ]];then
         echo "[WARN]/etc/resolv.conf is NOT symlink"
@@ -96,3 +96,4 @@ echo '################################################### Done #################
     fi
     echo "[end] Changing to the symbolic link."
     exit 0
+echo '################################################### Done #################################'
