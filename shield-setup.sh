@@ -133,7 +133,7 @@ function ln_resolv() {
             log_message "[INFO ] nameserver is not local stub! Continue!"
         fi
     else
-        log_message "[WARN]/etc/resolv.conf is symlink"
+        log_message "[INFO]/etc/resolv.conf is symlink"
         if [[ $(cat /etc/resolv.conf | grep -v '#' | grep -c 127.0.0.53) -ne 0 ]];then
             log_message "[WARN] nameserver is local stub!"
             if [[ -f /run/systemd/resolve/resolv.conf ]];then
