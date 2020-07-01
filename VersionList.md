@@ -12,12 +12,11 @@
 * [20200210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200210a---20200210)
 
 ## shield-setup.sh
+* [20200701a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200701a---20200701)
 * [20200621a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200621a---20200621)
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
 * [20200528a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200528a---20200528)
 * [20200527a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200527a---20200527)
-* [20200520a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200520a---20200520)
-* [20200424a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200424a---20200424)
 
 ## shield-setup-online-old.sh
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
@@ -61,11 +60,11 @@
 * [20191216a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191216a---20191216)
 
 ## shield-sup.sh
+* [20200701a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200701a---20200701)
 * [20200313a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200313a---20200313)
 * [20200226a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200226a---20200226)
 * [20200219a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200219a---20200219)
 * [20200207a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200207a---20200207)
-* [20200206a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200206a---20200206)
 
 ## getlog.sh
 * [20200219a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200219a---20200219)
@@ -80,6 +79,7 @@
 * [20190920a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190920a---20190920)
 
 ## proxy-cent.py
+* [20200701a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200701a---20200701)
 * [20191119a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191119a---20191119)
 
 ## backup-restore.sh
