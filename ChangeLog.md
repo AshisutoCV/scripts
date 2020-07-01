@@ -1,4 +1,19 @@
 # Changelog
+## [VER=20200621a] - 2020/06/21
+
+### 変更
+#### shield-sup.sh
+* Ericom純正のshield-supportを実行後、不足部の追加をkka originalとして実行するように変更。
+
+### 変更
+#### shield-setup.sh
+* /etc/resolve.conf のリンク修正をCentOSに対して除外
+
+### 変更
+#### proxy-cent.py
+* /etc/bashcrの対象ファイル修正（再ログイン時にenvから消える事象を解消）
+
+--------------------------------------------------------------
 
 ## [VER=20200621a] - 2020/06/21
 

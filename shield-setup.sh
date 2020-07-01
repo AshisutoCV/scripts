@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200621a
+### VER=20200701a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -1689,7 +1689,9 @@ else
     OS="Ubuntu"
 fi
 
-ln_resolv
+if [[ $OS == "Ubuntu" ]]; then
+    ln_resolv
+fi
 
 # check args and set flags
 check_args $@
