@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+####################
+### K.K. Ashisuto
+### VER=20200701a
+####################
+
 """
 created by :
 Nityananda Gohain
@@ -34,7 +39,7 @@ if getuid() != 0:
 
 yum_ = r'/etc/yum.conf'
 yum_backup = r'./.backup_proxy/yum.txt'
-bash_ = r'/etc/bash.bashrc'
+bash_ = r'/etc/bashrc'
 bash_backup = r'./.backup_proxy/bash.txt'
 env_ = r'/etc/environment'
 env_backup = r'./.backup_proxy/env.txt'
@@ -42,7 +47,7 @@ docker_ = r'/etc/systemd/system/docker.service.d/http-proxy.conf'
 docker_backup = r'./.backup_proxy/docker.txt'
 docker_path = r'/etc/systemd/system/docker.service.d'
 docker_systemd_link = r'/etc/systemd/system/multi-user.target.wants/docker.service'
-restore_script = r'/etc/bash.restore'
+restore_script = r'/etc/bashrc.restore'
 
 # This function directly writes to the yum.conf file
 # Fist deletes the lines containning proxy
@@ -237,15 +242,15 @@ def ref_env():
                     opened_file.write('export {}\n'.format(line))
         opened_file.write('\n')
         opened_file.write('# Re-execute bashrc to reflect the existing settings, if exists.\n')
-        opened_file.write("source /etc/bash.bashrc\n")
+        opened_file.write("source /etc/bashrc\n")
 
 def end_message(flag):
     if not flag:
         print("DONE!")
-        print("Plese run the command '$ source /etc/bash.bashrc'.")
+        print("Plese run the command '$ source /etc/bashrc'.")
     else:
         print("DONE!")
-        print("Plese run the command '$ source /etc/bash.restore'.")
+        print("Plese run the command '$ source /etc/bashrc.restore'.")
 
 
 if __name__ == "__main__":
