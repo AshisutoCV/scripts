@@ -67,7 +67,7 @@ if [ ! -z ${args} ]; then
 fi
 
 # Exec Ericom shield-support.sh
-    . sudo $ES_PATH/shield-support.sh
+    sudo $ES_PATH/shield-support.sh
 
 
 echo '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
