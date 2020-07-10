@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200701a
+### VER=20200710a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -1799,7 +1799,8 @@ if [ ! -z $DOCKER0 ]; then
     if [ ! -d /etc/docker/ ];then
         sudo mkdir -p /etc/docker
     fi
-    sudo tee /etc/docker/daemon.json <<EOF >/dev/null
+    if [[ $offline_flg -eq 1 ]];then
+        sudo tee /etc/docker/daemon.json <<EOF >/dev/null
 {
   "insecure-registries": ["$REGISTRY_OVA"],
   "log-driver": "json-file",
@@ -1810,8 +1811,21 @@ if [ ! -z $DOCKER0 ]; then
   "bip": "${DOCKER0}"
 }
 EOF
+    else
+        sudo tee /etc/docker/daemon.json <<EOF >/dev/null
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "10"
+  },
+  "bip": "${DOCKER0}"
+}
+EOF
+    fi
+
     if [ -x "/usr/bin/docker" ]; then
-        sudo systemctl reload docker
+        sudo systemctl restart docker
     fi
 fi
 
