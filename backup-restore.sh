@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200115a
+### VER=20200716a
 ####################
 
 # 変数
@@ -306,6 +306,11 @@ function exec_ssh2(){
     rm -f tmp_hostname.txt
     exec setsid ssh $SSH_OP $SSH_USER@$SSH_HOST $REMOTE_CMD 2>&1 | tee -a >> $LOGFILE tmp_hostname.txt 
     NODE_HOSTNAME=$(cat tmp_hostname.txt | grep -v "Warning")
+    if [[ $(echo $NODE_HOSTNAME | grep -c 'Permission denied') -ge 1 ]];then
+        rm -f tmp_hostname.txt
+        log_message "!!! ERROR: The ssh password is incorrect. Or ssh is not allowed."
+        fin 1
+    fi
     rm -f tmp_hostname.txt
 }
 
@@ -373,6 +378,9 @@ if [ "$PASSWORD" == "" ];then
 fi
 
 export PASSWORD
+
+# sshパスワードの事前チェック
+exec_ssh2 'localhost' 'hostname'
 
 
 # バックアップの場合、対象ノードをleave する。

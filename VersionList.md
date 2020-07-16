@@ -85,6 +85,7 @@
 * [20191119a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191119a---20191119)
 
 ## backup-restore.sh
+* [20200716a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200716a---20200716)
 * [20200115a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200115a---20200115)
 
 ***
