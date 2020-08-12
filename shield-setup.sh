@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200710a
+### VER=20200812a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -27,8 +27,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -176,6 +176,7 @@ function check_args(){
     uninstall_flg=0
     deleteall_flg=0
     old_flg=0
+    multi_flg=0
     #offline_flg=0
     S_APP_VERSION=""
 
@@ -859,6 +860,44 @@ function create_cluster() {
             failed_to_install "Extract CLUSTERID " "all"
         fi
         log_message "[end] Extract clusterid "
+    fi
+}
+
+function shield_prepare_servers() {
+    echo ""
+    echo "複数台で構成する場合、他のノードに対する事前処理を行います。"
+    echo ""
+    while :
+    do
+        echo ""
+        echo "================================================================================="
+        echo -n '他のノードは存在しますか？（複数台構成としますか？） [Y/n]:'
+            read ANSWERnodes
+            case $ANSWER in
+                "" | "Y" | "y" | "yse" | "Yes" | "YES" )
+                    multi_flg=1
+                    break
+                    ;;
+                "n" | "N" | "no" | "No" | "NO" )
+                    multi_flg=0
+                    break
+                    ;;
+                * )
+                    echo "YまたはNで答えて下さい。"
+                    ;;
+            esac
+    done
+
+    if [[ $multi_flg -eq 1 ]] && [[ $offline_flg -eq 0 ]]; then
+        echo ""
+        echo "====================================================="
+        echo '追加するノードのIPアドレスを半角スペースで区切って入力してください。'
+        echo -n '    [ex:) 192.168.100.22　192.168.100.33]: '
+        read ANSWERips
+
+        sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}
+        echo ""
+        echo "================================================================================="
     fi
 }
 
@@ -1930,6 +1969,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     fi
     pre_create_cluster
     create_cluster
+    shield_prepare_servers
     create_cluster_cmd
     log_message "[end] create cluster"
     step
@@ -1952,8 +1992,10 @@ install_helm
 step
 
 # Wait until Tiller is available
-wait_for_tiller
-step
+if [[ "$BRANCH" == "Rel-20.05" ]]; then
+    wait_for_tiller
+    step
+fi
 
 #add repo for NOT Offline
 if [[ $offline_flg -eq 0 ]]; then
