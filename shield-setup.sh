@@ -873,7 +873,7 @@ function shield_prepare_servers() {
         echo "================================================================================="
         echo -n '他のノードは存在しますか？（複数台構成としますか？） [Y/n]:'
             read ANSWERnodes
-            case $ANSWER in
+            case $ANSWERnodes in
                 "" | "Y" | "y" | "yse" | "Yes" | "YES" )
                     multi_flg=1
                     break
