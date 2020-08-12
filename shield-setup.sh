@@ -1090,7 +1090,8 @@ function create_cluster_cmd() {
                     show_agent_cmd_old
                  else
                     show_agent_cmd
-                 fi                 echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
+                 fi
+                 echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'または、'  | tee -a $CMDFILE
@@ -1099,7 +1100,8 @@ function create_cluster_cmd() {
                     show_agent_cmd_old
                  else
                     show_agent_cmd
-                 fi                 echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
+                 fi
+                 echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  ;;
             "2") DOCKERRUNCMD=$DOCKERRUNCMD2
@@ -1114,7 +1116,8 @@ function create_cluster_cmd() {
                     show_agent_cmd_old
                  else
                     show_agent_cmd
-                 fi                 echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
+                 fi
+                 echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'そして、'  | tee -a $CMDFILE
@@ -1123,7 +1126,8 @@ function create_cluster_cmd() {
                     show_agent_cmd_old
                  else
                     show_agent_cmd
-                 fi                 echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
+                 fi
+                 echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  ;;
             "3") DOCKERRUNCMD=""
@@ -1132,7 +1136,8 @@ function create_cluster_cmd() {
                     show_agent_cmd_old
                  else
                     show_agent_cmd
-                 fi                 echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
+                 fi
+                 echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'または、'  | tee -a $CMDFILE
@@ -1141,7 +1146,8 @@ function create_cluster_cmd() {
                     show_agent_cmd_old
                  else
                     show_agent_cmd
-                 fi                 echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
+                 fi
+                 echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'そして'  | tee -a $CMDFILE
@@ -1150,7 +1156,8 @@ function create_cluster_cmd() {
                     show_agent_cmd_old
                  else
                     show_agent_cmd
-                 fi                 echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
+                 fi
+                 echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                 ;;
         esac
