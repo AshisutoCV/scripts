@@ -41,7 +41,7 @@ fi
 
 deploy_flg=0
 spell_flg=0
-ses_limit_flg=0
+ses_limit_flg=1
 elk_snap_flg=0
 old_flg=0
 

@@ -171,7 +171,7 @@ function check_args(){
     deploy_flg=0
     yamlget_flg=0
     spell_flg=0
-    ses_limit_flg=0
+    ses_limit_flg=1
     elk_snap_flg=0
     uninstall_flg=0
     deleteall_flg=0

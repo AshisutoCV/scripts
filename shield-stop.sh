@@ -82,6 +82,9 @@ function stop_shield() {
         ./delete-shield.sh | tee -a $LOGFILE
     else
         sed -i -e 's/Uninstalling/Stopping/' delete-shield.sh
+        if [[ $((${GITVER:0:2}${GITVER:3:2} - 2007))  -ge 0 ]];then
+            sed -i -e 's/helm delete "shield-${component}"/helm delete --namespace ${component} "shield-${component}"/' delete-shield.sh
+        fi
         if [[ $(grep -c 'keep-namespace' delete-shield.sh) -gt 0 ]];then
             ./delete-shield.sh -s -k 2>>$LOGFILE | tee -a $LOGFILE
         else
