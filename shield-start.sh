@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200607a
+### VER=20200815a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -41,7 +41,7 @@ fi
 
 deploy_flg=0
 spell_flg=0
-ses_limit_flg=0
+ses_limit_flg=1
 elk_snap_flg=0
 old_flg=0
 

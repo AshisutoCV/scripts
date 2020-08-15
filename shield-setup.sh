@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200812a-dev
+### VER=20200815a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -28,7 +28,7 @@ STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -171,7 +171,7 @@ function check_args(){
     deploy_flg=0
     yamlget_flg=0
     spell_flg=0
-    ses_limit_flg=0
+    ses_limit_flg=1
     elk_snap_flg=0
     uninstall_flg=0
     deleteall_flg=0
@@ -873,7 +873,7 @@ function shield_prepare_servers() {
         echo "================================================================================="
         echo -n '他のノードは存在しますか？（複数台構成としますか？） [Y/n]:'
             read ANSWERnodes
-            case $ANSWER in
+            case $ANSWERnodes in
                 "" | "Y" | "y" | "yse" | "Yes" | "YES" )
                     multi_flg=1
                     break
@@ -901,7 +901,7 @@ function shield_prepare_servers() {
     fi
 }
 
-function show_agent_cmd() {
+function show_agent_cmd_old() {
      echo ""  | tee -a $CMDFILE
      if [[ $offline_flg -eq 0 ]];then
          echo "curl -s -O ${SCRIPTS_URL}/clean-rancher-agent.sh"  | tee -a $CMDFILE
@@ -945,6 +945,41 @@ function show_agent_cmd() {
          fi
          echo './install-docker.sh'  | tee -a $CMDFILE
      else
+         echo "scp ericom@${MY_IP}:/etc/docker/daemon.json ."  | tee -a $CMDFILE
+         echo ""  | tee -a $CMDFILE
+         echo "sudo mv -f daemon.json /etc/docker/daemon.json"  | tee -a $CMDFILE
+         echo ""  | tee -a $CMDFILE
+         echo "sudo systemctl restart docker"
+     fi
+     echo ""  | tee -a $CMDFILE
+     echo ""  | tee -a $CMDFILE
+}
+
+function show_agent_cmd() {
+     echo ""  | tee -a $CMDFILE
+     if [[ $offline_flg -eq 0 ]];then
+         echo "curl -s -O ${SCRIPTS_URL}/clean-rancher-agent.sh"  | tee -a $CMDFILE
+     else
+         echo "curl -s -OL ${SCRIPTS_URL_ES}/clean-rancher-agent.sh"  | tee -a $CMDFILE
+     fi
+     echo ""  | tee -a $CMDFILE
+     echo "chmod +x clean-rancher-agent.sh"  | tee -a $CMDFILE
+     echo ""  | tee -a $CMDFILE
+     echo ""  | tee -a $CMDFILE
+     echo "curl -s -OL ${SCRIPTS_URL}/delete-all.sh"  | tee -a $CMDFILE
+     echo ""  | tee -a $CMDFILE
+     echo "chmod +x delete-all.sh"  | tee -a $CMDFILE
+     echo ""  | tee -a $CMDFILE
+     echo ""  | tee -a $CMDFILE
+     if [[ $offline_flg -eq 0 ]]; then
+         if [ ! -z $DOCKER0 ]; then 
+             echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
+             echo ""  | tee -a $CMDFILE
+             echo "sudo systemctl restart docker"
+         fi
+    else
          echo "scp ericom@${MY_IP}:/etc/docker/daemon.json ."  | tee -a $CMDFILE
          echo ""  | tee -a $CMDFILE
          echo "sudo mv -f daemon.json /etc/docker/daemon.json"  | tee -a $CMDFILE
@@ -1041,19 +1076,31 @@ function create_cluster_cmd() {
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'そして、'
                  echo '(【必要に応じて】 下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。)'  | tee -a $CMDFILE
-                 show_agent_cmd
+                 if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
+                    show_agent_cmd_old
+                 else
+                    show_agent_cmd
+                 fi
                  echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'または、'  | tee -a $CMDFILE
                  echo '(【必要に応じて】 下記コマンドを他の Cluster Management単体 ノードで実行してください。)'  | tee -a $CMDFILE
-                 show_agent_cmd
+                 if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
+                    show_agent_cmd_old
+                 else
+                    show_agent_cmd
+                 fi
                  echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'または、'  | tee -a $CMDFILE
                  echo '(【必要に応じて】 下記コマンドを他の Worker単体 ノードで実行してください。)'  | tee -a $CMDFILE
-                 show_agent_cmd
+                 if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
+                    show_agent_cmd_old
+                 else
+                    show_agent_cmd
+                 fi
                  echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  ;;
@@ -1065,31 +1112,51 @@ function create_cluster_cmd() {
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'そして、'  | tee -a $CMDFILE
                  echo '(【必要に応じて】 下記コマンドを他の Cluster Management単体 ノードで実行してください。)'  | tee -a $CMDFILE
-                 show_agent_cmd
+                 if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
+                    show_agent_cmd_old
+                 else
+                    show_agent_cmd
+                 fi
                  echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'そして、'  | tee -a $CMDFILE
                  echo '(【必要に応じて】 下記コマンドを他の Worker単体 ノードで実行してください。)'  | tee -a $CMDFILE
-                 show_agent_cmd
+                 if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
+                    show_agent_cmd_old
+                 else
+                    show_agent_cmd
+                 fi
                  echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  ;;
             "3") DOCKERRUNCMD=""
                  echo '下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。'  | tee -a $CMDFILE
-                 show_agent_cmd
+                 if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
+                    show_agent_cmd_old
+                 else
+                    show_agent_cmd
+                 fi
                  echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'または、'  | tee -a $CMDFILE
                  echo '下記コマンドを Cluster Management単体 ノードで実行してください。'  | tee -a $CMDFILE
-                 show_agent_cmd
+                 if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
+                    show_agent_cmd_old
+                 else
+                    show_agent_cmd
+                 fi
                  echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'そして'  | tee -a $CMDFILE
                  echo '下記コマンドを WORKER単体 ノードで実行してください。'  | tee -a $CMDFILE
-                 show_agent_cmd
+                 if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
+                    show_agent_cmd_old
+                 else
+                    show_agent_cmd
+                 fi
                  echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                 ;;
