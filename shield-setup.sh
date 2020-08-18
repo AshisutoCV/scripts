@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200815a
+### VER=20200818a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -27,8 +27,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -171,7 +171,7 @@ function check_args(){
     deploy_flg=0
     yamlget_flg=0
     spell_flg=0
-    ses_limit_flg=1
+    ses_limit_flg=0
     elk_snap_flg=0
     uninstall_flg=0
     deleteall_flg=0
@@ -517,6 +517,7 @@ function change_dir(){
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
     CHKBRANCH=${BUILD[0]}${BUILD[1]}
+    BUILD=${BUILD[2]}
     if [[ $CHKBRANCH -lt 1911 ]];then
         log_message "pwd: $(pwd)"        
     else
@@ -1638,6 +1639,8 @@ function deploy_shield() {
     if [ $ses_limit_flg -ne 1 ]; then
         sed -i -e 's/^#shield-proxy/shield-proxy/' custom-proxy.yaml
         sed -i -e 's/^#.*checkSessionLimit/  checkSessionLimit/' custom-proxy.yaml
+    else
+        sed -i -e 's/^[^#].*checkSessionLimit/# checkSessionLimit/' custom-proxy.yaml
     fi
     if [ $elk_snap_flg -eq 1 ]; then
         sed -i -e '/#.*enableSnapshots/s/^.*#.*enableSnapshots/    enableSnapshots/g' custom-values-elk.yaml
@@ -1832,8 +1835,10 @@ if [ -f .ra_rancherurl ] || [ -f .ra_clusterid ] || [ -f .ra_apitoken ];then
 fi
 
 export BRANCH
+export BUILD
 echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
+log_message "BUILD: $BUILD"
 
 if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
     old_flg=1
@@ -1845,6 +1850,11 @@ if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BR
         rm -f ${CURRENT_DIR}/shield-setup-online-old.sh
         exit 0
     fi
+fi
+
+if [[ "$BUILD" == "667" ]]; then
+    ses_limit_flg=1
+    log_message "ses_limit_flg: $ses_limit_flg"
 fi
 
 # get&run install-shield-from-container
@@ -1876,10 +1886,14 @@ get_scripts
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         run_rancher
         install_helm
-        wait_for_tiller
+        if [[ "$BRANCH" == "Rel-20.05" ]]; then
+            wait_for_tiller
+        fi
         if [[ $stg_flg -eq 1 ]] || [[ $dev_flg -eq 1 ]]; then
             add_repo
         fi
+        #check_system_project
+        check_system_project
         deploy_shield
         move_to_project
         check_start
