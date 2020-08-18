@@ -1,4 +1,27 @@
 # Changelog
+## [VER=20200818a] - 2020/08/18
+
+### 変更
+#### shield-setup.sh
+* shield-prepare-serversを利用するように実装
+* 2007にあわせ、helm-tillerの待機を削除
+* ses-limit-checkを1(OFF)とする667限定
+* update時のsystempod待ちを追加
+* ses-limitフラグの1／0に連動してyamlの書き換えを実装
+
+#### shield-update.sh
+* ses-limit-checkを1(OFF)とする667限定に合わせた微修正を実施
+
+#### shield-stop.sh
+* helmv3に対応
+
+#### shield-start.sh
+* helmv3に対応
+
+#### prepare-node.sh
+* k8s-centOS対応
+
+--------------------------------------------------------------
 
 ## [VER=20200716a] - 2020/07/16
 
