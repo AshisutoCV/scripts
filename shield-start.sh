@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200607a
+### VER=20200818a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -25,7 +25,7 @@ PARENT_DIR=$(dirname $(cd $(dirname $0); pwd))
 cd $CURRENT_DIR
 
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 BRANCH="master"
@@ -41,7 +41,7 @@ fi
 
 deploy_flg=0
 spell_flg=0
-ses_limit_flg=0
+ses_limit_flg=1
 elk_snap_flg=0
 old_flg=0
 
