@@ -3,6 +3,14 @@
 
 ### 変更
 #### shield-setup.sh
+* shield-prepare-serversを2005対象外とするがtypo ※0820aは利用禁止
+
+--------------------------------------------------------------
+
+## [VER=20200820a] - 2020/08/20
+
+### 変更
+#### shield-setup.sh
 * shield-prepare-serversを2005対象外とする
 
 #### shield-update.sh
