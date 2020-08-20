@@ -2050,7 +2050,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     fi
     pre_create_cluster
     create_cluster
-    if [[ "$BRANCH" != "Rel-20.05" ]]; then
+    if [[ "$BRANCH" != "Rel-20.05" ]] &&  [[ $offline_flg -eq 0 ]]; then
         shield_prepare_servers
     fi
     create_cluster_cmd
