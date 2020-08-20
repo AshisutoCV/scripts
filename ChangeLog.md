@@ -1,4 +1,24 @@
 # Changelog
+## [VER=20200820a] - 2020/08/20
+
+### 変更
+#### shield-setup.sh
+* shield-prepare-serversを2005対象外とする
+
+#### shield-update.sh
+* ses-limit-checkを1(OFF)とする667限定に合わせた微修正を実施
+
+#### shield-stop.sh
+* helmv3に対応
+
+#### shield-start.sh
+* helmv3に対応
+
+#### prepare-node.sh
+* k8s-centOS対応
+
+--------------------------------------------------------------
+
 ## [VER=20200818a] - 2020/08/18
 
 ### 変更
