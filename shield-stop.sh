@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200818a
+### VER=20200821a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -48,6 +48,12 @@ if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BR
     SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/${BRANCH}/Kube/scripts"
 fi
 
+#OS Check
+if [ -f /etc/redhat-release ]; then
+    OS="RHEL"
+else
+    OS="Ubuntu"
+fi
 
 function usage() {
     echo "USAGE: $0"
@@ -178,7 +184,9 @@ function ln_resolv() {
 log_message "###### START ###########################################################"
 
 stop_shield
-ln_resolv
+if [[ $OS == "Ubuntu" ]]; then
+    ln_resolv
+fi
 fin 0
 
 
