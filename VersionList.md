@@ -46,6 +46,7 @@
 * [20200318a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200318a---20200318)
 
 ## shield-stop.sh
+* [20200821a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200821a---20200821)
 * [20200818a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200818a---20200818)
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
 * [20200520a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200520a---20200520)
