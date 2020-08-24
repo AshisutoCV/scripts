@@ -24,6 +24,7 @@
 * [20200527a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200527a---20200527)
 
 ## shield-setup-online-old.sh
+* [20200824a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200824a---20200824)
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
 
 ## shield-update.sh
