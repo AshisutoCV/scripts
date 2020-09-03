@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200818a
+### VER=20200818a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -24,8 +24,8 @@ BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/fix_update1911"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -483,10 +483,10 @@ else
         old_flg=1
         if [[ $offline_flg -eq 0 ]]; then
             log_message "###### for OLD version Re-START ###########################################################"
-            curl -s -o ${ES_PATH}/shield-update-online-old.sh -L ${SCRIPTS_URL}/shield-update-online-old.sh 
-            chmod +x ${ES_PATH}/shield-update-online-old.sh
-            ${ES_PATH}/shield-update-online-old.sh $@ --version $S_APP_VERSION
-            rm -f ${ES_PATH}/shield-update-online-old.sh
+            curl -s -o ${CURRENT_DIR}/shield-update-online-old.sh -L ${SCRIPTS_URL}/shield-update-online-old.sh 
+            chmod +x ${CURRENT_DIR}/shield-update-online-old.sh
+            ${CURRENT_DIR}/shield-update-online-old.sh $@ --version $S_APP_VERSION
+            rm -f ${CURRENT_DIR}/shield-update-online-old.sh
             exit 0
         fi
     fi
