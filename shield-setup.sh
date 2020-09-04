@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200820b
+### VER=20200904a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -819,12 +819,7 @@ function create_cluster() {
                     "kubeController": {
                       "clusterCidr": "'$CLUSTER_CIDR'",
                       "serviceClusterIpRange": "'$SERVICE_CLUSTER_IP_RANGE'",
-                      "type": "kubeControllerService",
-                      "extraArgs": {
-                        "node-monitor-grace-period": "10s",
-                        "node-monitor-period": "10s",
-                        "pod-eviction-timeout": "30s"
-                      }
+                      "type": "kubeControllerService"
                     },
                     "kubelet": {
                       "type": "kubeletService",

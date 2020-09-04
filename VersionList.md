@@ -13,27 +13,21 @@
 * [20200210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200210a---20200210)
 
 ## shield-setup.sh
+* [20200904a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200904a---20200904)
 * [20200820b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200820b---20200820)
 * [20200820a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200820a---20200820)
 * [20200818a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200818a---20200818)
-* [20200710a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200710a---20200710)
-* [20200701a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200701a---20200701)
-* [20200621a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200621a---20200621)
-* [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
-* [20200528a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200528a---20200528)
-* [20200527a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200527a---20200527)
 
 ## shield-setup-online-old.sh
 * [20200824a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200824a---20200824)
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
 
 ## shield-update.sh
+* [20200904a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200904a---20200904)
 * [20200818a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200818a---20200818)
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
 * [20200528a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200528a---20200528)
 * [20200520a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200520a---20200520)
-* [20200313a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200313a---20200313)
-* [20200219a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200219a---20200219)
 
 ## shield-update-online-old.sh
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
