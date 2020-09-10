@@ -2,10 +2,15 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200904a
+### VER=20200910a
 ####################
 
+del_root_flg=0
 export HOME=$(eval echo ~${SUDO_USER})
+if [[ ! -d $HOME/ericomshield/ ]];then
+    del_root_flg=1
+    export HOME=$(cd $(dirname $0); pwd)
+fi
 export KUBECONFIG=${HOME}/.kube/config
 
 ES_PATH="$HOME/ericomshield"
@@ -440,6 +445,26 @@ function exec_update(){
     fi
 }
 
+function change_to_root(){
+    cd $CURRENT_DIR
+    pwd
+    export HOME=$(eval echo ~${USER})
+    if [ $del_root_flg -eq 1 ] ; then
+        rm -rf $HOME/ericomshield
+    fi
+    mv -f ericomshield $HOME/
+    mv -f .kube $HOME/
+    mv -f shield-setup.sh $HOME/
+    mv -f shield-update.sh $HOME/
+    CURRENT_DIR=$(cd $(dirname $HOME/shield-setup.sh); pwd)
+    cd $CURRENT_DIR
+    pwd
+    chown -R root:root ericomshield
+    chown -R root:root .kube
+    chown root:root shield-setup.sh
+    chown root:root shield-update.sh
+}
+
 ######START#####
 log_message "###### START (update)###########################################################"
 
@@ -450,6 +475,12 @@ check_args $@
 export BRANCH
 log_message "BRANCH: $BRANCH"
 
+#OS Check
+if [ -f /etc/redhat-release ]; then
+    OS="RHEL"
+else
+    OS="Ubuntu"
+fi
 
 if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
     select_version
@@ -469,7 +500,14 @@ if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
             exit 0
         fi
     fi
-
+    if [[ "$BRANCH" == "Rel-20.05" ]] && [[ "$OS" == "RHEL" ]]; then
+        if ((EUID != 0)); then
+            echo "CentOSでRel-20.05以降にバージョンアップする場合は root ユーザで実行してください。"
+            echo " Please run it as root　（NOT sudo）"
+            echo "$0 $@"
+            exit
+        fi
+    fi
     # get install scripts
     get_scripts
     check_sysctl    
@@ -516,6 +554,9 @@ else
     rm -f .es_update
     ./shield-stop.sh
     mv_rancher_store
+    if [[ "$BRANCH" == "Rel-20.05" ]] && [[ "$OS" == "RHEL" ]]; then
+        change_to_root
+    fi
     exec_update
 fi
 
