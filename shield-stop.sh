@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200821a
+### VER=20201030a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -91,11 +91,11 @@ function stop_shield() {
         if [[ $((${GITVER:0:2}${GITVER:3:2} - 2007))  -ge 0 ]];then
             sed -i -e 's/helm delete "shield-${component}"/helm delete --namespace ${component} "shield-${component}"/' delete-shield.sh
         fi
-        if [[ $(grep -c 'keep-namespace' delete-shield.sh) -gt 0 ]];then
-            ./delete-shield.sh -s -k 2>>$LOGFILE | tee -a $LOGFILE
-        else
+        #if [[ $(grep -c 'keep-namespace' delete-shield.sh) -gt 0 ]];then
+        #    ./delete-shield.sh -s -k 2>>$LOGFILE | tee -a $LOGFILE
+        #else
             ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
-        fi
+        #fi
     fi
 
     if [[ $offline_flg -eq 0 ]] && [[ $old_flg -eq 1 ]];then
