@@ -80,6 +80,7 @@
 * [20191031b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191031b---20191031)
 
 ## shield-restore.sh
+* [20201112a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201112a---20201112)
 * [20200219a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200219a---20200219)
 * [20191008a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191008a---20191008)
 * [20190920a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20190920a---20190920)
