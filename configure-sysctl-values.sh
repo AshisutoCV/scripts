@@ -36,17 +36,18 @@ EOF
 }
 
 update_sysctl <<EOF
-#Recommended sysctl settings for EricomShield
+# Recommended sysctl settings for EricomShield
 
-#Changes for try increase docker performance.
-#Increase number of open files
+# Changes to increase docker performance
+
+# Increase number of open files
 fs.file-max = 10000000
 
-#Increase max number of processes
+# Increase max number of processes
 kernel.pid_max = 1000000
 
-# Have a larger connection range available
-net.ipv4.ip_local_port_range=1024 65000
+# Have a wider ephemeral port range available
+net.ipv4.ip_local_port_range=32768 65535
 
 # Reuse closed sockets faster
 net.ipv4.tcp_tw_reuse=1
@@ -76,23 +77,20 @@ net.ipv4.conf.all.rp_filter=1
 # is not forwarded to the outside world. Enable forwarding.
 net.ipv4.conf.all.forwarding=1
 
-#vm.min_free_kbytes=65536
-
-# Connection tracking to prevent dropped connections (usually issue on LBs)
-#net.netfilter.nf_conntrack_max=262144
-#net.ipv4.netfilter.ip_conntrack_generic_timeout=120
-#net.netfilter.nf_conntrack_tcp_timeout_established=86400
-
 # ARP cache settings for a highly loaded docker swarm
 net.ipv4.neigh.default.gc_thresh1=8096
 net.ipv4.neigh.default.gc_thresh2=12288
 net.ipv4.neigh.default.gc_thresh3=16384
 
-#increase memory lock for elasticsearch 5
+# Increase operating system limits on mmap counts for Elasticsearch
 vm.max_map_count=262144
 
-# Decrease vm.swappiness
-vm.swappiness=1
+# Disable vm.swappiness
+vm.swappiness=0
+
+# Kubernetes recommended values for VM
+vm.overcommit_memory=1
+vm.panic_on_oom=0
 
 # Fixes the "fluent-bit-config 17 [2019/10/04 12:55:27]
 # [error] [plugins/in_tail/tail_fs.c:169 errno=24] Too many open files" - type
