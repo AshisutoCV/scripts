@@ -18,6 +18,8 @@
 	* 実行ノード上での全てを削除
 * shield-status.sh
     * Workload ステータス確認
+* shield-json-check.sh
+	* 設定比較差分検知スクリプト
 
 ### 公開バージョン定義ファイル
 * k8s-pre-rel-ver.txt
