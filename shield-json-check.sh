@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20201218b
+### VER=20201221a
 ####################
 
 ##### 変数 #####===================================================
@@ -80,9 +80,9 @@ if [ "$RESULT" = "1" ]; then
     echo "$OUTPUT" >> ${ERROR_FILE}
 fi
 
-diff -q ${MASTER_US_TMP} ${MASTER_US_TMP} 2>&1 > /dev/null || {
+diff -q ${MASTER_US_TMP} ${BACKUP_US_TMP} 2>&1 > /dev/null || {
     RESULT=$? 
-    OUTPUT=$(diff ${MASTER_US_TMP} ${MASTER_US_TMP} 2>&1)
+    OUTPUT=$(diff ${MASTER_US_TMP} ${BACKUP_US_TMP} 2>&1)
 }
 
 if [ "$RESULT" = "1" ]; then
