@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20201221a
+### VER=20201222a
 ####################
 
 ##### 変数 #####===================================================
@@ -38,12 +38,12 @@ rm -f ${ERROR_FILE}
 
 CONSUL_BACKUP_POD=$(kubectl get pods --namespace=management | grep consul-backup | awk {'print $1'})
 kubectl exec -t --namespace=management ${CONSUL_BACKUP_POD} python /scripts/backup.py > /dev/null 2>&1
-sleep 3s
+sleep 10s
 
 BACKUP_JSON=${BACKUP_DIR}/$(ls -1t ${BACKUP_DIR} | head -1)
 
-jq -c '.[]  | select(.key | test("license_last_login")| not) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>\""; system("echo "$7" | base64 -d");printf "\"\n" }' > ${MASTER_TMP}
-jq -c '.[]  | select(.key | test("license_last_login")| not) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>\""; system("echo "$7" | base64 -d");printf "\"\n" }' > ${BACKUP_TMP}
+jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not)) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>\""; system("echo "$7" | base64 -d");printf "\"\n" }' > ${MASTER_TMP}
+jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not)) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>\""; system("echo "$7" | base64 -d");printf "\"\n" }' > ${BACKUP_TMP}
 
 jq -c '.[] | select(.key | test("translations/ja-jp")) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $7 }' | sed -e 's/"//g' | base64 -d | sed -e "s/,/,\n/g" > ${MASTER_JP_TMP}
 jq -c '.[] | select(.key | test("translations/ja-jp")) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $7 }' | sed -e 's/"//g' | base64 -d | sed -e "s/,/,\n/g" > ${BACKUP_JP_TMP}

@@ -2,6 +2,7 @@
 ***
 
 ## shield-json-check.sh
+* [20201222a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201222a---20201222)
 * [20201221a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201221a---20201221)
 * [20201218b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201218b---20201218)
 * [20201218a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201218a---20201218)
