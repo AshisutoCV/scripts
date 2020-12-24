@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200818a
+### VER=20201224a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -53,29 +53,12 @@ if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BR
 fi
 
 function usage() {
-    echo "USAGE: $0"
+    echo "USAGE: $0 [-f | --force-start]"
+    echo "    -f       : SYSTEM系Podの起動ステータスを待たずに展開を開始します。"
+
     exit 0
 }
 
-#namespace_flg=0
-for i in `seq 1 ${#}`
-do
-    if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
-        usage
-#    elif [ "$1" == "--namespace" ] || [ "$1" == "-n" ] ; then
-#        shift
-#        $TARGET_NAME="$1"
-#        namespace_flg=1
-    else
-        args="${args} ${1}"
-    fi
-    shift
-done
-
-if [ ! -z ${args} ]; then
-    log_message "${args} は不正な引数です。"
-    fin 1
-fi
 
 function log_message() {
     local PREV_RET_CODE=$?
@@ -287,6 +270,40 @@ function change_resource() {
 
 log_message "###### START ###########################################################"
 
+#check_args
+    #namespace_flg=0
+    force_flg=0
+    args=""
+
+    echo "args: $1" >> $LOGFILE
+
+    for i in `seq 1 ${#}`
+    do
+        if [ "$1" == "--force-start" ] || [ "$1" == "-f" ]; then
+            force_flg=1
+        elif [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+            usage
+#        elif [ "$1" == "--namespace" ] || [ "$1" == "-n" ] ; then
+#            shift
+#            $TARGET_NAME="$1"
+#            namespace_flg=1
+        else
+            args="${args} ${1}"
+        fi
+        shift
+    done
+
+    if [ ! -z ${args} ]; then
+        log_message "${args} は不正な引数です。"
+        usage
+        fin 1
+    fi
+
+    echo "///// args /////////////////////" >> $LOGFILE
+    echo "force_flg: $force_flg" >> $LOGFILE
+    echo "args: $args" >> $LOGFILE
+    echo "////////////////////////////////" >> $LOGFILE
+
 #read ra files
 if [ -f .ra_rancherurl ] && [ -f .ra_clusterid ] && [ -f .ra_apitoken ];then
     RANCHERURL=$(cat .ra_rancherurl)
@@ -312,8 +329,16 @@ fi
 S_APP_VERSION=$(cat .es_version)
 
 log_message "[start] Waiting System Project is Actived"
-while :
+j=0
+
+if [[ $force_flg -eq 1 ]];then
+    n=10
+else
+    n=999
+fi
+while [ $j -ne $n ]
 do
+    j=`expr 1 + $j`
     for i in 1 2 3 
     do
         ./shield-status.sh --system -q
@@ -323,7 +348,16 @@ do
         break
     fi
 done
-log_message "[end] Waiting System Project is Actived"
+echo "n: $n" >> $LOGFILE
+echo "j: $j" >> $LOGFILE
+if [[ $j -eq $n ]];then
+    log_message "[end] Waiting System Project BUT all pods is NOT Actived"
+    if [[ $force_flg -ne 1 ]];then
+        fin 9
+    fi
+else
+    log_message "[end] Waiting System Project is Actived"
+fi
 
 log_message "[start] Start Shield"
 if [[ $old_flg -eq 1 ]];then
