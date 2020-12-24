@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20201030a
+### VER=20201224a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -56,13 +56,11 @@ else
 fi
 
 function usage() {
-    echo "USAGE: $0"
+    echo "USAGE: $0 [ -f | --force-delete-namespace]"
+    echo "    -f       : NAMESPACEを強制削除します。"
+
     exit 0
 }
-
-if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
-    usage
-fi
 
 function stop_shield() {
     log_message "[start] Stop shield"
@@ -91,11 +89,15 @@ function stop_shield() {
         if [[ $((${GITVER:0:2}${GITVER:3:2} - 2007))  -ge 0 ]];then
             sed -i -e 's/helm delete "shield-${component}"/helm delete --namespace ${component} "shield-${component}"/' delete-shield.sh
         fi
-        #if [[ $(grep -c 'keep-namespace' delete-shield.sh) -gt 0 ]];then
-        #    ./delete-shield.sh -s -k 2>>$LOGFILE | tee -a $LOGFILE
-        #else
+        if [[ $(grep -c 'keep-namespace' delete-shield.sh) -gt 0 ]];then
+            if [ $force_flg -eq 0 ]; then
+                ./delete-shield.sh -s -k 2>>$LOGFILE | tee -a $LOGFILE
+            else
+                ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
+            fi
+        else
             ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
-        #fi
+        fi
     fi
 
     if [[ $offline_flg -eq 0 ]] && [[ $old_flg -eq 1 ]];then
@@ -182,6 +184,36 @@ function ln_resolv() {
 }
 
 log_message "###### START ###########################################################"
+
+
+force_flg=0
+args=""
+
+echo "args: $1" >> $LOGFILE
+
+for i in `seq 1 ${#}`
+do
+    if [ "$1" == "--force-delete-namespace" ] || [ "$1" == "-f" ]; then
+        force_flg=1
+    elif [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+        usage
+    else
+        args="${args} ${1}"
+    fi
+    shift
+done
+
+if [ ! -z ${args} ]; then
+    log_message "${args} は不正な引数です。"
+    usage
+    fin 1
+fi
+
+echo "///// args /////////////////////" >> $LOGFILE
+echo "force_flg: $force_flg" >> $LOGFILE
+echo "args: $args" >> $LOGFILE
+echo "////////////////////////////////" >> $LOGFILE
+
 
 stop_shield
 if [[ $OS == "Ubuntu" ]]; then
