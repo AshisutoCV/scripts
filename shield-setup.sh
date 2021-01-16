@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210118a-dev
+### VER=20210116a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -27,8 +27,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 
@@ -112,7 +112,12 @@ function step() {
 function get_shield-prepare-servers() {
     log_message "[start] Overwrite shield-prepaer-servers."
     if [[ -f ${ES_PATH}/shield-prepare-servers ]]; then
-        curl -o ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL}/shield-prepare-servers
+        if [ ! -e ./org/ ];then
+            mkdir org
+        fi
+        mv -f ./shield-prepare-servers ./org/shield-prepare-servers
+        curl -so ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL}/shield-prepare-servers
+        chmod +x ${ES_PATH}/shield-prepare-servers
     else
         log_message "[WARN] ${ES_PATH}/shield-prepare-servers が存在しません。確認してください。"
         fin 1
