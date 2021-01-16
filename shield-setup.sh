@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200904a
+### VER=20210118a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -27,9 +27,10 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
+
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -107,6 +108,16 @@ function step() {
     if [ $STEP_BY_STEP = "true" ]; then
         read -p 'Press Enter to continue...' ENTER
     fi
+}
+function get_shield-prepare-servers() {
+    log_message "[start] Overwrite shield-prepaer-servers."
+    if [[ -f ${ES_PATH}/shield-prepare-servers ]]; then
+        curl -o ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL}/shield-prepare-servers
+    else
+        log_message "[WARN] ${ES_PATH}/shield-prepare-servers が存在しません。確認してください。"
+        fin 1
+    fi
+    log_message "[end] Overwrite shield-prepaer-servers."
 }
 
 function ln_resolv() {
@@ -2046,6 +2057,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     pre_create_cluster
     create_cluster
     if [[ "$BRANCH" != "Rel-20.05" ]] &&  [[ $offline_flg -eq 0 ]]; then
+        if [[ "$BRANCH" == "Rel-20.07" ]] || [[ "$BRANCH" == "Rel-20.10" ]] || [[ "$BRANCH" == "Rel-20.11" ]] || [[ "$BRANCH" == "Rel-20.12" ]];then
+            get_shield-prepare-servers
+        fi
         shield_prepare_servers
     fi
     create_cluster_cmd
