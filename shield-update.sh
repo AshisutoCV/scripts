@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200910a
+### VER=20210127a
 ####################
 
 del_root_flg=0
@@ -552,7 +552,7 @@ else
     fi
     change_dir
     rm -f .es_update
-    ./shield-stop.sh
+    ./shield-stop.sh -f
     mv_rancher_store
     if [[ "$BRANCH" == "Rel-20.05" ]] && [[ "$OS" == "RHEL" ]]; then
         change_to_root
