@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210116a-test
+### VER=20210203a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -1868,6 +1868,16 @@ if [[ "$BUILD" == "667" ]]; then
     log_message "ses_limit_flg: $ses_limit_flg"
 fi
 
+# check ubuntu env
+if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
+    if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
+        sudo add-apt-repository universe
+    fi
+    sudo apt-mark unhold docker-ce | tee -a $LOGFILE
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
+fi
+
 # get&run install-shield-from-container
 if [ ls "$ES_PATH/.*" ] &>/dev/null; then
     echo "Keeping dot files"
@@ -1913,16 +1923,6 @@ get_scripts
 
 # set MY_IP
 choose_network_interface
-
-# check ubuntu env
-if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
-    if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
-        sudo add-apt-repository universe
-    fi
-    sudo apt-mark unhold docker-ce | tee -a $LOGFILE
-    sudo apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
-fi
 
 #docker daemon.json modify
 if [ ! -z $DOCKER0 ]; then 
