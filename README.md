@@ -59,6 +59,10 @@
 	* Votiroライセンス申請用情報取得スクリプト(メーカー製)
 
 ## サポートツール(括弧内のものは本体から自動DLする部品)
+* json-check.sh(json-check.py)
+	* backupのjsonとkvsの値を比較し、差分検知するスクリプト(swarm限定)
+* shield-json-check.sh
+	* backupのjsonとkvsの値を比較し、差分検知するスクリプト(k8s限定)
 * shield-registry-start.sh
 	* ローカルリポジトリサーバ作成スクリプト(Swarm限定)(メーカー製)
 * nocat.sh (nocat.py)
