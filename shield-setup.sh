@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200904a
+### VER=20210203a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -27,9 +27,10 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
+
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -107,6 +108,21 @@ function step() {
     if [ $STEP_BY_STEP = "true" ]; then
         read -p 'Press Enter to continue...' ENTER
     fi
+}
+function get_shield-prepare-servers() {
+    log_message "[start] Overwrite shield-prepaer-servers."
+    if [[ -f ${ES_PATH}/shield-prepare-servers ]]; then
+        if [ ! -e ./org/ ];then
+            mkdir org
+        fi
+        mv -f ./shield-prepare-servers ./org/shield-prepare-servers
+        curl -so ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL}/shield-prepare-servers
+        chmod +x ${ES_PATH}/shield-prepare-servers
+    else
+        log_message "[WARN] ${ES_PATH}/shield-prepare-servers が存在しません。確認してください。"
+        fin 1
+    fi
+    log_message "[end] Overwrite shield-prepaer-servers."
 }
 
 function ln_resolv() {
@@ -1852,6 +1868,16 @@ if [[ "$BUILD" == "667" ]]; then
     log_message "ses_limit_flg: $ses_limit_flg"
 fi
 
+# check ubuntu env
+if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
+    if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
+        sudo add-apt-repository universe
+    fi
+    sudo apt-mark unhold docker-ce | tee -a $LOGFILE
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
+fi
+
 # get&run install-shield-from-container
 if [ ls "$ES_PATH/.*" ] &>/dev/null; then
     echo "Keeping dot files"
@@ -1897,16 +1923,6 @@ get_scripts
 
 # set MY_IP
 choose_network_interface
-
-# check ubuntu env
-if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
-    if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
-        sudo add-apt-repository universe
-    fi
-    sudo apt-mark unhold docker-ce | tee -a $LOGFILE
-    sudo apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
-fi
 
 #docker daemon.json modify
 if [ ! -z $DOCKER0 ]; then 
@@ -2046,6 +2062,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     pre_create_cluster
     create_cluster
     if [[ "$BRANCH" != "Rel-20.05" ]] &&  [[ $offline_flg -eq 0 ]]; then
+        if [[ "$BRANCH" == "Rel-20.07" ]] || [[ "$BRANCH" == "Rel-20.10" ]] || [[ "$BRANCH" == "Rel-20.11" ]] || [[ "$BRANCH" == "Rel-20.12" ]];then
+            get_shield-prepare-servers
+        fi
         shield_prepare_servers
     fi
     create_cluster_cmd
