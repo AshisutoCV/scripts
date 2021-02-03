@@ -34,7 +34,7 @@ fi
 if ! which jq > /dev/null 2>&1 ;then
     echo "installing jq."
     sudo apt-get update -qq
-    sudo apt-get install -y -qq jq >>"$LOGFILE" 2>&1
+    sudo apt-get install -y jq
 fi
 
 if [ ! -f ${MASTER_JSON} ]; then
