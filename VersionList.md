@@ -1,6 +1,9 @@
 # Version List
 ***
 
+## shield-json-check.sh
+* [20210210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210210a---20210210)
+
 ## json-check.sh
 * [20210203b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210203b---20210203)
 
