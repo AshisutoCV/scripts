@@ -59,6 +59,8 @@
 	* Votiroライセンス申請用情報取得スクリプト(メーカー製)
 
 ## サポートツール(括弧内のものは本体から自動DLする部品)
+* shield-cdrver-check.sh
+	* AdminUI表示(shield-statsの内容)と、期待値が異なる場合にエラー出力するスクリプト(k8s限定)
 * json-check.sh(json-check.py)
 	* backupのjsonとkvsの値を比較し、差分検知するスクリプト(swarm限定)
 * shield-json-check.sh
