@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210210a
+### VER=20210212a
 ####################
 
 CURRENT_DIR=$(cd $(dirname $0); pwd)
@@ -30,7 +30,7 @@ var=${var//"<p>"/" | "}
 var=${var//"<blockquote>"/}
 var=${var//"</blockquote>"/}
 #cdr_ver=$(echo "$var" | sed -e 's/^.*active_CDR:.*version: \(.*\) |  cdr_controller.*$/\1/')
-cdr_ver=$(echo "$var" | sed -e 's/^.*active_CDR:\(.*\) |  cdr_controller.*$/\1/')
+cdr_ver=$(echo "$var" | sed -e 's/^.*active_CDR:\(.*\) |  cdr_controller.*$/\1/' | sed -e 's/^\(.*\) |  ad_settings.*$/\1/')
 
 if [[ "$cdr_ver" = "" ]];then
         cdr_ver="N.A."
