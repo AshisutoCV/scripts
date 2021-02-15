@@ -1,7 +1,7 @@
 # Version List
 ***
 
-## shield-json-check.sh
+## shield-cdrver-check.sh
 * [20210212a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210212a---20210212)
 * [20210210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210210a---20210210)
 
@@ -9,6 +9,7 @@
 * [20210203b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210203b---20210203)
 
 ## shield-json-check.sh
+* [20210215a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210215a---20210215)
 * [20201222a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201222a---20201222)
 * [20201221a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201221a---20201221)
 * [20201218b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201218b---20201218)
