@@ -2,11 +2,11 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20201222a
+### VER=20210215a
 ####################
 
 ##### 変数 #####===================================================
-BACKUP_DIR=/home/ericom/ericomshield/consul-backup/backup
+BACKUP_DIR=/home/ericom/ericomshield/config-backup/backup
 JSON_CHECK_DIR=${BACKUP_DIR}/json-check
 MASTER_JSON=${JSON_CHECK_DIR}/master.json
 ERROR_FILE=${JSON_CHECK_DIR}/error.txt
@@ -42,8 +42,8 @@ sleep 10s
 
 BACKUP_JSON=${BACKUP_DIR}/$(ls -1t ${BACKUP_DIR} | head -1)
 
-jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not)) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>\""; system("echo "$7" | base64 -d");printf "\"\n" }' > ${MASTER_TMP}
-jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not)) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>\""; system("echo "$7" | base64 -d");printf "\"\n" }' > ${BACKUP_TMP}
+jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not) and (.key | test("system-test")| not)) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>\""; system("echo "$7" | base64 -d");printf "\"\n" }' > ${MASTER_TMP}
+jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not) and (.key | test("system-test")| not)) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>\""; system("echo "$7" | base64 -d");printf "\"\n" }' > ${BACKUP_TMP}
 
 jq -c '.[] | select(.key | test("translations/ja-jp")) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $7 }' | sed -e 's/"//g' | base64 -d | sed -e "s/,/,\n/g" > ${MASTER_JP_TMP}
 jq -c '.[] | select(.key | test("translations/ja-jp")) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $7 }' | sed -e 's/"//g' | base64 -d | sed -e "s/,/,\n/g" > ${BACKUP_JP_TMP}
