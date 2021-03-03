@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210204a
+### VER=20210303a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -593,6 +593,8 @@ function choose_network_interface() {
     local INTERFACES=($(find /sys/class/net -type l -not -lname '*virtual*' -printf '%f\n'))
     local INTERFACE_ADDRESSES=()
     local OPTIONS=()
+
+    INTERFACES+=($(cat /etc/netplan/00-installer-config.yaml | python3 -c "import yaml; import json; import sys; print(json.dumps(yaml.load(sys.stdin, Loader=yaml.SafeLoader), indent=2))" | jq -r '.network.vlans | keys' | jq -r '.[]'))
 
     if [ -f "/sys/class/net/bonding_masters" ]; then
         INTERFACES+=($(cat /sys/class/net/bonding_masters))
@@ -1921,6 +1923,23 @@ get_scripts
         fin 0
     fi
 
+# install jq
+log_message "[start] install jq"
+if ! which jq > /dev/null 2>&1 ;then
+    if [[ $OS == "Ubuntu" ]]; then
+        sudo apt-get install -y -qq jq >>"$LOGFILE" 2>&1
+    elif [[ $OS == "RHEL" ]]; then
+        sudo yum -y -q install epel-release
+        sudo yum -y -q install jq >>"$LOGFILE" 2>&1
+    fi
+    if ! which jq > /dev/null 2>&1 ;then
+        failed_to_install "install jq" "ver"
+    fi
+else
+    log_message "jq is already installed"
+fi
+log_message "[end] install jq"
+
 # set MY_IP
 choose_network_interface
 
@@ -1968,23 +1987,6 @@ if [[ $offline_flg -eq 0 ]];then
     check_docker
     log_message "[end] install docker"
 fi
-
-# install jq
-log_message "[start] install jq"
-if ! which jq > /dev/null 2>&1 ;then
-    if [[ $OS == "Ubuntu" ]]; then
-        sudo apt-get install -y -qq jq >>"$LOGFILE" 2>&1
-    elif [[ $OS == "RHEL" ]]; then
-        sudo yum -y -q install epel-release
-        sudo yum -y -q install jq >>"$LOGFILE" 2>&1
-    fi
-    if ! which jq > /dev/null 2>&1 ;then
-        failed_to_install "install jq" "ver"
-    fi
-else
-    log_message "jq is already installed"
-fi
-log_message "[end] install jq"
 
 
 ### install-shield-local.sh
