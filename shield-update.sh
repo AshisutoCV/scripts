@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210127a
+### VER=20210329a
 ####################
 
 del_root_flg=0
@@ -148,8 +148,12 @@ function select_version() {
     else
         BUILD=()
         BUILD=(${VERSION_DEPLOYED//./ })
+        GBUILD=${BUILD[0]}.${BUILD[1]}
         BUILD=${BUILD[2]}
         GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+        if [[ $GIT_BRANCH == "Rel-" ]];then
+            GIT_BRANCH="Rel-${GBUILD}"
+        fi
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
@@ -164,8 +168,12 @@ function select_version() {
         else
             BUILD=()
             BUILD=(${S_APP_VERSION//./ })
+            GBUILD=${BUILD[0]}.${BUILD[1]}
             BUILD=${BUILD[2]}
             GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+            if [[ $GIT_BRANCH == "Rel-" ]];then
+                GIT_BRANCH="Rel-${GBUILD}"
+            fi
             echo -n "リリース前先行利用バージョン ${GIT_BRANCH}_Build:${BUILD} をセットアップします。[Y/n]:"
             read ANSWER
             echo "pre-use: $S_APP_VERSION" >> $LOGFILE
@@ -206,8 +214,12 @@ function select_version() {
                 if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
                     BUILD=()
                     BUILD=(${S_APP_VERSION//./ })
+                    GBUILD=${BUILD[0]}.${BUILD[1]}
                     BUILD=${BUILD[2]}
                     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
+                    if [[ $GIT_BRANCH == "Rel-" ]];then
+                        GIT_BRANCH="Rel-${GBUILD}"
+                    fi
                     echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
                 else
                     echo "$m: Rel-$S_APP_VERSION" 
@@ -240,13 +252,19 @@ function select_version() {
     fi
 
     if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev"  ]; then
-        BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
         BUILD=()
         BUILD=(${S_APP_VERSION//./ })
         CHKBRANCH=${BUILD[0]}${BUILD[1]}
+        GBUILD=${BUILD[0]}.${BUILD[1]}
         BUILD=${BUILD[2]}
+        BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
+        if [[ $BRANCH == "Rel-" ]];then
+            BRANCH="Rel-${GBUILD}"
+        fi
         GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
-
+        if [[ $GIT_BRANCH == "Rel-" ]];then
+            GIT_BRANCH="Rel-${GBUILD}"
+        fi
         log_message "${GIT_BRANCH}_Build:${BUILD} をセットアップします。"
     else
         log_message "Rel-${S_APP_VERSION} をセットアップします。"
