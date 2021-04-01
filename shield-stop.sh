@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20201224a
+### VER=20210401a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -94,6 +94,12 @@ function stop_shield() {
                 ./delete-shield.sh -s -k 2>>$LOGFILE | tee -a $LOGFILE
             else
                 ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
+            fi
+        elif [[ $(grep -c 'delete-namespace' delete-shield.sh) -gt 0 ]];then
+            if [ $force_flg -eq 0 ]; then
+                ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
+            else
+                ./delete-shield.sh -s -d 2>>$LOGFILE | tee -a $LOGFILE
             fi
         else
             ./delete-shield.sh -s 2>>$LOGFILE | tee -a $LOGFILE
