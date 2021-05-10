@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210314a
+### VER=20210510a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -1819,6 +1819,18 @@ function install_helm() {
     fi
 }
 
+function mod_cluster_dns() {
+    if [ ! -z $CLUSTER_DNS_SERVER ]; then 
+        echo  "[dev] START mod cluster dns server address from es_custom_env" >> $LOGFILE
+        TARGET1="${ES_PATH}/shield/charts/common/charts/shield-common/values.yaml"
+        TARGET2="${ES_PATH}/shield/charts/common/values.yaml"
+        sed -i -e "s/^clusterDNSsvc:.*$/clusterDNSsvc: \"${CLUSTER_DNS_SERVER}\"/" ${TARGET1}
+        sed -i -e "s/^clusterDNSsvc:.*$/clusterDNSsvc: \"${CLUSTER_DNS_SERVER}\"/" ${TARGET2}
+    else
+        echo  "[dev] NO mod cluster dns server address" >> $LOGFILE
+    fi
+}
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -1922,6 +1934,9 @@ fi
 
 # get operation scripts
 get_scripts
+
+# mod cluster dns address from es_custom_env
+mod_cluster_dns
 
 #update or deploy NOT offline
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
