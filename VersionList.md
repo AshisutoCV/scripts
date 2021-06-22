@@ -6,10 +6,12 @@
 * [20210210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210210a---20210210)
 
 ## json-check.sh
+* [20210622a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210622a---20210622)
 * [20210618a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210618a---20210618)
 * [20210203b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210203b---20210203)
 
 ## shield-json-check.sh
+* [20210622a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210622a---20210622)
 * [20210618a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210618a---20210618)
 * [20210215a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210215a---20210215)
 * [20201222a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201222a---20201222)
