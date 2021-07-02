@@ -1831,6 +1831,23 @@ function mod_cluster_dns() {
     fi
 }
 
+
+function check_prepare() {
+
+    if [ -f ${ES_PATH}/.es_prepare ] ;then
+        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+        if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
+            log_message "[info] shield-prepare was executed."
+        else
+            log_message "[error] バージョンにあったshield-prepare-serversが未実行のようです。"
+            failed_to_install "check_prepare"
+        fi
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+        failed_to_install "check_prepare"
+    fi
+}
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -1851,6 +1868,8 @@ flg_check
 
 # version select
 select_version
+
+check_prepare
 
 #read custom_env file
 if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
