@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210329a
+### VER=20210329a-dev
 ####################
 
 del_root_flg=0
@@ -29,8 +29,8 @@ BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -130,16 +130,16 @@ function check_args(){
 }
 
 function select_version() {
-    ### attention common setup&update ###
+    ### attention common setup&update&shield-prepare-servers ###
     CHART_VERSION=""
     VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ; then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     fi
-    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
+    if [[ "$VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
+    elif [[ "$VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
@@ -157,6 +157,18 @@ function select_version() {
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
+
+
+    if [ -f "$ES_PATH/.es_prepare" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+    echo "=================================================================="
+        failed_to_install "select_version check_prepare"
+    fi
+    echo "=================================================================="
+
+
 
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
@@ -272,6 +284,7 @@ function select_version() {
 
     change_dir
 
+    #shield-prepare-serversはコメントアウト
     echo ${S_APP_VERSION} > .es_version
 }
 
@@ -483,6 +496,23 @@ function change_to_root(){
     chown root:root shield-update.sh
 }
 
+function check_prepare() {
+
+    if [ -f ${ES_PATH}/.es_prepare ] ;then
+        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+        if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
+            log_message "[info] shield-prepare was executed."
+        else
+            log_message "[error] バージョンにあったshield-prepare-serversが未実行のようです。"
+            failed_to_install "check_prepare"
+        fi
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+        failed_to_install "check_prepare"
+    fi
+}
+
+
 ######START#####
 log_message "###### START (update)###########################################################"
 
@@ -502,7 +532,8 @@ fi
 
 if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
     select_version
-
+    check_prepare
+    
     export BRANCH
     echo $BRANCH > .es_branch
     log_message "BRANCH: $BRANCH"

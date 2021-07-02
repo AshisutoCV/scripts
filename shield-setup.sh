@@ -109,21 +109,6 @@ function step() {
         read -p 'Press Enter to continue...' ENTER
     fi
 }
-function get_shield-prepare-servers() {
-    log_message "[start] Overwrite shield-prepaer-servers."
-    if [[ -f ${ES_PATH}/shield-prepare-servers ]]; then
-        if [ ! -e ./org/ ];then
-            mkdir org
-        fi
-        mv -f ./shield-prepare-servers ./org/shield-prepare-servers
-        curl -so ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL}/shield-prepare-servers
-        chmod +x ${ES_PATH}/shield-prepare-servers
-    else
-        log_message "[WARN] ${ES_PATH}/shield-prepare-servers が存在しません。確認してください。"
-        fin 1
-    fi
-    log_message "[end] Overwrite shield-prepaer-servers."
-}
 
 function ln_resolv() {
     log_message "[start] Changing to the symbolic link."
@@ -402,16 +387,16 @@ function delete_all() {
 }
 
 function select_version() {
-    ### attention common setup&update ###
+    ### attention common setup&update&shield-prepare-servers ###
     CHART_VERSION=""
     VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ; then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     fi
-    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
+    if [[ "$VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
+    elif [[ "$VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
@@ -429,6 +414,18 @@ function select_version() {
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
+
+
+    if [ -f "$ES_PATH/.es_prepare" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+    echo "=================================================================="
+        failed_to_install "select_version check_prepare"
+    fi
+    echo "=================================================================="
+
+
 
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
@@ -544,6 +541,7 @@ function select_version() {
 
     change_dir
 
+    #shield-prepare-serversはコメントアウト
     echo ${S_APP_VERSION} > .es_version
 }
 
@@ -892,44 +890,6 @@ function create_cluster() {
             failed_to_install "Extract CLUSTERID " "all"
         fi
         log_message "[end] Extract clusterid "
-    fi
-}
-
-function shield_prepare_servers() {
-    echo ""
-    echo "複数台で構成する場合、他のノードに対する事前処理を行います。"
-    echo ""
-    while :
-    do
-        echo ""
-        echo "================================================================================="
-        echo -n '他のノードは存在しますか？（複数台構成としますか？） [Y/n]:'
-            read ANSWERnodes
-            case $ANSWERnodes in
-                "" | "Y" | "y" | "yse" | "Yes" | "YES" )
-                    multi_flg=1
-                    break
-                    ;;
-                "n" | "N" | "no" | "No" | "NO" )
-                    multi_flg=0
-                    break
-                    ;;
-                * )
-                    echo "YまたはNで答えて下さい。"
-                    ;;
-            esac
-    done
-
-    if [[ $multi_flg -eq 1 ]] && [[ $offline_flg -eq 0 ]]; then
-        echo ""
-        echo "====================================================="
-        echo '追加するノードのIPアドレスを半角スペースで区切って入力してください。'
-        echo -n '    [ex:) 192.168.100.22　192.168.100.33]: '
-        read ANSWERips
-
-        sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}
-        echo ""
-        echo "================================================================================="
     fi
 }
 
@@ -2115,12 +2075,6 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     fi
     pre_create_cluster
     create_cluster
-    if [[ "$BRANCH" != "Rel-20.05" ]] &&  [[ $offline_flg -eq 0 ]]; then
-        if [[ "$BRANCH" == "Rel-20.07" ]] || [[ "$BRANCH" == "Rel-20.10" ]] || [[ "$BRANCH" == "Rel-20.11" ]] || [[ "$BRANCH" == "Rel-20.12" ]];then
-            get_shield-prepare-servers
-        fi
-        shield_prepare_servers
-    fi
     create_cluster_cmd
     log_message "[end] create cluster"
     step

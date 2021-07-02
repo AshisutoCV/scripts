@@ -178,16 +178,16 @@ function check_args(){
 }
 
 function select_version() {
-    ### attention common setup&update ###
+    ### attention common setup&update&shield-prepare-servers ###
     CHART_VERSION=""
     VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ; then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     fi
-    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
+    if [[ "$VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
+    elif [[ "$VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
@@ -205,6 +205,18 @@ function select_version() {
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
+
+
+    if [ -f "$ES_PATH/.es_prepare" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+    echo "=================================================================="
+        failed_to_install "select_version check_prepare"
+    fi
+    echo "=================================================================="
+
+
 
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
@@ -320,7 +332,8 @@ function select_version() {
 
     change_dir
 
-    echo ${S_APP_VERSION} > .es_version
+    #shield-prepare-serversはコメントアウト
+    #echo ${S_APP_VERSION} > .es_version
 }
 
 function change_dir(){
