@@ -388,4 +388,5 @@ get_shield-prepare-servers
 shield_prepare_servers
 
 #All fin
+echo ${S_APP_VERSION} > .es_prepare
 fin 0
