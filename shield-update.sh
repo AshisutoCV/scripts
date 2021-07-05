@@ -521,11 +521,11 @@ function check_prepare() {
             log_message "[info] shield-prepare was executed."
         else
             log_message "[error] バージョンにあったshield-prepare-serversが未実行のようです。"
-            failed_to_install "check_prepare"
+            exit 9
         fi
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
-        failed_to_install "check_prepare"
+        exit 9
     fi
 }
 
