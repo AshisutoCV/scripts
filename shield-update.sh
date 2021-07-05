@@ -496,6 +496,23 @@ function change_to_root(){
     chown root:root shield-update.sh
 }
 
+function pre_check_prepare() {
+
+    if [ -f ${ES_PATH}/.es_prepare ] ;then
+        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+        S_APP_VERSION=$(cat ${ES_PATH}/.es_version)
+        if [[ ${PREPARE_VER} != $S_APP_VERSION ]]; then
+            log_message "[info] shield-prepare was executed."
+        else
+            log_message "[error] アップデート前にshield-prepare-serversが未実行のようです。"
+            failed_to_install "pre_check_prepare"
+        fi
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+        failed_to_install "pre_check_prepare"
+    fi
+}
+
 function check_prepare() {
 
     if [ -f ${ES_PATH}/.es_prepare ] ;then
@@ -531,6 +548,7 @@ else
 fi
 
 if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
+    pre_check_prepare
     select_version
     check_prepare
     
