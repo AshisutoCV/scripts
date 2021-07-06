@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210629a-dev
+### VER=20210706a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -420,8 +420,10 @@ function select_version() {
         log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
-    echo "=================================================================="
+        echo "=================================================================="
         failed_to_install "select_version check_prepare"
+        #for shield-prepare-servers.sh
+        #log_message "[info] shield-prepare-serversは未実行。"
     fi
     echo "=================================================================="
 
