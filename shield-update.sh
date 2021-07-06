@@ -577,7 +577,7 @@ if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
     fi
     # get install scripts
     get_scripts
-    check_sysctl    
+    #check_sysctl    
     #get_yaml
     echo ${S_APP_VERSION} > .es_update
     cd ${CURRENT_DIR}
