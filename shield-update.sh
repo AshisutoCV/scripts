@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210706a-dev
+### VER=20210707a-dev
 ####################
 
 del_root_flg=0
@@ -285,9 +285,6 @@ function select_version() {
     fi
 
     change_dir
-
-    #shield-prepare-serversはコメントアウト
-    echo ${S_APP_VERSION} > .es_version
 }
 
 function change_dir(){
@@ -614,6 +611,7 @@ else
                     ;;
             esac
     done
+
     if [ -f .es_update ];then
         S_APP_VERSION=$(cat .es_update)
     else

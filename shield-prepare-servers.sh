@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210706a-dev
+### VER=20210707a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -333,9 +333,6 @@ function select_version() {
     fi
 
     change_dir
-
-    #shield-prepare-serversはコメントアウト
-    #echo ${S_APP_VERSION} > .es_version
 }
 
 function change_dir(){

@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210706a-dev
+### VER=20210707a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -542,9 +542,6 @@ function select_version() {
     fi
 
     change_dir
-
-    #shield-prepare-serversはコメントアウト
-    echo ${S_APP_VERSION} > .es_version
 }
 
 function change_dir(){
@@ -1863,6 +1860,7 @@ export BUILD
 echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
+echo ${S_APP_VERSION} > .es_version
 
 if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
     old_flg=1
