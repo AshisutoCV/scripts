@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210707a-dev
+### VER=20210708a-dev
 ####################
 
 del_root_flg=0
@@ -499,8 +499,8 @@ function pre_check_prepare() {
 
     if [ -f ${ES_PATH}/.es_prepare ] ;then
         PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
-        S_APP_VERSION=$(cat ${ES_PATH}/.es_version)
-        if [[ ${PREPARE_VER} != $S_APP_VERSION ]]; then
+        NOW_S_APP_VERSION=$(cat ${ES_PATH}/.es_version)
+        if [[ ${PREPARE_VER} != $NOW_S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
             log_message "[error] アップデート前にshield-prepare-serversが未実行のようです。"
