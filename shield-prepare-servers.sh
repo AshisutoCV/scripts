@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210707a-dev
+### VER=20210713a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -19,6 +19,7 @@ if [ ! -e ${ES_PATH}/logs/ ];then
 fi
 
 LOGFILE="${ES_PATH}/logs/install.log"
+TEMP_ANSIBLE="/tmp/shield-prepare-servers.log"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 ERICOMPASS2="Ericom98765$"
@@ -352,6 +353,9 @@ function change_dir(){
 }
 
 function shield_prepare_servers() {
+    if [ -f $TEMP_ANSIBLE ];then
+        rm -f $TEMP_ANSIBLE
+    fi
     echo ""
     echo "他のノードに対する事前処理を行います。"
     echo "自ノードに対する事前処理は別のノードから実行してください。"
@@ -361,12 +365,21 @@ function shield_prepare_servers() {
     echo -n '    [ex:) 192.168.100.22　192.168.100.33]: '
     read ANSWERips
 
-    sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}
+    sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
     echo ""
     echo "================================================================================="
 }
 
 
+function check_shield_prepare_servers() {
+    FAILED_CNT=$(grep failed= $TEMP_ANSIBLE | grep -cv failed=0)
+    UNREACH_CNT=$(grep unreachable= $TEMP_ANSIBLE | grep -cv unreachable=0)
+    if [[ $FAILED_CNT -ne 0 ]] || [[ $UNREACH_CNT -ne 0 ]]; then
+        log_message "実行時にエラーが検出されました。ノード間通信・prepare-servers.shによる事前準備、パスワードを確認の上、再度実行を試みてください。"
+        log_message "パスワードに間違いがない状態でエラーが継続する場合には、サポートに問い合わせをしてください。"
+        failed_to_install "check shield-prepare-servers"
+    fi
+}
 
 ######START#####
 log_message "###### START ###########################################################"
@@ -398,6 +411,7 @@ log_message "BUILD: $BUILD"
 get_shield-prepare-servers
 
 shield_prepare_servers
+check_shield_prepare_servers
 
 #All fin
 echo ${S_APP_VERSION} > .es_prepare
