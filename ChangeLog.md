@@ -1,5 +1,20 @@
 # Changelog
 
+## [VER=20210721a] - 2021/07/21
+
+### 新規
+#### shield-prepare-servers.sh
+* バージョンにあったshield-prepare-serversを実行するために作成
+* docker-ceがインストールされている場合は削除する
+
+### 変更
+#### shield-setup.sh
+#### shield-update.sh
+* 20210721a shield-prepare-servers.shとの処理連携対応
+
+--------------------------------------------------------------
+
+
 ## [VER=20210622a] - 2021/06/22
 
 ### 変更
