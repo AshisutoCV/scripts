@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210329a
+### VER=20210721a
 ####################
 
 del_root_flg=0
@@ -130,16 +130,16 @@ function check_args(){
 }
 
 function select_version() {
-    ### attention common setup&update ###
+    ### attention common setup&update&shield-prepare-servers ###
     CHART_VERSION=""
     VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ; then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     fi
-    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
+    if [[ "$VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
+    elif [[ "$VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
@@ -157,6 +157,20 @@ function select_version() {
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
+
+
+    if [ -f "$ES_PATH/.es_prepare" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+        echo "=================================================================="
+        failed_to_install "select_version check_prepare"
+        #for shield-prepare-servers.sh
+        #log_message "[info] shield-prepare-serversは未実行。"
+    fi
+    echo "=================================================================="
+
+
 
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
@@ -271,8 +285,6 @@ function select_version() {
     fi
 
     change_dir
-
-    echo ${S_APP_VERSION} > .es_version
 }
 
 function change_dir(){
@@ -483,6 +495,40 @@ function change_to_root(){
     chown root:root shield-update.sh
 }
 
+function pre_check_prepare() {
+
+    if [ -f ${ES_PATH}/.es_prepare ] ;then
+        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+        NOW_S_APP_VERSION=$(cat ${ES_PATH}/.es_version)
+        if [[ ${PREPARE_VER} != $NOW_S_APP_VERSION ]]; then
+            log_message "[info] shield-prepare was executed."
+        else
+            log_message "[error] アップデート前にshield-prepare-serversが未実行のようです。"
+            exit 9 
+        fi
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+        exit 9
+    fi
+}
+
+function check_prepare() {
+
+    if [ -f ${ES_PATH}/.es_prepare ] ;then
+        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+        if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
+            log_message "[info] shield-prepare was executed."
+        else
+            log_message "[error] バージョンにあったshield-prepare-serversが未実行のようです。"
+            exit 9
+        fi
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+        exit 9
+    fi
+}
+
+
 ######START#####
 log_message "###### START (update)###########################################################"
 
@@ -501,8 +547,10 @@ else
 fi
 
 if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
+    pre_check_prepare
     select_version
-
+    check_prepare
+    
     export BRANCH
     echo $BRANCH > .es_branch
     log_message "BRANCH: $BRANCH"
@@ -528,7 +576,7 @@ if [ ! -f .es_update ] && [ ! -f ${ES_PATH}/.es_update ]; then
     fi
     # get install scripts
     get_scripts
-    check_sysctl    
+    #check_sysctl    
     #get_yaml
     echo ${S_APP_VERSION} > .es_update
     cd ${CURRENT_DIR}
@@ -563,6 +611,7 @@ else
                     ;;
             esac
     done
+
     if [ -f .es_update ];then
         S_APP_VERSION=$(cat .es_update)
     else

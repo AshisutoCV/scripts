@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210510a
+### VER=20210721a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -108,21 +108,6 @@ function step() {
     if [ $STEP_BY_STEP = "true" ]; then
         read -p 'Press Enter to continue...' ENTER
     fi
-}
-function get_shield-prepare-servers() {
-    log_message "[start] Overwrite shield-prepaer-servers."
-    if [[ -f ${ES_PATH}/shield-prepare-servers ]]; then
-        if [ ! -e ./org/ ];then
-            mkdir org
-        fi
-        mv -f ./shield-prepare-servers ./org/shield-prepare-servers
-        curl -so ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL}/shield-prepare-servers
-        chmod +x ${ES_PATH}/shield-prepare-servers
-    else
-        log_message "[WARN] ${ES_PATH}/shield-prepare-servers が存在しません。確認してください。"
-        fin 1
-    fi
-    log_message "[end] Overwrite shield-prepaer-servers."
 }
 
 function ln_resolv() {
@@ -402,16 +387,16 @@ function delete_all() {
 }
 
 function select_version() {
-    ### attention common setup&update ###
+    ### attention common setup&update&shield-prepare-servers ###
     CHART_VERSION=""
     VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ; then
         VERSION_DEPLOYED=$(helm list shield-management 2>&1 | awk '{ print $10 }')
         VERSION_DEPLOYED=$(echo ${VERSION_DEPLOYED} | sed -e "s/[\r\n]\+//g")
     fi
-    if [[ "VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
+    if [[ "$VERSION_DEPLOYED" == "" ]] && [ -f ".es_version" ] ; then
         VERSION_DEPLOYED=$(cat .es_version)
-    elif [[ "VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
+    elif [[ "$VERSION_DEPLOYED" == "" ]] && [ -f "$ES_PATH/.es_version" ] ; then
         VERSION_DEPLOYED=$(cat $ES_PATH/.es_version)
     fi
     echo "=================================================================="
@@ -429,6 +414,20 @@ function select_version() {
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
+
+
+    if [ -f "$ES_PATH/.es_prepare" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+        echo "=================================================================="
+        failed_to_install "select_version check_prepare"
+        #for shield-prepare-servers.sh
+        #log_message "[info] shield-prepare-serversは未実行。"
+    fi
+    echo "=================================================================="
+
+
 
     if [ $pre_flg -eq 1 ] ; then
         CHART_VERSION=$(curl -sL ${SCRIPTS_URL}/k8s-pre-rel-ver.txt | awk '{ print $1 }')
@@ -543,8 +542,6 @@ function select_version() {
     fi
 
     change_dir
-
-    echo ${S_APP_VERSION} > .es_version
 }
 
 function change_dir(){
@@ -892,44 +889,6 @@ function create_cluster() {
             failed_to_install "Extract CLUSTERID " "all"
         fi
         log_message "[end] Extract clusterid "
-    fi
-}
-
-function shield_prepare_servers() {
-    echo ""
-    echo "複数台で構成する場合、他のノードに対する事前処理を行います。"
-    echo ""
-    while :
-    do
-        echo ""
-        echo "================================================================================="
-        echo -n '他のノードは存在しますか？（複数台構成としますか？） [Y/n]:'
-            read ANSWERnodes
-            case $ANSWERnodes in
-                "" | "Y" | "y" | "yse" | "Yes" | "YES" )
-                    multi_flg=1
-                    break
-                    ;;
-                "n" | "N" | "no" | "No" | "NO" )
-                    multi_flg=0
-                    break
-                    ;;
-                * )
-                    echo "YまたはNで答えて下さい。"
-                    ;;
-            esac
-    done
-
-    if [[ $multi_flg -eq 1 ]] && [[ $offline_flg -eq 0 ]]; then
-        echo ""
-        echo "====================================================="
-        echo '追加するノードのIPアドレスを半角スペースで区切って入力してください。'
-        echo -n '    [ex:) 192.168.100.22　192.168.100.33]: '
-        read ANSWERips
-
-        sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}
-        echo ""
-        echo "================================================================================="
     fi
 }
 
@@ -1831,6 +1790,23 @@ function mod_cluster_dns() {
     fi
 }
 
+
+function check_prepare() {
+
+    if [ -f ${ES_PATH}/.es_prepare ] ;then
+        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+        if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
+            log_message "[info] shield-prepare was executed."
+        else
+            log_message "[error] バージョンにあったshield-prepare-serversが未実行のようです。"
+            failed_to_install "check_prepare"
+        fi
+    else
+        log_message "[error] shield-prepare-serversが未実行のようです。"
+        failed_to_install "check_prepare"
+    fi
+}
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -1851,6 +1827,8 @@ flg_check
 
 # version select
 select_version
+
+check_prepare
 
 #read custom_env file
 if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
@@ -1882,6 +1860,7 @@ export BUILD
 echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
+echo ${S_APP_VERSION} > .es_version
 
 if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
     old_flg=1
@@ -2096,12 +2075,6 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     fi
     pre_create_cluster
     create_cluster
-    if [[ "$BRANCH" != "Rel-20.05" ]] &&  [[ $offline_flg -eq 0 ]]; then
-        if [[ "$BRANCH" == "Rel-20.07" ]] || [[ "$BRANCH" == "Rel-20.10" ]] || [[ "$BRANCH" == "Rel-20.11" ]] || [[ "$BRANCH" == "Rel-20.12" ]];then
-            get_shield-prepare-servers
-        fi
-        shield_prepare_servers
-    fi
     create_cluster_cmd
     log_message "[end] create cluster"
     step
