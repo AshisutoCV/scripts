@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210713a-dev
+### VER=20210721a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -27,8 +27,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
@@ -74,6 +74,40 @@ function failed_to_install() {
 function fin() {
     log_message "###### DONE ############################################################"
     exit $1
+}
+
+function check_docker-ce() {
+    if [[ $(dpkg -l | grep docker-ce | grep -c ii) -gt 0 ]];then
+        log_message "[WARN] docker-ce が検出されました。"
+        echo ""
+        echo "docker-ce をアンインストールして、再起動します。"
+        echo "再起動後、改めてshield-prepare-servers.shを実行してください。"
+        echo ""
+        while :
+        do
+            echo ""
+            echo -n 'よろしいですか？ [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+        done
+
+        sudo systemctl disable --now docker
+        sudo apt-get -y remove docker-ce* containerd.io
+        sudo systemctl unmask docker.service
+        sudo systemctl unmask docker.socket
+        sudo reboot
+    else
+        log_message "[info] No docker-ce."
+    fi
 }
 
 function get_shield-prepare-servers() {
@@ -407,6 +441,7 @@ echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
 
+check_docker-ce
 # get operation scripts
 get_shield-prepare-servers
 
