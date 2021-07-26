@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210721a
+### VER=20210726a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -2000,6 +2000,11 @@ if [[ $offline_flg -eq 0 ]];then
     log_message "[end] install docker"
 fi
 
+if [[ "$BUILD" == "758" ]]; then
+    log_message "[start] fix for 21.04.758"
+    sed -i -e 's/es-system-configuration:210426-Rel-21.04/es-system-configuration:210715-Rel-21.04"/g' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.04.758"
+fi
 
 ### install-shield-local.sh
 ##################      MAIN: EVERYTHING STARTS HERE: ##########################
