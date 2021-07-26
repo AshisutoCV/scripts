@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210726a
+### VER=20210726b
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -2002,7 +2002,7 @@ fi
 
 if [[ "$BUILD" == "758" ]]; then
     log_message "[start] fix for 21.04.758"
-    sed -i -e 's/es-system-configuration:210426-Rel-21.04/es-system-configuration:210715-Rel-21.04"/g' ${ES_PATH}/shield/values.yaml
+    sed -i -e 's/es-system-configuration:210426-Rel-21.04/es-system-configuration:210715-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.04.758"
 fi
 
