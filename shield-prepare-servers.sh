@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210721a
+### VER=20210727a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -32,6 +32,12 @@ SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
+
+# SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
+if [ -n "$PASSWORD" ]; then
+  cat <<< "$PASSWORD"
+  exit 0
+fi
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -76,16 +82,44 @@ function fin() {
     exit $1
 }
 
-function check_docker-ce() {
-    if [[ $(dpkg -l | grep docker-ce | grep -c ii) -gt 0 ]];then
+function check_docker-ce(){
+    echo -n 'ericomユーザのパスワードを入力: '
+    read ERI_PASS
+    # SSH_ASKPASSで呼ばれるシェルにパスワードを渡すために変数を設定
+    export PASSWORD=$ERI_PASS
+
+    # SSH_ASKPASSに本ファイルを設定
+    export SSH_ASKPASS=$0
+    # ダミーを設定
+    export DISPLAY=dummy:0
+
+    TARGET_LIST=""
+    while [ "$1" != "" ]
+    do
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 dpkg -l | grep docker-ce | grep -ce ii -ce hi)
+        if [[ $? -ne 0 ]];then
+            log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
+            fin 1
+        fi
+
+        if [[ $RET_NUM -gt 0 ]];then
+            TARGET_LIST+=" $1"
+        fi
+        shift
+    done
+
+    if [[ $(dpkg -l | grep docker-ce | grep -ce ii -ce hi) -gt 0 ]];then
+        TARGET_LIST+=" 127.0.0.1"
+    fi
+
+    echo "TARGET_LIST: ${TARGET_LIST}"
+    if [[ ${TARGET_LIST} != "" ]];then
         log_message "[WARN] docker-ce が検出されました。"
-        echo ""
         echo "docker-ce をアンインストールして、再起動します。"
         echo "再起動後、改めてshield-prepare-servers.shを実行してください。"
         echo ""
         while :
         do
-            echo ""
             echo -n 'よろしいですか？ [y/N]:'
                 read ANSWER
                 case $ANSWER in
@@ -100,13 +134,42 @@ function check_docker-ce() {
                 esac
         done
 
-        sudo systemctl disable --now docker
-        sudo apt-get -y remove docker-ce* containerd.io
-        sudo systemctl unmask docker.service
-        sudo systemctl unmask docker.socket
-        sudo reboot
-    else
-        log_message "[info] No docker-ce."
+        for t in $TARGET_LIST ;
+        do
+            echo "T: $t"
+            log_message "[start] delete docker-ce on $t"
+            if [[ "$t" == "127.0.0.1" ]];then
+                RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket")
+            else
+                RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket && sudo reboot")
+            fi
+            echo $RET
+        done
+        log_message "[end] delete docker-ce"
+        echo "対象ノードが全て再起動されたことを確認し、改めてshield-prepare-servers.shを実行してください。"
+        if [[ `echo "$TARGET_LIST" | grep '127.0.0.1'` ]] ; then 
+            echo ""
+            echo "このノードも再起動します。"
+            echo ""
+            while :
+            do
+                echo ""
+                echo -n 'よろしいですか？ [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+            done
+            sudo reboot
+        fi
+        fin 1
     fi
 }
 
@@ -399,6 +462,8 @@ function shield_prepare_servers() {
     echo -n '    [ex:) 192.168.100.22　192.168.100.33]: '
     read ANSWERips
 
+    check_docker-ce ${ANSWERips}
+
     sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
     echo ""
     echo "================================================================================="
@@ -441,7 +506,7 @@ echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
 
-check_docker-ce
+
 # get operation scripts
 get_shield-prepare-servers
 
