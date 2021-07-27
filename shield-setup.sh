@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210726b
+### VER=20210727a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -1917,6 +1917,12 @@ get_scripts
 # mod cluster dns address from es_custom_env
 mod_cluster_dns
 
+if [[ "$BUILD" == "758" ]]; then
+    log_message "[start] fix for 21.04.758"
+    sed -i -e 's/es-system-configuration:210426-Rel-21.04/es-system-configuration:210715-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.04.758"
+fi
+
 #update or deploy NOT offline
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         run_rancher
@@ -1998,12 +2004,6 @@ if [[ $offline_flg -eq 0 ]];then
     chmod +x install-docker.sh
     check_docker
     log_message "[end] install docker"
-fi
-
-if [[ "$BUILD" == "758" ]]; then
-    log_message "[start] fix for 21.04.758"
-    sed -i -e 's/es-system-configuration:210426-Rel-21.04/es-system-configuration:210715-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
-    log_message "[end] fix for 21.04.758"
 fi
 
 ### install-shield-local.sh
