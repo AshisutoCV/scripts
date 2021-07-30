@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210730b
+### VER=20210730c
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -97,12 +97,13 @@ function check_docker-ce(){
     TARGET_LIST=""
     while [ "$1" != "" ]
     do
-        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 dpkg -l | grep docker-ce | grep -ce ii -ce hi)
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `dpkg -l | grep docker-ce | grep -ce ii -ce hi`')
         if [[ $? -ne 0 ]];then
             log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
             fin 1
         fi
 
+        RET_NUM=`echo ${RET_NUM} | sed -e "s/[\r\n]\+//g"`
         if [[ $RET_NUM -gt 0 ]];then
             TARGET_LIST+=" $1"
         fi
