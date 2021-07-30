@@ -468,6 +468,9 @@ function shield_prepare_servers() {
 
     check_docker-ce ${ANSWERips}
 
+
+    echo ""
+    echo "[Info] このノードから shield-preapre-servers を実行します。"
     sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
     echo ""
     echo "================================================================================="
