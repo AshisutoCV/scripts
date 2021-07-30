@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210730a
+### VER=20210730b
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -83,6 +83,7 @@ function fin() {
 }
 
 function check_docker-ce(){
+    cd $CURRENT_DIR
     echo -n 'ericomユーザのパスワードを入力: '
     read ERI_PASS
     # SSH_ASKPASSで呼ばれるシェルにパスワードを渡すために変数を設定
@@ -146,6 +147,7 @@ function check_docker-ce(){
             echo $RET
         done
         log_message "[end] delete docker-ce"
+        change_dir
         echo "対象ノードが全て再起動されたことを確認し、改めてshield-prepare-servers.shを実行してください。"
         if [[ `echo "$TARGET_LIST" | grep '127.0.0.1'` ]] ; then 
             echo ""
