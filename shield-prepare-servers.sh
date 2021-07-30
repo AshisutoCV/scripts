@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210730c
+### VER=20210730d
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -114,8 +114,8 @@ function check_docker-ce(){
         TARGET_LIST+=" 127.0.0.1"
     fi
 
-    echo "TARGET_LIST: ${TARGET_LIST}"
     if [[ ${TARGET_LIST} != "" ]];then
+        echo "TARGET_LIST: ${TARGET_LIST}"
         log_message "[WARN] docker-ce が検出されました。"
         echo "docker-ce をアンインストールして、再起動します。"
         echo "再起動後、改めてshield-prepare-servers.shを実行してください。"
@@ -174,6 +174,7 @@ function check_docker-ce(){
         fi
         fin 1
     fi
+    change_dir
 }
 
 function get_shield-prepare-servers() {
