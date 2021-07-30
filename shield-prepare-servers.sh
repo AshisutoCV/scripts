@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210727a
+### VER=20210730a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -181,7 +181,8 @@ function get_shield-prepare-servers() {
         fi
         mv -f ./shield-prepare-servers ./org/shield-prepare-servers
     fi
-    curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/master/shield-prepare-servers
+    #curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/master/shield-prepare-servers
+    curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
     chmod +x ${ES_PATH}/shield-prepare-servers
     log_message "[end] Geting shield-prepaer-servers."
 }
