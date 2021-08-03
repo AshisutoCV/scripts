@@ -2,13 +2,13 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210730d
+### VER=20210803a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
 
-ES_PATH="$HOME/ericomshield"
+export ES_PATH="$HOME/ericomshield"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
@@ -19,7 +19,7 @@ if [ ! -e ${ES_PATH}/logs/ ];then
 fi
 
 LOGFILE="${ES_PATH}/logs/install.log"
-TEMP_ANSIBLE="/tmp/shield-prepare-servers.log"
+export TEMP_ANSIBLE="/tmp/shield-prepare-servers.log"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 ERICOMPASS2="Ericom98765$"
@@ -454,6 +454,34 @@ function change_dir(){
     fi
 }
 
+function check_shield_prepare_servers() {
+    FAILED_CNT=$(grep failed= $TEMP_ANSIBLE | grep -cv failed=0)
+    UNREACH_CNT=$(grep unreachable= $TEMP_ANSIBLE | grep -cv unreachable=0)
+    if [[ $FAILED_CNT -ne 0 ]] || [[ $UNREACH_CNT -ne 0 ]]; then
+        log_message "実行時にエラーが検出されました。ノード間通信・prepare-servers.shによる事前準備、パスワードを確認の上、再度実行を試みてください。"
+        log_message "パスワードに間違いがない状態でエラーが継続する場合には、サポートに問い合わせをしてください。"
+        failed_to_install "check shield-prepare-servers"
+    fi
+}
+
+function all_fin(){
+    cd $CURRENT_DIR
+
+    TARGET_LIST=""
+    while [ "$1" != "" ]
+    do
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo mkdir -p ${ES_PATH} && sudo echo ${S_APP_VERSION} | sudo tee ${ES_PATH}/.es_prepare && sudo chown -R ${USER}:${USER} ${ES_PATH}")
+        if [[ $? -ne 0 ]];then
+            log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
+            fin 1
+        fi
+        shift
+    done
+    #change_dir
+    #echo ${S_APP_VERSION} > ${ES_PATH}/.es_prepare
+    fin 0
+}
+
 function shield_prepare_servers() {
     if [ -f $TEMP_ANSIBLE ];then
         rm -f $TEMP_ANSIBLE
@@ -472,20 +500,41 @@ function shield_prepare_servers() {
 
     echo ""
     echo "[Info] このノードから shield-preapre-servers を実行します。"
-    sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
+   
+    expect -c "
+        set timeout 600
+        spawn sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}
+        expect \"password:\"
+        send \"${PASSWORD}\n\"
+        expect \"password]:\"
+        send \"\n\"
+        expect \"PLAY RECAP\"
+        expect \"==========\"
+        exit 0
+    " | tee $TEMP_ANSIBLE
+    #sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
     echo ""
     echo "================================================================================="
+
+    check_shield_prepare_servers
+    all_fin ${ANSWERips}
 }
 
-
-function check_shield_prepare_servers() {
-    FAILED_CNT=$(grep failed= $TEMP_ANSIBLE | grep -cv failed=0)
-    UNREACH_CNT=$(grep unreachable= $TEMP_ANSIBLE | grep -cv unreachable=0)
-    if [[ $FAILED_CNT -ne 0 ]] || [[ $UNREACH_CNT -ne 0 ]]; then
-        log_message "実行時にエラーが検出されました。ノード間通信・prepare-servers.shによる事前準備、パスワードを確認の上、再度実行を試みてください。"
-        log_message "パスワードに間違いがない状態でエラーが継続する場合には、サポートに問い合わせをしてください。"
-        failed_to_install "check shield-prepare-servers"
+function install_expect(){
+    # install_expect
+    log_message "[start] install expect"
+    if ! which expect > /dev/null 2>&1 ;then
+        if [[ $OS == "Ubuntu" ]]; then
+            sudo apt-get install -y -qq expect >>"$LOGFILE" 2>&1
+        fi
+        if ! which expect > /dev/null 2>&1 ;then
+            failed_to_install "install expect"
+        fi
+    else
+        log_message "expect is already installed"
     fi
+    log_message "[end] install expect"
+
 }
 
 ######START#####
@@ -517,10 +566,5 @@ log_message "BUILD: $BUILD"
 
 # get operation scripts
 get_shield-prepare-servers
-
+install_expect
 shield_prepare_servers
-check_shield_prepare_servers
-
-#All fin
-echo ${S_APP_VERSION} > .es_prepare
-fin 0
