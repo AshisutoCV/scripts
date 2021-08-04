@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210803a
+### VER=20210804a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -85,7 +85,7 @@ function fin() {
 function check_docker-ce(){
     cd $CURRENT_DIR
     echo -n 'ericomユーザのパスワードを入力: '
-    read ERI_PASS
+    read -s ERI_PASS
     # SSH_ASKPASSで呼ばれるシェルにパスワードを渡すために変数を設定
     export PASSWORD=$ERI_PASS
 
@@ -500,10 +500,15 @@ function shield_prepare_servers() {
 
     echo ""
     echo "[Info] このノードから shield-preapre-servers を実行します。"
-   
+    echo ""
+    echo -n "[sudo] password for ${USER}: "
+    read -s SUDO_PASSWORD
+    echo ""
     expect -c "
         set timeout 600
-        spawn sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}
+        spawn /bin/bash -c \"sudo -k -p sudo-pass: ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}\"
+        expect \"sudo-pass:\"
+        send \"${SUDO_PASSWORD}\n\"
         expect \"password:\"
         send \"${PASSWORD}\n\"
         expect \"password]:\"
