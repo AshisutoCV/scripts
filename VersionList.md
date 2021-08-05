@@ -2,6 +2,7 @@
 ***
 
 ## shield-prepare-servers.sh
+* [20210804a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210804a---20210804)
 * [20210721a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210721a---20210721)
 
 ## shield-cdrver-check.sh
