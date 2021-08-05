@@ -2,13 +2,13 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210721a
+### VER=20210804a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
 
-ES_PATH="$HOME/ericomshield"
+export ES_PATH="$HOME/ericomshield"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
@@ -19,7 +19,7 @@ if [ ! -e ${ES_PATH}/logs/ ];then
 fi
 
 LOGFILE="${ES_PATH}/logs/install.log"
-TEMP_ANSIBLE="/tmp/shield-prepare-servers.log"
+export TEMP_ANSIBLE="/tmp/shield-prepare-servers.log"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 ERICOMPASS2="Ericom98765$"
@@ -32,6 +32,12 @@ SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
+
+# SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
+if [ -n "$PASSWORD" ]; then
+  cat <<< "$PASSWORD"
+  exit 0
+fi
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -76,16 +82,46 @@ function fin() {
     exit $1
 }
 
-function check_docker-ce() {
-    if [[ $(dpkg -l | grep docker-ce | grep -c ii) -gt 0 ]];then
+function check_docker-ce(){
+    cd $CURRENT_DIR
+    echo -n 'ericomユーザのパスワードを入力: '
+    read -s ERI_PASS
+    # SSH_ASKPASSで呼ばれるシェルにパスワードを渡すために変数を設定
+    export PASSWORD=$ERI_PASS
+
+    # SSH_ASKPASSに本ファイルを設定
+    export SSH_ASKPASS=$0
+    # ダミーを設定
+    export DISPLAY=dummy:0
+
+    TARGET_LIST=""
+    while [ "$1" != "" ]
+    do
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `dpkg -l | grep docker-ce | grep -ce ii -ce hi`')
+        if [[ $? -ne 0 ]];then
+            log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
+            fin 1
+        fi
+
+        RET_NUM=`echo ${RET_NUM} | sed -e "s/[\r\n]\+//g"`
+        if [[ $RET_NUM -gt 0 ]];then
+            TARGET_LIST+=" $1"
+        fi
+        shift
+    done
+
+    if [[ $(dpkg -l | grep docker-ce | grep -ce ii -ce hi) -gt 0 ]];then
+        TARGET_LIST+=" 127.0.0.1"
+    fi
+
+    if [[ ${TARGET_LIST} != "" ]];then
+        echo "TARGET_LIST: ${TARGET_LIST}"
         log_message "[WARN] docker-ce が検出されました。"
-        echo ""
         echo "docker-ce をアンインストールして、再起動します。"
         echo "再起動後、改めてshield-prepare-servers.shを実行してください。"
         echo ""
         while :
         do
-            echo ""
             echo -n 'よろしいですか？ [y/N]:'
                 read ANSWER
                 case $ANSWER in
@@ -100,14 +136,45 @@ function check_docker-ce() {
                 esac
         done
 
-        sudo systemctl disable --now docker
-        sudo apt-get -y remove docker-ce* containerd.io
-        sudo systemctl unmask docker.service
-        sudo systemctl unmask docker.socket
-        sudo reboot
-    else
-        log_message "[info] No docker-ce."
+        for t in $TARGET_LIST ;
+        do
+            echo "T: $t"
+            log_message "[start] delete docker-ce on $t"
+            if [[ "$t" == "127.0.0.1" ]];then
+                RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket")
+            else
+                RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket && sudo reboot")
+            fi
+            echo $RET
+        done
+        log_message "[end] delete docker-ce"
+        change_dir
+        echo "対象ノードが全て再起動されたことを確認し、改めてshield-prepare-servers.shを実行してください。"
+        if [[ `echo "$TARGET_LIST" | grep '127.0.0.1'` ]] ; then 
+            echo ""
+            echo "このノードも再起動します。"
+            echo ""
+            while :
+            do
+                echo ""
+                echo -n 'よろしいですか？ [y/N]:'
+                read ANSWER
+                case $ANSWER in
+                    "Y" | "y" | "yse" | "Yes" | "YES" )
+                        break
+                        ;;
+                    "" | "n" | "N" | "no" | "No" | "NO" )
+                        ;;
+                    * )
+                        echo "YまたはNで答えて下さい。"
+                        ;;
+                esac
+            done
+            sudo reboot
+        fi
+        fin 1
     fi
+    change_dir
 }
 
 function get_shield-prepare-servers() {
@@ -118,7 +185,8 @@ function get_shield-prepare-servers() {
         fi
         mv -f ./shield-prepare-servers ./org/shield-prepare-servers
     fi
-    curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/master/shield-prepare-servers
+    #curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/master/shield-prepare-servers
+    curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
     chmod +x ${ES_PATH}/shield-prepare-servers
     log_message "[end] Geting shield-prepaer-servers."
 }
@@ -386,6 +454,34 @@ function change_dir(){
     fi
 }
 
+function check_shield_prepare_servers() {
+    FAILED_CNT=$(grep failed= $TEMP_ANSIBLE | grep -cv failed=0)
+    UNREACH_CNT=$(grep unreachable= $TEMP_ANSIBLE | grep -cv unreachable=0)
+    if [[ $FAILED_CNT -ne 0 ]] || [[ $UNREACH_CNT -ne 0 ]]; then
+        log_message "実行時にエラーが検出されました。ノード間通信・prepare-servers.shによる事前準備、パスワードを確認の上、再度実行を試みてください。"
+        log_message "パスワードに間違いがない状態でエラーが継続する場合には、サポートに問い合わせをしてください。"
+        failed_to_install "check shield-prepare-servers"
+    fi
+}
+
+function all_fin(){
+    cd $CURRENT_DIR
+
+    TARGET_LIST=""
+    while [ "$1" != "" ]
+    do
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo mkdir -p ${ES_PATH} && sudo echo ${S_APP_VERSION} | sudo tee ${ES_PATH}/.es_prepare && sudo chown -R ${USER}:${USER} ${ES_PATH}")
+        if [[ $? -ne 0 ]];then
+            log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
+            fin 1
+        fi
+        shift
+    done
+    #change_dir
+    #echo ${S_APP_VERSION} > ${ES_PATH}/.es_prepare
+    fin 0
+}
+
 function shield_prepare_servers() {
     if [ -f $TEMP_ANSIBLE ];then
         rm -f $TEMP_ANSIBLE
@@ -399,20 +495,51 @@ function shield_prepare_servers() {
     echo -n '    [ex:) 192.168.100.22　192.168.100.33]: '
     read ANSWERips
 
-    sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
+    check_docker-ce ${ANSWERips}
+
+
+    echo ""
+    echo "[Info] このノードから shield-preapre-servers を実行します。"
+    echo ""
+    echo -n "[sudo] password for ${USER}: "
+    read -s SUDO_PASSWORD
+    echo ""
+    expect -c "
+        set timeout 600
+        spawn /bin/bash -c \"sudo -k -p sudo-pass: ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}\"
+        expect \"sudo-pass:\"
+        send \"${SUDO_PASSWORD}\n\"
+        expect \"password:\"
+        send \"${PASSWORD}\n\"
+        expect \"password]:\"
+        send \"\n\"
+        expect \"PLAY RECAP\"
+        expect \"==========\"
+        exit 0
+    " | tee $TEMP_ANSIBLE
+    #sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
     echo ""
     echo "================================================================================="
+
+    check_shield_prepare_servers
+    all_fin ${ANSWERips}
 }
 
-
-function check_shield_prepare_servers() {
-    FAILED_CNT=$(grep failed= $TEMP_ANSIBLE | grep -cv failed=0)
-    UNREACH_CNT=$(grep unreachable= $TEMP_ANSIBLE | grep -cv unreachable=0)
-    if [[ $FAILED_CNT -ne 0 ]] || [[ $UNREACH_CNT -ne 0 ]]; then
-        log_message "実行時にエラーが検出されました。ノード間通信・prepare-servers.shによる事前準備、パスワードを確認の上、再度実行を試みてください。"
-        log_message "パスワードに間違いがない状態でエラーが継続する場合には、サポートに問い合わせをしてください。"
-        failed_to_install "check shield-prepare-servers"
+function install_expect(){
+    # install_expect
+    log_message "[start] install expect"
+    if ! which expect > /dev/null 2>&1 ;then
+        if [[ $OS == "Ubuntu" ]]; then
+            sudo apt-get install -y -qq expect >>"$LOGFILE" 2>&1
+        fi
+        if ! which expect > /dev/null 2>&1 ;then
+            failed_to_install "install expect"
+        fi
+    else
+        log_message "expect is already installed"
     fi
+    log_message "[end] install expect"
+
 }
 
 ######START#####
@@ -441,13 +568,8 @@ echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
 
-check_docker-ce
+
 # get operation scripts
 get_shield-prepare-servers
-
+install_expect
 shield_prepare_servers
-check_shield_prepare_servers
-
-#All fin
-echo ${S_APP_VERSION} > .es_prepare
-fin 0
