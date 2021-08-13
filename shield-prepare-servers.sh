@@ -2,16 +2,28 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210804a
+### VER=20210813a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
 
 export ES_PATH="$HOME/ericomshield"
+export ES_PATH_ERICOM="/home/ericom/ericomshield"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
+if [ ! -e $ES_PATH_ERICOM ];then
+    sudo mkdir -p $ES_PATH_ERICOM
+    sudo chown -R ericom:ericom $ES_PATH_ERICOM
+fi
+if [[ -f ${ES_PATH}/.es_prepare ]];then
+    log_message "[info] Move .es_prepare flg file..."
+    sudo mv -f ${ES_PATH}/.es_prepare ${ES_PATH_ERICOM}/.es_prepare
+    sudo chown ericom:ericom ${ES_PATH_ERICOM}/.es_prepare
+fi
+ES_PREPARE="$ES_PATH_ERICOM/.es_prepare"    
+
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs
     mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
@@ -84,8 +96,22 @@ function fin() {
 
 function check_docker-ce(){
     cd $CURRENT_DIR
-    echo -n 'ericomユーザのパスワードを入力: '
-    read -s ERI_PASS
+    while :
+    do
+        echo -n 'ericomユーザのパスワードを入力: '
+        read -s ERI_PASS
+        echo ""
+        echo -n '(確認)再度入力してください。: '
+        read -s ERI_PASS2
+        echo ""
+        if [[ "${ERI_PASS}" != "${ERI_PASS2}" ]];then
+            echo "入力が一致しません。再度入力してください。"
+        else
+            break
+        fi
+    done
+
+
     # SSH_ASKPASSで呼ばれるシェルにパスワードを渡すために変数を設定
     export PASSWORD=$ERI_PASS
 
@@ -178,7 +204,7 @@ function check_docker-ce(){
 }
 
 function get_shield-prepare-servers() {
-    log_message "[start] Geting shield-prepaer-servers."
+    log_message "[start] Getting shield-prepaer-servers."
     if [[ -f ${ES_PATH}/shield-prepare-servers ]]; then
         if [ ! -e ./org/ ];then
             mkdir org
@@ -188,7 +214,7 @@ function get_shield-prepare-servers() {
     #curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/master/shield-prepare-servers
     curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
     chmod +x ${ES_PATH}/shield-prepare-servers
-    log_message "[end] Geting shield-prepaer-servers."
+    log_message "[end] Getting shield-prepaer-servers."
 }
 
 function ln_resolv() {
@@ -310,8 +336,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PATH/.es_prepare" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    if [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
     else
         #log_message "[error] shield-prepare-serversが未実行のようです。"
         #echo "=================================================================="
@@ -470,15 +496,15 @@ function all_fin(){
     TARGET_LIST=""
     while [ "$1" != "" ]
     do
-        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo mkdir -p ${ES_PATH} && sudo echo ${S_APP_VERSION} | sudo tee ${ES_PATH}/.es_prepare && sudo chown -R ${USER}:${USER} ${ES_PATH}")
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo mkdir -p ${ES_PATH_ERICOM} && sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown -R ericom:ericom ${ES_PATH_ERICOM}")
         if [[ $? -ne 0 ]];then
+            log_message "[ERROR] RET_NUM: ${RET_NUM}"
             log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
             fin 1
         fi
+        log_message "[info] fin: $1"
         shift
     done
-    #change_dir
-    #echo ${S_APP_VERSION} > ${ES_PATH}/.es_prepare
     fin 0
 }
 
@@ -500,9 +526,33 @@ function shield_prepare_servers() {
 
     echo ""
     echo "[Info] このノードから shield-preapre-servers を実行します。"
-    echo ""
-    echo -n "[sudo] password for ${USER}: "
-    read -s SUDO_PASSWORD
+    while :
+    do
+        echo ""
+        echo -n "[sudo] password for ${USER}: "
+        read -s SUDO_PASSWORD
+        echo ""
+        expect -c "
+            spawn -noecho /bin/bash -c \"sudo -k -p checking pwd >/dev/null\"
+            expect \"checking\"
+            send \"${SUDO_PASSWORD}\n\"
+            expect \"Sorry,\" {
+                expect \"checking\"            
+                send \"${SUDO_PASSWORD}\n\"
+                expect \"checking\"            
+                send \"${SUDO_PASSWORD}\n\"
+                expect \"incorrect\"
+                send \"パスワードが違います。再度入力してください。\"
+                exit 0
+            } 
+            log_file sudo-ok.tmp
+            exit 0
+        "
+        if [[ -f sudo-ok.tmp ]];then
+            break
+        fi
+    done
+
     echo ""
     expect -c "
         set timeout 600
@@ -570,6 +620,6 @@ log_message "BUILD: $BUILD"
 
 
 # get operation scripts
-get_shield-prepare-servers
+#get_shield-prepare-servers
 install_expect
 shield_prepare_servers

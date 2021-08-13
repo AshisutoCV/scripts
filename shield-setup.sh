@@ -2,16 +2,29 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210727a
+### VER=20210813a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
 
-ES_PATH="$HOME/ericomshield"
+
+export ES_PATH="$HOME/ericomshield"
+export ES_PATH_ERICOM="/home/ericom/ericomshield"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
+if [ ! -e $ES_PATH_ERICOM ];then
+    sudo mkdir -p $ES_PATH_ERICOM
+    sudo chown -R ericom:ericom $ES_PATH_ERICOM
+fi
+if [[ -f ${ES_PATH}/.es_prepare ]];then
+    log_message "[info] Move .es_prepare flg file..."
+    sudo mv -f ${ES_PATH}/.es_prepare ${ES_PATH_ERICOM}/.es_prepare
+    sudo chown ericom:ericom ${ES_PATH_ERICOM}/.es_prepare
+fi
+ES_PREPARE="$ES_PATH_ERICOM/.es_prepare" 
+
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs
     mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
@@ -416,8 +429,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PATH/.es_prepare" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    if [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
         echo "=================================================================="
@@ -1793,8 +1806,8 @@ function mod_cluster_dns() {
 
 function check_prepare() {
 
-    if [ -f ${ES_PATH}/.es_prepare ] ;then
-        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+    if [ -f ${ES_PREPARE} ] ;then
+        PREPARE_VER=$(cat ${ES_PREPARE})
         if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
