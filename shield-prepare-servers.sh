@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210813a
+### VER=20210817a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -580,6 +580,7 @@ function install_expect(){
     log_message "[start] install expect"
     if ! which expect > /dev/null 2>&1 ;then
         if [[ $OS == "Ubuntu" ]]; then
+            sudo apt-get update -qq
             sudo apt-get install -y -qq expect >>"$LOGFILE" 2>&1
         fi
         if ! which expect > /dev/null 2>&1 ;then
@@ -620,6 +621,6 @@ log_message "BUILD: $BUILD"
 
 
 # get operation scripts
-#get_shield-prepare-servers
+get_shield-prepare-servers
 install_expect
 shield_prepare_servers
