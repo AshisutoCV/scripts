@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210721a
+### VER=20210819a
 ####################
 
 del_root_flg=0
@@ -13,15 +13,31 @@ if [[ ! -d $HOME/ericomshield/ ]];then
 fi
 export KUBECONFIG=${HOME}/.kube/config
 
-ES_PATH="$HOME/ericomshield"
+export ES_PATH="$HOME/ericomshield"
+export ES_PATH_ERICOM="/home/ericom/ericomshield"
+export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
+
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs
     mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
     mv -f ./logs/ ${ES_PATH}/logs/ > /dev/null 2>&1
 fi
+
+if [[ -f ${ES_PATH}/.es_prepare ]];then
+    log_message "[info] Move .es_prepare flg file..."
+    sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
+    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+fi
+if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+    log_message "[info] Move .es_prepare flg file..."
+    sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
+    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+fi
+
+ES_PREPARE="$ERICOM_PATH/.es_prepare"  
 
 elk_snap_flg=0
 LOGFILE="${ES_PATH}/logs/update.log"
@@ -159,8 +175,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PATH/.es_prepare" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    if [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
         echo "=================================================================="
@@ -514,8 +530,8 @@ function pre_check_prepare() {
 
 function check_prepare() {
 
-    if [ -f ${ES_PATH}/.es_prepare ] ;then
-        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+    if [ -f $ES_PREPARE ] ;then
+        PREPARE_VER=$(cat $ES_PREPARE)
         if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
