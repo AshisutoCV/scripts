@@ -2,28 +2,31 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210813a
+### VER=20210819a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
 
-
 export ES_PATH="$HOME/ericomshield"
 export ES_PATH_ERICOM="/home/ericom/ericomshield"
+export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
-if [ ! -e $ES_PATH_ERICOM ];then
-    sudo mkdir -p $ES_PATH_ERICOM
-    sudo chown -R ericom:ericom $ES_PATH_ERICOM
-fi
+
 if [[ -f ${ES_PATH}/.es_prepare ]];then
     log_message "[info] Move .es_prepare flg file..."
-    sudo mv -f ${ES_PATH}/.es_prepare ${ES_PATH_ERICOM}/.es_prepare
-    sudo chown ericom:ericom ${ES_PATH_ERICOM}/.es_prepare
+    sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
+    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
 fi
-ES_PREPARE="$ES_PATH_ERICOM/.es_prepare" 
+if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+    log_message "[info] Move .es_prepare flg file..."
+    sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
+    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+fi
+
+ES_PREPARE="$ERICOM_PATH/.es_prepare"    
 
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs

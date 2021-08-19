@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210817a
+### VER=20210819a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -10,19 +10,23 @@ export KUBECONFIG=${HOME}/.kube/config
 
 export ES_PATH="$HOME/ericomshield"
 export ES_PATH_ERICOM="/home/ericom/ericomshield"
+export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
-if [ ! -e $ES_PATH_ERICOM ];then
-    sudo mkdir -p $ES_PATH_ERICOM
-    sudo chown -R ericom:ericom $ES_PATH_ERICOM
-fi
+
 if [[ -f ${ES_PATH}/.es_prepare ]];then
     log_message "[info] Move .es_prepare flg file..."
-    sudo mv -f ${ES_PATH}/.es_prepare ${ES_PATH_ERICOM}/.es_prepare
-    sudo chown ericom:ericom ${ES_PATH_ERICOM}/.es_prepare
+    sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
+    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
 fi
-ES_PREPARE="$ES_PATH_ERICOM/.es_prepare"    
+if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+    log_message "[info] Move .es_prepare flg file..."
+    sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
+    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+fi
+
+ES_PREPARE="$ERICOM_PATH/.es_prepare"    
 
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs
@@ -509,6 +513,7 @@ function all_fin(){
 }
 
 function shield_prepare_servers() {
+
     if [ -f $TEMP_ANSIBLE ];then
         rm -f $TEMP_ANSIBLE
     fi
@@ -523,7 +528,10 @@ function shield_prepare_servers() {
 
     check_docker-ce ${ANSWERips}
 
-
+    rm -f sudo-ok.tmp
+    cd $CURRENT_DIR
+    rm -f sudo-ok.tmp
+    
     echo ""
     echo "[Info] このノードから shield-preapre-servers を実行します。"
     while :
@@ -533,18 +541,21 @@ function shield_prepare_servers() {
         read -s SUDO_PASSWORD
         echo ""
         expect -c "
-            spawn -noecho /bin/bash -c \"sudo -k -p checking pwd >/dev/null\"
-            expect \"checking\"
-            send \"${SUDO_PASSWORD}\n\"
+            spawn -noecho /bin/bash -c \"sudo -k -p checking pwd\"
+            expect \"checking\" {
+                send \"${SUDO_PASSWORD}\n\"
+            } \"/home/\" {
+                send \"\n\"
+            }
             expect \"Sorry,\" {
                 expect \"checking\"            
                 send \"${SUDO_PASSWORD}\n\"
                 expect \"checking\"            
                 send \"${SUDO_PASSWORD}\n\"
                 expect \"incorrect\"
-                send \"パスワードが違います。再度入力してください。\"
+                send \"echo 'パスワードが違います。再度入力してください。'\"
                 exit 0
-            } 
+            }
             log_file sudo-ok.tmp
             exit 0
         "
@@ -553,19 +564,28 @@ function shield_prepare_servers() {
         fi
     done
 
+    rm -f sudo-ok.tmp
     echo ""
     expect -c "
         set timeout 600
         spawn /bin/bash -c \"sudo -k -p sudo-pass: ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}\"
-        expect \"sudo-pass:\"
-        send \"${SUDO_PASSWORD}\n\"
-        expect \"password:\"
-        send \"${PASSWORD}\n\"
-        expect \"password]:\"
-        send \"\n\"
-        expect \"PLAY RECAP\"
-        expect \"==========\"
-        exit 0
+        expect \"sudo-pass:\" {
+            send \"${SUDO_PASSWORD}\n\"
+            expect \"password:\" 
+            send \"${PASSWORD}\n\"
+            expect \"password]:\"
+            send \"\n\"
+            expect \"PLAY RECAP\"
+            expect \"==========\"
+            exit 0   
+        } \"password:\" {
+            send \"${PASSWORD}\n\"
+            expect \"password]:\"
+            send \"\n\"
+            expect \"PLAY RECAP\"
+            expect \"==========\"
+            exit 0
+        }
     " | tee $TEMP_ANSIBLE
     #sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
     echo ""
@@ -578,8 +598,13 @@ function shield_prepare_servers() {
 function install_expect(){
     # install_expect
     log_message "[start] install expect"
+    if [[ $(which expect | grep -c snap) -ge 1 ]];then
+        log_message "[info] uninstall snappy expect"
+        sudo snap remove expect
+    fi
     if ! which expect > /dev/null 2>&1 ;then
         if [[ $OS == "Ubuntu" ]]; then
+            echo "updateing apt....."
             sudo apt-get update -qq
             sudo apt-get install -y -qq expect >>"$LOGFILE" 2>&1
         fi
