@@ -500,7 +500,7 @@ function all_fin(){
     TARGET_LIST=""
     while [ "$1" != "" ]
     do
-        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo mkdir -p ${ES_PATH_ERICOM} && sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown -R ericom:ericom ${ES_PATH_ERICOM}")
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown ericom:ericom ${ES_PREPARE}")
         if [[ $? -ne 0 ]];then
             log_message "[ERROR] RET_NUM: ${RET_NUM}"
             log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
