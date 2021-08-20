@@ -353,6 +353,7 @@ function mv_rancher_store(){
         fi
     fi
 }
+
 function log_message() {
     local PREV_RET_CODE=$?
     echo "$@"
