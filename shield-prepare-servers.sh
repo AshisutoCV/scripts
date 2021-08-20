@@ -2,8 +2,22 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210819a
+### VER=20210820a
 ####################
+
+function usage() {
+    echo ""
+    echo "USAGE: $0 "
+    echo ""
+    exit 0
+    ### for Develop only
+    # [ーv | --version <Chart version>]
+    ##
+}
+
+if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+    usage
+fi
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
@@ -14,19 +28,6 @@ export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
-
-if [[ -f ${ES_PATH}/.es_prepare ]];then
-    log_message "[info] Move .es_prepare flg file..."
-    sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
-    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
-fi
-if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
-    log_message "[info] Move .es_prepare flg file..."
-    sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
-    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
-fi
-
-ES_PREPARE="$ERICOM_PATH/.es_prepare"    
 
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs
@@ -61,21 +62,32 @@ elif [ -f ${ES_PATH}/.es_branch ]; then
     BRANCH=$(cat ${ES_PATH}/.es_branch)
 fi
 
-if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
-    usage
-fi
-
 if [ -f ${ES_PATH}/.es_offline ] ;then
     offline_flg=1
 else
     offline_flg=0
 fi
 
-function usage() {
-    echo "USAGE: $0 "
-    ### for Develop only
-    # [ーv | --version <Chart version>]
-    ##
+function check_ericom_user(){
+    # ericomユーザ存在確認
+    if [[ $(cat /etc/passwd | grep -c ericom) -eq 0 ]];then
+            log_message "[ERROR] ericomユーザが存在しません。prepare-node.shを実行したか確認してください。"        
+            failed_to_install "check_ericom_user"
+    else
+        # es_prepareを移動
+        if [[ -f ${ES_PATH}/.es_prepare ]];then
+            log_message "[info] Move .es_prepare flg file..."
+            sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
+            sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+        fi
+        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+            log_message "[info] Move .es_prepare flg file..."
+            sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
+            sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+        fi
+
+        ES_PREPARE="$ERICOM_PATH/.es_prepare"    
+    fi
 }
 
 function log_message() {
@@ -620,6 +632,9 @@ function install_expect(){
 
 ######START#####
 log_message "###### START ###########################################################"
+
+#ericomユーザ存在チェック
+check_ericom_user
 
 #OS Check
 if [ -f /etc/redhat-release ]; then
