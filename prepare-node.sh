@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200818a
+### VER=20210820a
 ####################
 
 if ((EUID !=0)); then
@@ -34,22 +34,41 @@ fi
 
 if [ -z "$MACHINE_USER" ]; then
     echo '################################################### Create Ericom user #################################'
-if [[ $OS == "Ubuntu" ]]; then
-    sudo adduser --gecos "" ericom
-    sudo mkdir -p "/home/ericom/"
+    if [[ $(cat /etc/passwd | grep -c ericom) -eq 0 ]];then
+        if [[ $OS == "Ubuntu" ]]; then
+            sudo adduser --gecos "" ericom
+            sudo mkdir -p "/home/ericom/"
+        else
+            sudo adduser ericom
+            sudo passwd ericom
+        fi
+        MACHINE_USER="ericom"
+    else
+        MACHINE_USER="ericom"
+        echo "======[ 注意事項 ]=========================================================================="
+        echo "ericom ユーザが既に存在します。"
+        echo "ericom ユーザのパスワードは全Shieldサーバで統一したパスワードを設定する必要があります。"
+        echo "これは、以降の作業にて統一されたパスワードのericomユーザにSSH接続を行い処理が行われるためです。"
+        echo "パスワードが統一されていない場合には確認の上、事前に変更をお願いします。"
+        echo "==========================================================================================="
+    fi
 else
-    sudo adduser ericom
-    sudo passwd ericom
+    echo "======[ 注意事項 ]=========================================================================="
+    echo "$MACHINE_USER ユーザのパスワードは全Shieldサーバで統一したパスワードを設定する必要があります。"
+    echo "これは、以降の作業にて統一されたパスワードのericomユーザにSSH接続を行い処理が行われるためです。"
+    echo "パスワードが統一されていない場合には確認の上、事前に変更をお願いします。"
+    echo "==========================================================================================="
 fi
-    MACHINE_USER="ericom"
-fi
+
 
 echo "########################## $MACHINE_USER Going to prepare super user #########################################"
+if [[ $(sudo cat /etc/sudoers | grep -c "$MACHINE_USER ALL=(ALL:ALL) NOPASSWD: ALL") -eq 0 ]];then
 
-COMMAND="$MACHINE_USER ALL=(ALL:ALL) NOPASSWD: ALL"
-
-echo $COMMAND | sudo EDITOR='tee -a' visudo
-
+    COMMAND="$MACHINE_USER ALL=(ALL:ALL) NOPASSWD: ALL"
+    echo $COMMAND | sudo EDITOR='tee -a' visudo
+else
+    echo "既に設定済みです。"
+fi
 
 echo '################################################### Changeing sshd_conf #################################'
 sudo sed -i -e '/^PasswordAuthentication/s/no/yes/' /etc/ssh/sshd_config

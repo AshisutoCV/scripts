@@ -2,16 +2,33 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210804a
+### VER=20210820a
 ####################
+
+function usage() {
+    echo ""
+    echo "USAGE: $0 "
+    echo ""
+    exit 0
+    ### for Develop only
+    # [ーv | --version <Chart version>]
+    ##
+}
+
+if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+    usage
+fi
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
 
 export ES_PATH="$HOME/ericomshield"
+export ES_PATH_ERICOM="/home/ericom/ericomshield"
+export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
+
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs
     mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
@@ -45,21 +62,32 @@ elif [ -f ${ES_PATH}/.es_branch ]; then
     BRANCH=$(cat ${ES_PATH}/.es_branch)
 fi
 
-if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
-    usage
-fi
-
 if [ -f ${ES_PATH}/.es_offline ] ;then
     offline_flg=1
 else
     offline_flg=0
 fi
 
-function usage() {
-    echo "USAGE: $0 "
-    ### for Develop only
-    # [ーv | --version <Chart version>]
-    ##
+function check_ericom_user(){
+    # ericomユーザ存在確認
+    if [[ $(cat /etc/passwd | grep -c ericom) -eq 0 ]];then
+            log_message "[ERROR] ericomユーザが存在しません。prepare-node.shを実行したか確認してください。"        
+            failed_to_install "check_ericom_user"
+    else
+        # es_prepareを移動
+        if [[ -f ${ES_PATH}/.es_prepare ]];then
+            log_message "[info] Move .es_prepare flg file..."
+            sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
+            sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+        fi
+        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+            log_message "[info] Move .es_prepare flg file..."
+            sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
+            sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+        fi
+
+        ES_PREPARE="$ERICOM_PATH/.es_prepare"    
+    fi
 }
 
 function log_message() {
@@ -84,8 +112,22 @@ function fin() {
 
 function check_docker-ce(){
     cd $CURRENT_DIR
-    echo -n 'ericomユーザのパスワードを入力: '
-    read -s ERI_PASS
+    while :
+    do
+        echo -n 'ericomユーザのパスワードを入力: '
+        read -s ERI_PASS
+        echo ""
+        echo -n '(確認)再度入力してください。: '
+        read -s ERI_PASS2
+        echo ""
+        if [[ "${ERI_PASS}" != "${ERI_PASS2}" ]];then
+            echo "入力が一致しません。再度入力してください。"
+        else
+            break
+        fi
+    done
+
+
     # SSH_ASKPASSで呼ばれるシェルにパスワードを渡すために変数を設定
     export PASSWORD=$ERI_PASS
 
@@ -178,7 +220,7 @@ function check_docker-ce(){
 }
 
 function get_shield-prepare-servers() {
-    log_message "[start] Geting shield-prepaer-servers."
+    log_message "[start] Getting shield-prepaer-servers."
     if [[ -f ${ES_PATH}/shield-prepare-servers ]]; then
         if [ ! -e ./org/ ];then
             mkdir org
@@ -188,7 +230,7 @@ function get_shield-prepare-servers() {
     #curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/master/shield-prepare-servers
     curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
     chmod +x ${ES_PATH}/shield-prepare-servers
-    log_message "[end] Geting shield-prepaer-servers."
+    log_message "[end] Getting shield-prepaer-servers."
 }
 
 function ln_resolv() {
@@ -310,8 +352,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PATH/.es_prepare" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    if [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
     else
         #log_message "[error] shield-prepare-serversが未実行のようです。"
         #echo "=================================================================="
@@ -470,19 +512,20 @@ function all_fin(){
     TARGET_LIST=""
     while [ "$1" != "" ]
     do
-        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo mkdir -p ${ES_PATH} && sudo echo ${S_APP_VERSION} | sudo tee ${ES_PATH}/.es_prepare && sudo chown -R ${USER}:${USER} ${ES_PATH}")
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown ericom:ericom ${ES_PREPARE}")
         if [[ $? -ne 0 ]];then
+            log_message "[ERROR] RET_NUM: ${RET_NUM}"
             log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
             fin 1
         fi
+        log_message "[info] fin: $1"
         shift
     done
-    #change_dir
-    #echo ${S_APP_VERSION} > ${ES_PATH}/.es_prepare
     fin 0
 }
 
 function shield_prepare_servers() {
+
     if [ -f $TEMP_ANSIBLE ];then
         rm -f $TEMP_ANSIBLE
     fi
@@ -497,25 +540,64 @@ function shield_prepare_servers() {
 
     check_docker-ce ${ANSWERips}
 
-
+    rm -f sudo-ok.tmp
+    cd $CURRENT_DIR
+    rm -f sudo-ok.tmp
+    
     echo ""
     echo "[Info] このノードから shield-preapre-servers を実行します。"
-    echo ""
-    echo -n "[sudo] password for ${USER}: "
-    read -s SUDO_PASSWORD
+    while :
+    do
+        echo ""
+        echo -n "[sudo] password for ${USER}: "
+        read -s SUDO_PASSWORD
+        echo ""
+        expect -c "
+            spawn -noecho /bin/bash -c \"sudo -k -p checking pwd\"
+            expect \"checking\" {
+                send \"${SUDO_PASSWORD}\n\"
+            } \"/home/\" {
+                send \"\n\"
+            }
+            expect \"Sorry,\" {
+                expect \"checking\"            
+                send \"${SUDO_PASSWORD}\n\"
+                expect \"checking\"            
+                send \"${SUDO_PASSWORD}\n\"
+                expect \"incorrect\"
+                send \"echo 'パスワードが違います。再度入力してください。'\"
+                exit 0
+            }
+            log_file sudo-ok.tmp
+            exit 0
+        "
+        if [[ -f sudo-ok.tmp ]];then
+            break
+        fi
+    done
+
+    rm -f sudo-ok.tmp
     echo ""
     expect -c "
         set timeout 600
         spawn /bin/bash -c \"sudo -k -p sudo-pass: ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}\"
-        expect \"sudo-pass:\"
-        send \"${SUDO_PASSWORD}\n\"
-        expect \"password:\"
-        send \"${PASSWORD}\n\"
-        expect \"password]:\"
-        send \"\n\"
-        expect \"PLAY RECAP\"
-        expect \"==========\"
-        exit 0
+        expect \"sudo-pass:\" {
+            send \"${SUDO_PASSWORD}\n\"
+            expect \"password:\" 
+            send \"${PASSWORD}\n\"
+            expect \"password]:\"
+            send \"\n\"
+            expect \"PLAY RECAP\"
+            expect \"==========\"
+            exit 0   
+        } \"password:\" {
+            send \"${PASSWORD}\n\"
+            expect \"password]:\"
+            send \"\n\"
+            expect \"PLAY RECAP\"
+            expect \"==========\"
+            exit 0
+        }
     " | tee $TEMP_ANSIBLE
     #sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
     echo ""
@@ -528,8 +610,14 @@ function shield_prepare_servers() {
 function install_expect(){
     # install_expect
     log_message "[start] install expect"
+    if [[ $(which expect | grep -c snap) -ge 1 ]];then
+        log_message "[info] uninstall snappy expect"
+        sudo snap remove expect
+    fi
     if ! which expect > /dev/null 2>&1 ;then
         if [[ $OS == "Ubuntu" ]]; then
+            echo "updateing apt....."
+            sudo apt-get update -qq
             sudo apt-get install -y -qq expect >>"$LOGFILE" 2>&1
         fi
         if ! which expect > /dev/null 2>&1 ;then
@@ -544,6 +632,9 @@ function install_expect(){
 
 ######START#####
 log_message "###### START ###########################################################"
+
+#ericomユーザ存在チェック
+check_ericom_user
 
 #OS Check
 if [ -f /etc/redhat-release ]; then

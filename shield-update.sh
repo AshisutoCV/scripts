@@ -2,8 +2,22 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210721a
+### VER=20210820a
 ####################
+
+function usage() {
+    echo ""
+    echo "USAGE: $0 [--pre-use]"
+    echo ""
+    exit 0
+    ### for Develop only
+    # [ーv | --version <Chart version>]
+    ##
+}
+
+if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+    usage
+fi
 
 del_root_flg=0
 export HOME=$(eval echo ~${SUDO_USER})
@@ -13,10 +27,13 @@ if [[ ! -d $HOME/ericomshield/ ]];then
 fi
 export KUBECONFIG=${HOME}/.kube/config
 
-ES_PATH="$HOME/ericomshield"
+export ES_PATH="$HOME/ericomshield"
+export ES_PATH_ERICOM="/home/ericom/ericomshield"
+export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
+
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs
     mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
@@ -39,18 +56,6 @@ elif [ -f ${ES_PATH}/.es_branch ]; then
     BRANCH=$(cat ${ES_PATH}/.es_branch)
 fi
 
-function usage() {
-    echo "USAGE: $0 [--pre-use]"
-    exit 0
-    ### for Develop only
-    # [--staging | --dev] [--pre-use]
-    ##
-}
-
-if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
-    usage
-fi
-
 if [ -f ${ES_PATH}/.es_offline ] ;then
     offline_flg=1
     REGISTRY_OVA=$(cat ${ES_PATH}/.es_offline)
@@ -67,6 +72,28 @@ if [ -f ${ES_PATH}/.es_offline ] ;then
 else
     offline_flg=0
 fi
+
+function check_ericom_user(){
+    # ericomユーザ存在確認
+    if [[ $(cat /etc/passwd | grep -c ericom) -eq 0 ]];then
+            log_message "[ERROR] ericomユーザが存在しません。prepare-node.shを実行したか確認してください。"        
+            failed_to_install "check_ericom_user"
+    else
+        # es_prepareを移動
+        if [[ -f ${ES_PATH}/.es_prepare ]];then
+            log_message "[info] Move .es_prepare flg file..."
+            sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
+            sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+        fi
+        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+            log_message "[info] Move .es_prepare flg file..."
+            sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
+            sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+        fi
+
+        ES_PREPARE="$ERICOM_PATH/.es_prepare"    
+    fi
+}
 
 function check_args(){
     pre_flg=0
@@ -159,8 +186,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PATH/.es_prepare" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    if [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
         echo "=================================================================="
@@ -326,6 +353,7 @@ function mv_rancher_store(){
         fi
     fi
 }
+
 function log_message() {
     local PREV_RET_CODE=$?
     echo "$@"
@@ -497,8 +525,8 @@ function change_to_root(){
 
 function pre_check_prepare() {
 
-    if [ -f ${ES_PATH}/.es_prepare ] ;then
-        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+    if [ -f $ES_PREPARE ] ;then
+        PREPARE_VER=$(cat $ES_PREPARE )
         NOW_S_APP_VERSION=$(cat ${ES_PATH}/.es_version)
         if [[ ${PREPARE_VER} != $NOW_S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
@@ -514,8 +542,8 @@ function pre_check_prepare() {
 
 function check_prepare() {
 
-    if [ -f ${ES_PATH}/.es_prepare ] ;then
-        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+    if [ -f $ES_PREPARE ] ;then
+        PREPARE_VER=$(cat $ES_PREPARE)
         if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
@@ -531,6 +559,9 @@ function check_prepare() {
 
 ######START#####
 log_message "###### START (update)###########################################################"
+
+#ericomユーザ存在チェック
+check_ericom_user
 
 # check args and set flags
 ALL_ARGS="$@"

@@ -2,16 +2,49 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210727a
+### VER=20210820a
 ####################
+
+function usage() {
+    echo ""
+    echo "USAGE: $0 [--pre-use] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all] [--offline --registry <Registry IP>:<Port>]"
+    echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
+    echo "                        ※ただし、先行利用バージョンについては、一切のサポートがございません。"
+    echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
+    echo "    --spell-check-on  : ブラウザのスペルチェック機能をONの状態でセットアップします。"
+    echo "                        ※日本語環境ではメモリリークの原因になるためデフォルトOFFです。"
+    echo "    --ses-chek-off    : 認証を行わない場合のセッション数チェックを行う機能をOFFでセットアップします。"
+    echo "                        デフォルト ONの状態でセットアップされます。"
+    echo "                        認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
+    echo "    --get-custom-yaml : helm展開時のcustom yamlファイルを新規に取得して上書きします。"
+    echo "                        独自に加えた変更が保持されませんのでご注意ください。"
+    echo "    --uninstall       : Shield のみをアンインストールします。 --deploy により再展開できます。"
+    echo "    --delete-all      : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
+    echo "    --offline         : Registry OVA を用いた、オフラインセットアップを行います。"
+    echo "                        --registry を必ずあわせて指定してください。"
+    echo "    --registry        : Registry OVA のレジストリIPアドレスを指定します。"
+    echo ""
+    exit 0
+    ### for Develop only
+    # [--version <Chart version>]
+    ##
+}
+
+if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+    usage
+fi
+
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
 
-ES_PATH="$HOME/ericomshield"
+export ES_PATH="$HOME/ericomshield"
+export ES_PATH_ERICOM="/home/ericom/ericomshield"
+export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 fi
+
 if [ ! -e ${ES_PATH}/logs/ ];then
     mkdir -p ${ES_PATH}/logs
     mv -f ./*.log ${ES_PATH}/logs/ > /dev/null 2>&1
@@ -31,15 +64,10 @@ SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
-
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 elif [ -f ${ES_PATH}/.es_branch ]; then
     BRANCH=$(cat ${ES_PATH}/.es_branch)
-fi
-
-if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
-    usage
 fi
 
 if [ -f ${ES_PATH}/.es_offline ] ;then
@@ -48,27 +76,27 @@ else
     offline_flg=0
 fi
 
-function usage() {
-    echo "USAGE: $0 [--pre-use] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all] [--offline --registry <Registry IP>:<Port>]"
-    echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
-    echo "                        ※ただし、先行利用バージョンについては、一切のサポートがございません。"
-    echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
-    echo "    --spell-check-on  : ブラウザのスペルチェック機能をONの状態でセットアップします。"
-    echo "                        ※日本語環境ではメモリリークの原因になるためデフォルトOFFです。"
-    echo "    --ses-chek-off    : 認証を行わない場合のセッション数チェックを行う機能をOFFでセットアップします。"
-    echo "                        デフォルト ONの状態でセットアップされます。"
-    echo "                        認証利用時にはOFFにすることで若干のレスポンス改善が見込まれます。"
-    echo "    --get-custom-yaml : helm展開時のcustom yamlファイルを新規に取得して上書きします。"
-    echo "                        独自に加えた変更が保持されませんのでご注意ください。"
-    echo "    --uninstall       : Shield のみをアンインストールします。 --deploy により再展開できます。"
-    echo "    --delete-all      : Rancherを含めて全てのコンテナを削除します。クラスタも破棄します。"
-    echo "    --offline         : Registry OVA を用いた、オフラインセットアップを行います。"
-    echo "                        --registry を必ずあわせて指定してください。"
-    echo "    --registry        : Registry OVA のレジストリIPアドレスを指定します。"
-    exit 0
-    ### for Develop only
-    # [--staging | --dev] [--version <Chart version>]
-    ##
+
+function check_ericom_user(){
+    # ericomユーザ存在確認
+    if [[ $(cat /etc/passwd | grep -c ericom) -eq 0 ]];then
+            log_message "[ERROR] ericomユーザが存在しません。prepare-node.shを実行したか確認してください。"        
+            failed_to_install "check_ericom_user"
+    else
+        # es_prepareを移動
+        if [[ -f ${ES_PATH}/.es_prepare ]];then
+            log_message "[info] Move .es_prepare flg file..."
+            sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
+            sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+        fi
+        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+            log_message "[info] Move .es_prepare flg file..."
+            sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
+            sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+        fi
+
+        ES_PREPARE="$ERICOM_PATH/.es_prepare"    
+    fi
 }
 
 function log_message() {
@@ -416,8 +444,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PATH/.es_prepare" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PATH/.es_prepare)"
+    if [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
         echo "=================================================================="
@@ -1793,8 +1821,8 @@ function mod_cluster_dns() {
 
 function check_prepare() {
 
-    if [ -f ${ES_PATH}/.es_prepare ] ;then
-        PREPARE_VER=$(cat ${ES_PATH}/.es_prepare)
+    if [ -f ${ES_PREPARE} ] ;then
+        PREPARE_VER=$(cat ${ES_PREPARE})
         if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
@@ -1809,6 +1837,9 @@ function check_prepare() {
 
 ######START#####
 log_message "###### START ###########################################################"
+
+#ericomユーザ存在チェック
+check_ericom_user
 
 #OS Check
 if [ -f /etc/redhat-release ]; then
