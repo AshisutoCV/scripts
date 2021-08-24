@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210820a
+### VER=20210824a
 ####################
 
 function usage() {
@@ -1951,6 +1951,7 @@ mod_cluster_dns
 if [[ "$BUILD" == "758" ]]; then
     log_message "[start] fix for 21.04.758"
     sed -i -e 's/es-system-configuration:210426-Rel-21.04/es-system-configuration:210715-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
+    sed -i -e 's/icap-server:210426-Rel-21.04/icap-server:210819-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.04.758"
 fi
 
