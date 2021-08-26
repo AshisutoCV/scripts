@@ -2,11 +2,22 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210622a
+### VER=20210825a-dev
 ####################
 
 ##### 変数 #####===================================================
 BACKUP_DIR=/home/ericom/ericomshield/config-backup/backup
+BACKUP_DIR_b=/home/ericom/ericomshield/consul-backup/backup
+
+if [[ ! -d $BACKUP_DIR ]];then
+    if [[ -d $BACKUP_DIR_b ]];then
+        BACKUP_DIR=$BACKUP_DIR_b
+    else
+        echo "BACKUP_DIR の存在が確認できません。"
+        exit 9
+    fi
+fi
+
 JSON_CHECK_DIR=${BACKUP_DIR}/json-check
 MASTER_JSON=${JSON_CHECK_DIR}/master.json
 ERROR_FILE=${JSON_CHECK_DIR}/error.txt
@@ -20,8 +31,16 @@ MASTER_UK_TMP=${BACKUP_DIR}/json-check/master-uk.tmp
 BACKUP_UK_TMP=${BACKUP_DIR}/json-check/backup-uk.tmp
 MASTER_US_TMP=${BACKUP_DIR}/json-check/master-us.tmp
 BACKUP_US_TMP=${BACKUP_DIR}/json-check/backup-us.tmp
+#CM_IP="192.168.1.1"
+#SETUP_USER="ubuntu"
+#USER_PASS=""
 ################===================================================
 
+# SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
+if [ -n "$PASSWORD" ]; then
+  cat <<< "$PASSWORD"
+  exit 0
+fi
 
 if ((EUID != 0)); then
     #    sudo su
@@ -38,9 +57,50 @@ fi
 
 rm -f ${ERROR_FILE}
 
-CONSUL_BACKUP_POD=$(kubectl get pods --namespace=management | grep consul-backup | awk {'print $1'})
-kubectl exec -t --namespace=management ${CONSUL_BACKUP_POD} python /scripts/backup.py > /dev/null 2>&1
-sleep 10s
+if which kubelet > /dev/null 2>&1 ; then
+    CONSUL_BACKUP_POD=$(kubectl get pods --namespace=management | grep consul-backup | awk {'print $1'})
+    kubectl exec -t --namespace=management ${CONSUL_BACKUP_POD} python /scripts/backup.py > /dev/null 2>&1
+    sleep 10s
+else
+    if [[ -z $CM_IP ]];then
+        echo -n "CMノードのIPアドレスを入力: "
+        read CM_IP
+        echo ""
+    fi
+    if [[ -z $SETUP_USER ]];then
+        echo -n "CMノードセットアップユーザ のユーザ名を入力: "
+        read SETUP_USER
+        echo ""
+    fi
+    if [[ -z $USER_PASS ]];then
+        while :
+        do
+            echo -n "リモートユーザ $SETUP_USER のパスワードを入力: "
+            read -s USER_PASS
+            echo ""
+            echo -n '(確認)再度入力してください。: '
+            read -s USER_PASS2
+            echo ""
+            if [[ "${USER_PASS}" != "${USER_PASS2}" ]];then
+                echo "入力が一致しません。再度入力してください。"
+            else
+                break
+            fi
+        done
+    fi
+
+    # SSH_ASKPASSで呼ばれるシェルにパスワードを渡すために変数を設定
+    export PASSWORD=$USER_PASS
+
+    # SSH_ASKPASSに本ファイルを設定
+    export SSH_ASKPASS=$0
+    # ダミーを設定
+    export DISPLAY=dummy:0
+    CONSUL_BACKUP_POD=$(exec setsid ssh -t -oStrictHostKeyChecking=no $SETUP_USER@$CM_IP 'kubectl get pods --namespace=management | grep consul-backup | cut -f1 -d" "')
+    CONSUL_BACKUP_POD=`echo ${CONSUL_BACKUP_POD} | sed -e "s/[\r\n]\+//g"`
+    RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no $SETUP_USER@$CM_IP "kubectl exec -t --namespace=management ${CONSUL_BACKUP_POD} python /scripts/backup.py > /dev/null 2>&1")
+    sleep 10
+fi
 
 BACKUP_JSON=${BACKUP_DIR}/$(ls -1t ${BACKUP_DIR} | grep backup | head -1)
 
