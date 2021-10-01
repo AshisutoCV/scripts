@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210910a
+### VER=20211001a
 ####################
 
 function usage() {
@@ -52,6 +52,7 @@ if [ ! -e ${ES_PATH}/logs/ ];then
 fi
 
 LOGFILE="${ES_PATH}/logs/install.log"
+FLGFILE="${ES_PATH}/.for_pm-fix_flg"
 CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
@@ -1767,6 +1768,8 @@ function check_start() {
     echo "          ${ES_PATH}/shield-status.sh 実行し、"
     echo "          全てのワークロードが Acriveになることをご確認ください。"
     echo ""
+
+    date > $FLGFILE
 }
 
 function change_resource() {
