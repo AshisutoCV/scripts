@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210401a
+### VER=20211001a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -19,6 +19,7 @@ if [ ! -e ${ES_PATH}/logs/ ];then
 fi
 
 LOGFILE="${ES_PATH}/logs/stop-start.log"
+FLGFILE="${ES_PATH}/.for_pm-fix_flg"
 BRANCH="master"
 GITVER=1912
 CURRENT_DIR=$(cd $(dirname $0); pwd)
@@ -225,6 +226,7 @@ stop_shield
 if [[ $OS == "Ubuntu" ]]; then
     ln_resolv
 fi
+rm -f $FLGFILE
 fin 0
 
 

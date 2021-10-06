@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20201224a
+### VER=20211001a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -19,6 +19,7 @@ if [ ! -e ${ES_PATH}/logs/ ];then
 fi
 
 LOGFILE="${ES_PATH}/logs/stop-start.log"
+FLGFILE="${ES_PATH}/.for_pm-fix_flg"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 PARENT_DIR=$(dirname $(cd $(dirname $0); pwd))
 
@@ -245,6 +246,8 @@ function check_start() {
     echo "          ${ES_PATH}/shield-status.sh 実行し、"
     echo "          全てのワークロードが Acriveになることをご確認ください。"
     echo ""
+
+    date > $FLGFILE
 }
 
 function change_resource() {
