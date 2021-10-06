@@ -1,6 +1,9 @@
 # Version List
 ***
 
+## shield-start.sh
+* [20211006b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211006b---20211006)
+
 ## shield-prepare-servers.sh
 * [20210820a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210820a---20210820)
 * [20210804a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210804a---20210804)
@@ -35,6 +38,7 @@
 * [20200210a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200210a---20200210)
 
 ## shield-setup.sh
+* [20211001a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211001a---20211001)
 * [20210910a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210910a---20210910)
 * [20210820a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210820a---20210820)
 * [20210727a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210727a---20210727)
@@ -56,6 +60,7 @@
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
 
 ## shield-start.sh
+* [20211001a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211001a---20211001)
 * [20201224a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201224a---20201224)
 * [20200818a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200818a---20200818)
 * [20200607a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200607a---20200607)
@@ -63,6 +68,7 @@
 * [20200520a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200520a---20200520)
 
 ## shield-stop.sh
+* [20211001a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211001a---20211001)
 * [20210401a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210401a---20210401)
 * [20201224a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201224a---20201224)
 * [20200821a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200821a---20200821)
