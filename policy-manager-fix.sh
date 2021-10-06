@@ -35,7 +35,7 @@ if [ -f $FLGFILE ];then
             log_message "Deliting Polocy manager pods."
             for POD in ${POLICY_MANAGER_PODS[@]};
             do
-                /usr/local/bin/kubectl --namespace=farm-services delete pods $POD
+                /usr/local/bin/kubectl --namespace=farm-services delete pods $POD >>"$LOGFILE"
             done
             log_message "All Policy Manager Pods Deleted."
 
