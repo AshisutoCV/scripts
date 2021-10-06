@@ -30,12 +30,12 @@ if [ -f $FLGFILE ];then
         if [[ $? -eq 0 ]]; then
             log_message "ALL workloads are Active."
 
-            POLICY_MANAGER_PODS=$(kubectl get pods --namespace=farm-services | grep policy | awk {'print $1'})
+            POLICY_MANAGER_PODS=$(/usr/local/bin/kubectl get pods --namespace=farm-services | grep policy | awk {'print $1'})
 
             log_message "Deliting Polocy manager pods."
             for POD in ${POLICY_MANAGER_PODS[@]};
             do
-                kubectl --namespace=farm-services delete pods $POD
+                /usr/local/bin/kubectl --namespace=farm-services delete pods $POD
             done
             log_message "All Policy Manager Pods Deleted."
 
