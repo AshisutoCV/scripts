@@ -2,13 +2,16 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20211006b
+### VER=20211019a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
 export ES_PATH="$HOME/ericomshield"
 
-LOGFILE="${ES_PATH}/logs/pm-fix.log"
+keep_logs_days=30
+LOGDIR="${ES_PATH}/logs"
+LOGFILE_NAME="pm-fix.log"
+LOGFILE="${LOGDIR}/$(date +%Y%m%d)_${LOGFILE_NAME}"
 FLGFILE="${ES_PATH}/.for_pm-fix_flg"
 
 function log_message() {
@@ -20,6 +23,10 @@ function log_message() {
     fi
     return 0
 }
+
+if [[ -e ${LOGDIR}/${LOGFILE_NAME} ]];then
+    mv -f ${LOGDIR}/${LOGFILE_NAME} ${LOGFILE}
+fi
 
 if [ -f $FLGFILE ];then
     log_message "The flag file was detected."
@@ -59,4 +66,23 @@ if [ -f $FLGFILE ];then
     done
 else
     log_message "The flag file does not exist."    
+fi
+
+YDAY=$(date +%Y%m%d --date "1 day ago")
+DDAY=$(date +%Y%m%d --date "$((++keep_logs_days)) day ago")
+YLOG="${LOGDIR}/${YDAY}_${LOGFILE_NAME}"
+DLOG="${LOGDIR}/${DDAY}_${LOGFILE_NAME}.tar.gz"
+
+
+if [[ -e $YLOG ]]; then
+    tar -zcvf ${YLOG}.tar.gz ${YLOG} >/dev/null 2>&1
+    if [[ -e ${YLOG}.tar.gz ]]; then
+        rm -rf ${YLOG}
+        log_message "Archived : ${YLOG} to ${YLOG}.tar.gz"
+    fi
+fi
+
+if [[ -f ${DLOG} ]]; then
+    rm -rf ${DLOG}
+    log_message "Deleted ; ${DLOG}"
 fi

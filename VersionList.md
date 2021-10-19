@@ -117,6 +117,10 @@
 * [20200716a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200716a---20200716)
 * [20200115a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200115a---20200115)
 
+##  policy-manager-fix.sh
+* [20211019a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211019a---20211019)
+* [20211006b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211006b---20211006)
+
 ***
 * fps-change.sh
 * nocat.sh
