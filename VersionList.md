@@ -19,6 +19,7 @@
 * [20210203b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210203b---20210203)
 
 ## shield-json-check.sh
+* [20211022a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211022a---20211022)
 * [20210831a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210831a---20210831)
 * [20210622a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210622a---20210622)
 * [20210618a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210618a---20210618)
@@ -116,6 +117,10 @@
 ## backup-restore.sh
 * [20200716a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200716a---20200716)
 * [20200115a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200115a---20200115)
+
+##  policy-manager-fix.sh
+* [20211019a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211019a---20211019)
+* [20211006b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211006b---20211006)
 
 ***
 * fps-change.sh
