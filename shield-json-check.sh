@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210831a
+### VER=20211022a
 ####################
 
 ##### 変数 #####===================================================
@@ -57,7 +57,7 @@ fi
 
 rm -f ${ERROR_FILE}
 
-if which kubelet > /dev/null 2>&1 ; then
+if which kubectl > /dev/null 2>&1 ; then
     CONSUL_BACKUP_POD=$(kubectl get pods --namespace=management | grep consul-backup | awk {'print $1'})
     kubectl exec -t --namespace=management ${CONSUL_BACKUP_POD} python /scripts/backup.py > /dev/null 2>&1
     sleep 10s
@@ -134,6 +134,7 @@ jq -c '.[] | select(.key | test("translations/en-us")) ' ${MASTER_JSON} | awk -F
 jq -c '.[] | select(.key | test("translations/en-us")) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $7 }' | sed -e 's/"//g' | base64 -d | sed -e "s/,/,\n/g" > ${BACKUP_US_TMP}
 
 
+RESULT=0
 diff -q ${MASTER_TMP2} ${BACKUP_TMP2} 2>&1 > /dev/null || {
     RESULT=$? 
     OUTPUT=$(diff ${MASTER_TMP2} ${BACKUP_TMP2} 2>&1)
@@ -143,6 +144,7 @@ if [ "$RESULT" = "1" ]; then
     echo "$OUTPUT" > ${ERROR_FILE}
 fi
 
+RESULT=0
 diff -q ${MASTER_JP_TMP} ${BACKUP_JP_TMP} 2>&1 > /dev/null || {
     RESULT=$? 
     OUTPUT=$(diff ${MASTER_JP_TMP} ${BACKUP_JP_TMP} 2>&1)
@@ -152,6 +154,7 @@ if [ "$RESULT" = "1" ]; then
     echo "$OUTPUT" >> ${ERROR_FILE}
 fi
 
+RESULT=0
 diff -q ${MASTER_UK_TMP} ${BACKUP_UK_TMP} 2>&1 > /dev/null || {
     RESULT=$? 
     OUTPUT=$(diff ${MASTER_UK_TMP} ${BACKUP_UK_TMP} 2>&1)
@@ -161,6 +164,7 @@ if [ "$RESULT" = "1" ]; then
     echo "$OUTPUT" >> ${ERROR_FILE}
 fi
 
+RESULT=0
 diff -q ${MASTER_US_TMP} ${BACKUP_US_TMP} 2>&1 > /dev/null || {
     RESULT=$? 
     OUTPUT=$(diff ${MASTER_US_TMP} ${BACKUP_US_TMP} 2>&1)
