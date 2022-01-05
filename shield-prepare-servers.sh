@@ -505,7 +505,11 @@ function change_dir(){
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
     CHKBRANCH=${BUILD[0]}${BUILD[1]}
-    BUILD=${BUILD[2]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
     if [[ $CHKBRANCH -lt 1911 ]];then
         log_message "pwd: $(pwd)"        
     else
