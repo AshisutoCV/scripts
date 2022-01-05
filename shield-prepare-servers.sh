@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210820a
+### VER=20220105a-dev
 ####################
 
 function usage() {
@@ -44,8 +44,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
@@ -342,7 +342,11 @@ function select_version() {
         BUILD=()
         BUILD=(${VERSION_DEPLOYED//./ })
         GBUILD=${BUILD[0]}.${BUILD[1]}
-        BUILD=${BUILD[2]}
+        if [[ ${BUILD[3]} ]] ;then
+            BUILD=${BUILD[2]}.${BUILD[3]}
+        else
+            BUILD=${BUILD[2]}
+        fi
         GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
         if [[ $GIT_BRANCH == "Rel-" ]];then
             GIT_BRANCH="Rel-${GBUILD}"
@@ -376,7 +380,11 @@ function select_version() {
             BUILD=()
             BUILD=(${S_APP_VERSION//./ })
             GBUILD=${BUILD[0]}.${BUILD[1]}
-            BUILD=${BUILD[2]}
+            if [[ ${BUILD[3]} ]] ;then
+                BUILD=${BUILD[2]}.${BUILD[3]}
+            else
+                BUILD=${BUILD[2]}
+            fi
             GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
             if [[ $GIT_BRANCH == "Rel-" ]];then
                 GIT_BRANCH="Rel-${GBUILD}"
@@ -396,6 +404,11 @@ function select_version() {
     elif [ $ver_flg -eq 1 ] ; then
             CHART=(${S_APP_VERSION//./ })
             CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
+            if [[ ${CHART[3]} ]] ;then
+                CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}.${CHART[3]}"
+            else
+                CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
+            fi
     else
         declare -A vers_c
         declare -A vers_a
@@ -422,7 +435,11 @@ function select_version() {
                     BUILD=()
                     BUILD=(${S_APP_VERSION//./ })
                     GBUILD=${BUILD[0]}.${BUILD[1]}
-                    BUILD=${BUILD[2]}
+                    if [[ ${BUILD[3]} ]] ;then
+                        BUILD=${BUILD[2]}.${BUILD[3]}
+                    else
+                        BUILD=${BUILD[2]}
+                    fi
                     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
                     if [[ $GIT_BRANCH == "Rel-" ]];then
                         GIT_BRANCH="Rel-${GBUILD}"
@@ -463,7 +480,11 @@ function select_version() {
         BUILD=(${S_APP_VERSION//./ })
         CHKBRANCH=${BUILD[0]}${BUILD[1]}
         GBUILD=${BUILD[0]}.${BUILD[1]}
-        BUILD=${BUILD[2]}
+        if [[ ${BUILD[3]} ]] ;then
+            BUILD=${BUILD[2]}.${BUILD[3]}
+        else
+            BUILD=${BUILD[2]}
+        fi
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
         if [[ $BRANCH == "Rel-" ]];then
             BRANCH="Rel-${GBUILD}"
