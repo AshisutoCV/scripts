@@ -12,6 +12,7 @@ function usage() {
     exit 0
     ### for Develop only
     # [ーv | --version <Chart version>]
+    # [--set]
     ##
 }
 
@@ -289,6 +290,7 @@ function check_args(){
     pre_flg=0
     args=""
     ver_flg=0
+    set_flg=0
     S_APP_VERSION=""
 
     echo "args: $@" >> $LOGFILE
@@ -299,6 +301,8 @@ function check_args(){
             pre_flg=1
         elif [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
             usage
+        elif [ "$1" == "--set" ] ; then
+            set_flg=1
         elif [ "$1" == "-v" ] || [ "$1" == "--version" ] || [ "$1" == "--Version" ]; then
             shift
             S_APP_VERSION="$1"
@@ -318,6 +322,7 @@ function check_args(){
     echo "pre_flg: $pre_flg" >> $LOGFILE
     echo "args: $args" >> $LOGFILE
     echo "ver_flg: $ver_flg" >> $LOGFILE
+    echo "set_flg: $set_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "////////////////////////////////" >> $LOGFILE
 }
@@ -537,7 +542,7 @@ function all_fin(){
     TARGET_LIST=""
     while [ "$1" != "" ]
     do
-        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown ericom:ericom ${ES_PREPARE}")
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown ericom:ericom ${ES_PREPARE}")
         if [[ $? -ne 0 ]];then
             log_message "[ERROR] RET_NUM: ${RET_NUM}"
             log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
@@ -684,6 +689,11 @@ echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
 
+if [ $set_flg -eq 1 ] ; then
+    sudo su - ericom -c "echo ${S_APP_VERSION} > ${ERICOM_PATH}/.es_prepare"
+    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+    fin 0
+fi
 
 # get operation scripts
 get_shield-prepare-servers

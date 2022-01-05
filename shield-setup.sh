@@ -1992,7 +1992,7 @@ fi
 if [ $lowres_flg -eq 1 ]; then
     if [[ "$BUILD" == "816.2" ]]; then
         log_message "[start] fix for 21.11.816.2"
-        sed -i -e 's/securebrowsing/shield-cef:211219-Rel-21.11/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
+        sed -i -e 's/shield-cef:211219-Rel-21.11/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
         log_message "[end] fix for 21.11.816.2"
     fi
 fi
