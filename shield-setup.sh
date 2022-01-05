@@ -7,7 +7,7 @@
 
 function usage() {
     echo ""
-    echo "USAGE: $0 [--pre-use] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all] [--offline --registry <Registry IP>:<Port>]"
+    echo "USAGE: $0 [--pre-use] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all] [--offline --registry <Registry IP>:<Port>] [--low-resource] "
     echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
     echo "                        ※ただし、先行利用バージョンについては、一切のサポートがございません。"
     echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
@@ -23,6 +23,7 @@ function usage() {
     echo "    --offline         : Registry OVA を用いた、オフラインセットアップを行います。"
     echo "                        --registry を必ずあわせて指定してください。"
     echo "    --registry        : Registry OVA のレジストリIPアドレスを指定します。"
+    echo "    --low-resource    : ブラウザコンテナのリソース消費を既存同等に抑えます。(21.11.816.2専用)"
     echo ""
     exit 0
     ### for Develop only
@@ -207,6 +208,7 @@ function check_args(){
     deleteall_flg=0
     old_flg=0
     multi_flg=0
+    lowres_flg=0
     #offline_flg=0
     S_APP_VERSION=""
 
@@ -230,6 +232,8 @@ function check_args(){
             ses_limit_flg=1
         elif [ "$1" == "--uninstall" ] || [ "$1" == "--Uninstall" ] ; then
             uninstall_flg=1
+        elif [ "$1" == "--low-resource" ] || [ "$1" == "--Low-resource" ] || [ "$1" == "--Low-Resource" ] ; then
+            lowres_flg=1
         elif [ "$1" == "--offline" ] || [ "$1" == "--Offline" ] || [ "$1" == "--OffLine" ]; then
             offline_flg=1
         elif [ "$1" == "--registry" ] || [ "$1" == "--Registry" ] ; then
@@ -279,6 +283,7 @@ function check_args(){
     echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
     echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
     echo "offline_flg: $offline_flg" >> $LOGFILE
+    echo "lowres_flg: $lowres_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
     echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
@@ -1976,11 +1981,20 @@ get_scripts
 # mod cluster dns address from es_custom_env
 mod_cluster_dns
 
+# image replace for yaml HotFix
 if [[ "$BUILD" == "758" ]]; then
     log_message "[start] fix for 21.04.758"
     sed -i -e 's/es-system-configuration:210426-Rel-21.04/es-system-configuration:210715-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     sed -i -e 's/icap-server:210426-Rel-21.04/icap-server:210819-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.04.758"
+fi
+
+if [ $lowres_flg -eq 1 ]; then
+    if [[ "$BUILD" == "816.2" ]]; then
+        log_message "[start] fix for 21.11.816.2"
+        sed -i -e 's/securebrowsing/shield-cef:211219-Rel-21.11/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
+        log_message "[end] fix for 21.11.816.2"
+    fi
 fi
 
 #update or deploy NOT offline
