@@ -2,12 +2,12 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220105a-dev
+### VER=20220106a-dev
 ####################
 
 function usage() {
     echo ""
-    echo "USAGE: $0 [--pre-use] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all] [--offline --registry <Registry IP>:<Port>] [--low-resource] "
+    echo "USAGE: $0 [--pre-use] [--deploy] [--get-custom-yaml] [--uninstall] [--delete-all] [--offline --registry <Registry IP>:<Port>]"
     echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
     echo "                        ※ただし、先行利用バージョンについては、一切のサポートがございません。"
     echo "    --deploy          : Rancherクラスタが構成済みの環境で、Shieldの展開のみを行います。"
@@ -23,7 +23,6 @@ function usage() {
     echo "    --offline         : Registry OVA を用いた、オフラインセットアップを行います。"
     echo "                        --registry を必ずあわせて指定してください。"
     echo "    --registry        : Registry OVA のレジストリIPアドレスを指定します。"
-    echo "    --low-resource    : ブラウザコンテナのリソース消費を既存同等に抑えます。(21.11.816.2専用)"
     echo ""
     exit 0
     ### for Develop only
@@ -232,8 +231,6 @@ function check_args(){
             ses_limit_flg=1
         elif [ "$1" == "--uninstall" ] || [ "$1" == "--Uninstall" ] ; then
             uninstall_flg=1
-        elif [ "$1" == "--low-resource" ] || [ "$1" == "--Low-resource" ] || [ "$1" == "--Low-Resource" ] ; then
-            lowres_flg=1
         elif [ "$1" == "--offline" ] || [ "$1" == "--Offline" ] || [ "$1" == "--OffLine" ]; then
             offline_flg=1
         elif [ "$1" == "--registry" ] || [ "$1" == "--Registry" ] ; then
@@ -1868,6 +1865,45 @@ function check_prepare() {
     fi
 }
 
+function low_res_choice() {
+        log_message "[start] resource choice."
+        while :
+        do
+            echo ""
+            echo "========================================================================================="
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo '※Rel-21.11.816.2以降、機能拡張・セキュリティ対応などの理由により、'
+            echo '　ブラウザコンテナの消費リソースが増加しています。'
+            echo '※新しいリソース設定の状態[ 1)通常インストール ]でご利用頂くことを推奨していますが、'
+            echo '　何らかの理由で消費リソースを抑えてインストールしたい場合は[ 2) リソースを抑制したインストール ]'
+            echo '　を選択してください。'
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo ""
+            echo '1) 通常インストール'
+            echo '2) リソースを抑制したインストール '
+            echo ""
+            echo -n "番号で選んでください："
+            read ANSWERNO-RES
+            echo "AMSWERNO-RES: ${ANSWERNO-RES}" >> $LOGFILE
+
+            case ${ANSWERNO-RES} in
+                "1")
+                    lowres_flg=0
+                    break
+                    ;;
+                "2")
+                    lowres_flg=1
+                    break
+                    ;;
+                *)
+                    echo "番号が正しくありません。"
+                    ;;
+            esac
+        done
+        echo "lowres_flg: $lowres_flg" >> $LOGFILE
+        log_message "[end] resource choice."
+}
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -1942,6 +1978,12 @@ if [[ "$BUILD" == "667" ]]; then
     ses_limit_flg=1
     log_message "ses_limit_flg: $ses_limit_flg"
 fi
+
+# 21.11.816.2 resource choice
+if [[ "$BUILD" -ge "816.2" ]]; then
+    low_res_choice
+fi
+
 
 # check ubuntu env
 if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then

@@ -2,15 +2,13 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220105a-dev
+### VER=20220106a-dev
 ####################
 
 function usage() {
     echo ""
     echo "USAGE: $0 [--pre-use] [--no-low-resource]"
     echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
-    echo "    --no-low-resource : ブラウザコンテナのリソース消費を既存同等に抑えず、最新の状態で導入します。"
-    echo "    　　　　　　　　　　　　指定しない場合、ブラウザコンテナのリソース消費を既存同等に抑えます。(21.11.816.2専用)"
     echo ""
     exit 0
     ### for Develop only
@@ -104,7 +102,6 @@ function check_args(){
     dev_flg=0
     stg_flg=0
     ver_flg=0
-    lowres_flg=1
     S_APP_VERSION=""
 
     echo "args: $1" >> $LOGFILE
@@ -119,8 +116,6 @@ function check_args(){
             dev_flg=1
         elif [ "$1" == "--staging" ] || [ "$1" == "--Staging" ] ; then
             stg_flg=1
-        elif [ "$1" == "--no-low-resource" ] || [ "$1" == "--No-Low-resource" ] || [ "$1" == "--No-Low-Resource" ] ; then
-            lowres_flg=0
         elif [ "$1" == "-v" ] || [ "$1" == "--version" ] || [ "$1" == "--Version" ]; then
             shift
             S_APP_VERSION="$1"
@@ -142,7 +137,6 @@ function check_args(){
     echo "dev_flg: $dev_flg" >> $LOGFILE
     echo "stg_flg: $stg_flg" >> $LOGFILE
     echo "ver_flg: $ver_flg" >> $LOGFILE
-    echo "lowres_flg: $lowres_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "offline_flg: $offline_flg" >> $LOGFILE
     echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
@@ -531,11 +525,7 @@ function exec_update(){
     elif [ $stg_flg -eq 1 ]; then
         /bin/bash $CURRENT_DIR/shield-setup.sh --update --version ${S_APP_VERSION} --Staging
     else
-        if [ $lowres_flg -eq 1 ]; then
-            /bin/bash $CURRENT_DIR/shield-setup.sh --update --low-resource --version ${S_APP_VERSION}
-        else
-            /bin/bash $CURRENT_DIR/shield-setup.sh --update --version ${S_APP_VERSION}
-        fi
+        /bin/bash $CURRENT_DIR/shield-setup.sh --update --version ${S_APP_VERSION}
     fi
 }
 
