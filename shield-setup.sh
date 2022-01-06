@@ -1874,8 +1874,8 @@ function low_res_choice() {
             echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
             echo '※Rel-21.11.816.2以降、機能拡張・セキュリティ対応などの理由により、'
             echo '　ブラウザコンテナの消費リソースが増加しています。'
-            echo '※新しいリソース設定の状態[ 1)通常インストール ]でご利用頂くことを推奨していますが、'
-            echo '　何らかの理由で消費リソースを抑えてインストールしたい場合は[ 2) リソースを抑制したインストール ]'
+            echo '※新しいリソース設定の状態 [ 1)通常インストール ] でご利用頂くことを推奨していますが、'
+            echo '　何らかの理由で消費リソースを抑えてインストールしたい場合は [ 2) リソースを抑制したインストール ]'
             echo '　を選択してください。'
             echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
             echo ""
@@ -1883,10 +1883,10 @@ function low_res_choice() {
             echo '2) リソースを抑制したインストール '
             echo ""
             echo -n "番号で選んでください："
-            read ANSWERNO-RES
-            echo "AMSWERNO-RES: ${ANSWERNO-RES}" >> $LOGFILE
+            read ANSWERNORES
+            echo "AMSWERNORES: $ANSWERNORES" >> $LOGFILE
 
-            case ${ANSWERNO-RES} in
+            case $ANSWERNORES in
                 "1")
                     lowres_flg=0
                     break
@@ -1980,7 +1980,7 @@ if [[ "$BUILD" == "667" ]]; then
 fi
 
 # 21.11.816.2 resource choice
-if [[ "$BUILD" -ge "816.2" ]]; then
+if [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
     low_res_choice
 fi
 
@@ -2032,11 +2032,9 @@ if [[ "$BUILD" == "758" ]]; then
 fi
 
 if [ $lowres_flg -eq 1 ]; then
-    if [[ "$BUILD" == "816.2" ]]; then
-        log_message "[start] fix for 21.11.816.2"
-        sed -i -e 's/shield-cef:211219-Rel-21.11/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
-        log_message "[end] fix for 21.11.816.2"
-    fi
+    log_message "[start] fix for low resources"
+    sed -i -e 's/shield-cef:211219-Rel-21.11/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for low resources"
 fi
 
 #update or deploy NOT offline
