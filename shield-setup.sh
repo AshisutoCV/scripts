@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20211001a
+### VER=20220106a
 ####################
 
 function usage() {
@@ -207,6 +207,7 @@ function check_args(){
     deleteall_flg=0
     old_flg=0
     multi_flg=0
+    lowres_flg=0
     #offline_flg=0
     S_APP_VERSION=""
 
@@ -279,6 +280,7 @@ function check_args(){
     echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
     echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
     echo "offline_flg: $offline_flg" >> $LOGFILE
+    echo "lowres_flg: $lowres_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
     echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
@@ -435,7 +437,11 @@ function select_version() {
         BUILD=()
         BUILD=(${VERSION_DEPLOYED//./ })
         GBUILD=${BUILD[0]}.${BUILD[1]}
-        BUILD=${BUILD[2]}
+        if [[ ${BUILD[3]} ]] ;then
+            BUILD=${BUILD[2]}.${BUILD[3]}
+        else
+            BUILD=${BUILD[2]}
+        fi
         GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
         if [[ $GIT_BRANCH == "Rel-" ]];then
             GIT_BRANCH="Rel-${GBUILD}"
@@ -469,7 +475,11 @@ function select_version() {
             BUILD=()
             BUILD=(${S_APP_VERSION//./ })
             GBUILD=${BUILD[0]}.${BUILD[1]}
-            BUILD=${BUILD[2]}
+            if [[ ${BUILD[3]} ]] ;then
+                BUILD=${BUILD[2]}.${BUILD[3]}
+            else
+                BUILD=${BUILD[2]}
+            fi
             GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
             if [[ $GIT_BRANCH == "Rel-" ]];then
                 GIT_BRANCH="Rel-${GBUILD}"
@@ -489,6 +499,11 @@ function select_version() {
     elif [ $ver_flg -eq 1 ] ; then
             CHART=(${S_APP_VERSION//./ })
             CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
+            if [[ ${CHART[3]} ]] ;then
+                CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}.${CHART[3]}"
+            else
+                CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
+            fi
     else
         declare -A vers_c
         declare -A vers_a
@@ -515,7 +530,11 @@ function select_version() {
                     BUILD=()
                     BUILD=(${S_APP_VERSION//./ })
                     GBUILD=${BUILD[0]}.${BUILD[1]}
-                    BUILD=${BUILD[2]}
+                    if [[ ${BUILD[3]} ]] ;then
+                        BUILD=${BUILD[2]}.${BUILD[3]}
+                    else
+                        BUILD=${BUILD[2]}
+                    fi
                     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
                     if [[ $GIT_BRANCH == "Rel-" ]];then
                         GIT_BRANCH="Rel-${GBUILD}"
@@ -556,7 +575,11 @@ function select_version() {
         BUILD=(${S_APP_VERSION//./ })
         CHKBRANCH=${BUILD[0]}${BUILD[1]}
         GBUILD=${BUILD[0]}.${BUILD[1]}
-        BUILD=${BUILD[2]}
+        if [[ ${BUILD[3]} ]] ;then
+            BUILD=${BUILD[2]}.${BUILD[3]}
+        else
+            BUILD=${BUILD[2]}
+        fi
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
         if [[ $BRANCH == "Rel-" ]];then
             BRANCH="Rel-${GBUILD}"
@@ -577,7 +600,11 @@ function change_dir(){
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
     CHKBRANCH=${BUILD[0]}${BUILD[1]}
-    BUILD=${BUILD[2]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
     if [[ $CHKBRANCH -lt 1911 ]];then
         log_message "pwd: $(pwd)"        
     else
@@ -1838,6 +1865,45 @@ function check_prepare() {
     fi
 }
 
+function low_res_choice() {
+        log_message "[start] resource choice."
+        while :
+        do
+            echo ""
+            echo "========================================================================================="
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo '※Rel-21.11.816.2以降、機能拡張・セキュリティ対応などの理由により、'
+            echo '　ブラウザコンテナの消費リソースが増加しています。'
+            echo '※新しいリソース設定の状態 [ 1)通常インストール ] でご利用頂くことを推奨していますが、'
+            echo '　何らかの理由で消費リソースを抑えてインストールしたい場合は [ 2) リソースを抑制したインストール ]'
+            echo '　を選択してください。'
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo ""
+            echo '1) 通常インストール'
+            echo '2) リソースを抑制したインストール '
+            echo ""
+            echo -n "番号で選んでください："
+            read ANSWERNORES
+            echo "AMSWERNORES: $ANSWERNORES" >> $LOGFILE
+
+            case $ANSWERNORES in
+                "1")
+                    lowres_flg=0
+                    break
+                    ;;
+                "2")
+                    lowres_flg=1
+                    break
+                    ;;
+                *)
+                    echo "番号が正しくありません。"
+                    ;;
+            esac
+        done
+        echo "lowres_flg: $lowres_flg" >> $LOGFILE
+        log_message "[end] resource choice."
+}
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -1913,6 +1979,12 @@ if [[ "$BUILD" == "667" ]]; then
     log_message "ses_limit_flg: $ses_limit_flg"
 fi
 
+# 21.11.816.2 resource choice
+if [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
+    low_res_choice
+fi
+
+
 # check ubuntu env
 if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
     if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
@@ -1951,11 +2023,18 @@ get_scripts
 # mod cluster dns address from es_custom_env
 mod_cluster_dns
 
+# image replace for yaml HotFix
 if [[ "$BUILD" == "758" ]]; then
     log_message "[start] fix for 21.04.758"
     sed -i -e 's/es-system-configuration:210426-Rel-21.04/es-system-configuration:210715-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     sed -i -e 's/icap-server:210426-Rel-21.04/icap-server:210819-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.04.758"
+fi
+
+if [ $lowres_flg -eq 1 ]; then
+    log_message "[start] fix for low resources"
+    sed -i -e 's/shield-cef:211219-Rel-21.11/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for low resources"
 fi
 
 #update or deploy NOT offline

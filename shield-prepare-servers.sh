@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210820a
+### VER=20220106a
 ####################
 
 function usage() {
@@ -12,6 +12,7 @@ function usage() {
     exit 0
     ### for Develop only
     # [ーv | --version <Chart version>]
+    # [--set]
     ##
 }
 
@@ -289,6 +290,7 @@ function check_args(){
     pre_flg=0
     args=""
     ver_flg=0
+    set_flg=0
     S_APP_VERSION=""
 
     echo "args: $@" >> $LOGFILE
@@ -299,6 +301,8 @@ function check_args(){
             pre_flg=1
         elif [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
             usage
+        elif [ "$1" == "--set" ] ; then
+            set_flg=1
         elif [ "$1" == "-v" ] || [ "$1" == "--version" ] || [ "$1" == "--Version" ]; then
             shift
             S_APP_VERSION="$1"
@@ -318,6 +322,7 @@ function check_args(){
     echo "pre_flg: $pre_flg" >> $LOGFILE
     echo "args: $args" >> $LOGFILE
     echo "ver_flg: $ver_flg" >> $LOGFILE
+    echo "set_flg: $set_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "////////////////////////////////" >> $LOGFILE
 }
@@ -342,7 +347,11 @@ function select_version() {
         BUILD=()
         BUILD=(${VERSION_DEPLOYED//./ })
         GBUILD=${BUILD[0]}.${BUILD[1]}
-        BUILD=${BUILD[2]}
+        if [[ ${BUILD[3]} ]] ;then
+            BUILD=${BUILD[2]}.${BUILD[3]}
+        else
+            BUILD=${BUILD[2]}
+        fi
         GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
         if [[ $GIT_BRANCH == "Rel-" ]];then
             GIT_BRANCH="Rel-${GBUILD}"
@@ -376,7 +385,11 @@ function select_version() {
             BUILD=()
             BUILD=(${S_APP_VERSION//./ })
             GBUILD=${BUILD[0]}.${BUILD[1]}
-            BUILD=${BUILD[2]}
+            if [[ ${BUILD[3]} ]] ;then
+                BUILD=${BUILD[2]}.${BUILD[3]}
+            else
+                BUILD=${BUILD[2]}
+            fi
             GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
             if [[ $GIT_BRANCH == "Rel-" ]];then
                 GIT_BRANCH="Rel-${GBUILD}"
@@ -396,6 +409,11 @@ function select_version() {
     elif [ $ver_flg -eq 1 ] ; then
             CHART=(${S_APP_VERSION//./ })
             CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
+            if [[ ${CHART[3]} ]] ;then
+                CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}.${CHART[3]}"
+            else
+                CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
+            fi
     else
         declare -A vers_c
         declare -A vers_a
@@ -422,7 +440,11 @@ function select_version() {
                     BUILD=()
                     BUILD=(${S_APP_VERSION//./ })
                     GBUILD=${BUILD[0]}.${BUILD[1]}
-                    BUILD=${BUILD[2]}
+                    if [[ ${BUILD[3]} ]] ;then
+                        BUILD=${BUILD[2]}.${BUILD[3]}
+                    else
+                        BUILD=${BUILD[2]}
+                    fi
                     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
                     if [[ $GIT_BRANCH == "Rel-" ]];then
                         GIT_BRANCH="Rel-${GBUILD}"
@@ -463,7 +485,11 @@ function select_version() {
         BUILD=(${S_APP_VERSION//./ })
         CHKBRANCH=${BUILD[0]}${BUILD[1]}
         GBUILD=${BUILD[0]}.${BUILD[1]}
-        BUILD=${BUILD[2]}
+        if [[ ${BUILD[3]} ]] ;then
+            BUILD=${BUILD[2]}.${BUILD[3]}
+        else
+            BUILD=${BUILD[2]}
+        fi
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
         if [[ $BRANCH == "Rel-" ]];then
             BRANCH="Rel-${GBUILD}"
@@ -484,7 +510,11 @@ function change_dir(){
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
     CHKBRANCH=${BUILD[0]}${BUILD[1]}
-    BUILD=${BUILD[2]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
     if [[ $CHKBRANCH -lt 1911 ]];then
         log_message "pwd: $(pwd)"        
     else
@@ -512,7 +542,7 @@ function all_fin(){
     TARGET_LIST=""
     while [ "$1" != "" ]
     do
-        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown ericom:ericom ${ES_PREPARE}")
+        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown ericom:ericom ${ES_PREPARE}")
         if [[ $? -ne 0 ]];then
             log_message "[ERROR] RET_NUM: ${RET_NUM}"
             log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
@@ -659,6 +689,11 @@ echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
 
+if [ $set_flg -eq 1 ] ; then
+    sudo su - ericom -c "echo ${S_APP_VERSION} > ${ERICOM_PATH}/.es_prepare"
+    sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
+    fin 0
+fi
 
 # get operation scripts
 get_shield-prepare-servers

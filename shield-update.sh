@@ -2,12 +2,13 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20211215a
+### VER=20220106a
 ####################
 
 function usage() {
     echo ""
-    echo "USAGE: $0 [--pre-use]"
+    echo "USAGE: $0 [--pre-use] [--no-low-resource]"
+    echo "    --pre-use         : 日本での正式リリースに先立ち、1バージョン先のものをβ扱いでご利用いただけます。"
     echo ""
     exit 0
     ### for Develop only
@@ -176,7 +177,11 @@ function select_version() {
         BUILD=()
         BUILD=(${VERSION_DEPLOYED//./ })
         GBUILD=${BUILD[0]}.${BUILD[1]}
-        BUILD=${BUILD[2]}
+        if [[ ${BUILD[3]} ]] ;then
+            BUILD=${BUILD[2]}.${BUILD[3]}
+        else
+            BUILD=${BUILD[2]}
+        fi
         GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
         if [[ $GIT_BRANCH == "Rel-" ]];then
             GIT_BRANCH="Rel-${GBUILD}"
@@ -210,7 +215,11 @@ function select_version() {
             BUILD=()
             BUILD=(${S_APP_VERSION//./ })
             GBUILD=${BUILD[0]}.${BUILD[1]}
-            BUILD=${BUILD[2]}
+            if [[ ${BUILD[3]} ]] ;then
+                BUILD=${BUILD[2]}.${BUILD[3]}
+            else
+                BUILD=${BUILD[2]}
+            fi
             GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
             if [[ $GIT_BRANCH == "Rel-" ]];then
                 GIT_BRANCH="Rel-${GBUILD}"
@@ -230,6 +239,11 @@ function select_version() {
     elif [ $ver_flg -eq 1 ] ; then
             CHART=(${S_APP_VERSION//./ })
             CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
+            if [[ ${CHART[3]} ]] ;then
+                CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}.${CHART[3]}"
+            else
+                CHART_VERSION="${CHART[0]}.$(( 10#${CHART[1]} )).${CHART[2]}"
+            fi
     else
         declare -A vers_c
         declare -A vers_a
@@ -256,7 +270,11 @@ function select_version() {
                     BUILD=()
                     BUILD=(${S_APP_VERSION//./ })
                     GBUILD=${BUILD[0]}.${BUILD[1]}
-                    BUILD=${BUILD[2]}
+                    if [[ ${BUILD[3]} ]] ;then
+                        BUILD=${BUILD[2]}.${BUILD[3]}
+                    else
+                        BUILD=${BUILD[2]}
+                    fi
                     GIT_BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${BUILD} | awk '{print $2}')"
                     if [[ $GIT_BRANCH == "Rel-" ]];then
                         GIT_BRANCH="Rel-${GBUILD}"
@@ -297,7 +315,11 @@ function select_version() {
         BUILD=(${S_APP_VERSION//./ })
         CHKBRANCH=${BUILD[0]}${BUILD[1]}
         GBUILD=${BUILD[0]}.${BUILD[1]}
-        BUILD=${BUILD[2]}
+        if [[ ${BUILD[3]} ]] ;then
+            BUILD=${BUILD[2]}.${BUILD[3]}
+        else
+            BUILD=${BUILD[2]}
+        fi
         BRANCH="Rel-$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver-git.txt | grep ${S_APP_VERSION} | awk '{print $2}')"
         if [[ $BRANCH == "Rel-" ]];then
             BRANCH="Rel-${GBUILD}"
@@ -318,7 +340,11 @@ function change_dir(){
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
     CHKBRANCH=${BUILD[0]}${BUILD[1]}
-    BUILD=${BUILD[2]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
     if [[ $CHKBRANCH -lt 1911 ]];then
         log_message "pwd: $(pwd)"        
     else
