@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220106a
+### VER=20220120a
 ####################
 
 function usage() {
@@ -412,7 +412,7 @@ function delete_all() {
         echo "curl -s -OL ${SCRIPTS_URL}/delete-all.sh"
         echo 'chmod +x delete-all.sh'
     fi
-    echo './delete-all.sh'
+    echo 'sudo ./delete-all.sh'
     echo ""
     echo '------------------------------------------------------------'
 }

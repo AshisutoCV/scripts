@@ -6,6 +6,12 @@
 #### shield-prepare-servers.sh
 * EH_PATH_ERICOMの所有者調整
 
+#### shield-setup.sh
+* delete-all.shの実行指示をsudo 付きに変更。
+
+#### delete-all.sh
+* delete-all.shの実行時、既存ES_PATHの待避でユーザ権限を保持するように調整
+
 --------------------------------------------------------------
 
 ## [VER=20220106a] - 2022/01/06

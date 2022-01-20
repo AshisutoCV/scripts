@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200313a
+### VER=20220120a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -36,12 +36,12 @@ done
 
 
 if [ -d ${ES_PATH} ]; then
+    USERNAME=$(ls -ld  ${ES_PATH} | awk '{print $3}')
+    GROUPNAME=$(ls -ld  ${ES_PATH} | awk '{print $4}')
     mv -f ${ES_PATH}/logs ${HOME}
     sudo rm -rf ${ES_PATH}
     mkdir -p ${ES_PATH}
     mv -f logs ${ES_PATH}/
-    USERNAME=$(ls -ld  ${ES_PATH} | awk '{print $3}')
-    GROUPNAME=$(ls -ld  ${ES_PATH} | awk '{print $4}')
     chown ${USERNAME}:${GROUPNAME} ${ES_PATH}
     chown ${USERNAME}:${GROUPNAME} ${ES_PATH}/logs
 fi
