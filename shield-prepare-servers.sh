@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220106a
+### VER=20220120a
 ####################
 
 function usage() {
@@ -28,6 +28,8 @@ export ES_PATH_ERICOM="/home/ericom/ericomshield"
 export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
+else
+    sudo chown -R ${USER}:${USER} ${ES_PATH_ERICOM}
 fi
 
 if [ ! -e ${ES_PATH}/logs/ ];then
