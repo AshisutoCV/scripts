@@ -29,7 +29,7 @@ export ERICOM_PATH="/home/ericom"
 if [ ! -e $ES_PATH ];then
     mkdir -p $ES_PATH
 else
-    sudo chown -R ${USER}:${USER} ${ES_PATH_ERICOM}
+    sudo chown -R ${USER}:${USER} ${ES_PATH}
 fi
 
 if [ ! -e ${ES_PATH}/logs/ ];then
