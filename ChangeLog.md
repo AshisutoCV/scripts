@@ -1,11 +1,19 @@
 # Changelog
 
+## [VER=20220120a] - 2022/01/06
+
+### 変更
+#### shield-prepare-servers.sh
+* EH_PATH_ERICOMの所有者調整
+
+--------------------------------------------------------------
+
 ## [VER=20220106a] - 2022/01/06
 
 ### 変更
-#### shied-setup.sh
-#### shied-update.sh
-#### shied-prepare-servers.sh
+#### shield-setup.sh
+#### shield-update.sh
+#### shield-prepare-servers.sh
 * 21.11.816.2の導入に対応。
 
 --------------------------------------------------------------
