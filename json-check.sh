@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20210622a
+### VER=20220214a
 ####################
 
 ##### 変数 #####===================================================
@@ -63,7 +63,7 @@ sleep 10s
 
 BACKUP_JSON=${BACKUP_DIR}/$(ls -1t ${BACKUP_DIR} | grep backup | head -1)
 
-jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not)) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>" $7 "\n" }' > ${MASTER_TMP}
+jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not) and (.key | test("prefetch-codec-support-list")| not)) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>" $7 "\n" }' > ${MASTER_TMP}
 
 while read line
 do
@@ -75,7 +75,7 @@ do
 done < ${MASTER_TMP}
 
 
-jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not)) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $3  "<<>>" $7 "\n" }' > ${BACKUP_TMP}
+jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not) and (.key | test("prefetch-codec-support-list")| not)) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $3  "<<>>" $7 "\n" }' > ${BACKUP_TMP}
 
 while read line
 do
@@ -93,7 +93,7 @@ jq -c '.[] | select(.key | test("translations/en-uk")) ' ${BACKUP_JSON} | awk -F
 jq -c '.[] | select(.key | test("translations/en-us")) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $7 }' | sed -e 's/"//g' | base64 -d | sed -e "s/,/,\n/g" > ${MASTER_US_TMP}
 jq -c '.[] | select(.key | test("translations/en-us")) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $7 }' | sed -e 's/"//g' | base64 -d | sed -e "s/,/,\n/g" > ${BACKUP_US_TMP}
 
-
+RESULT=0
 diff -q ${MASTER_TMP2} ${BACKUP_TMP2} 2>&1 > /dev/null || {
     RESULT=$? 
     OUTPUT=$(diff ${MASTER_TMP2} ${BACKUP_TMP2} 2>&1)
@@ -103,6 +103,7 @@ if [ "$RESULT" = "1" ]; then
     echo "$OUTPUT" > ${ERROR_FILE}
 fi
 
+RESULT=0
 diff -q ${MASTER_JP_TMP} ${BACKUP_JP_TMP} 2>&1 > /dev/null || {
     RESULT=$? 
     OUTPUT=$(diff ${MASTER_JP_TMP} ${BACKUP_JP_TMP} 2>&1)
@@ -112,6 +113,7 @@ if [ "$RESULT" = "1" ]; then
     echo "$OUTPUT" >> ${ERROR_FILE}
 fi
 
+RESULT=0
 diff -q ${MASTER_UK_TMP} ${BACKUP_UK_TMP} 2>&1 > /dev/null || {
     RESULT=$? 
     OUTPUT=$(diff ${MASTER_UK_TMP} ${BACKUP_UK_TMP} 2>&1)
@@ -121,6 +123,7 @@ if [ "$RESULT" = "1" ]; then
     echo "$OUTPUT" >> ${ERROR_FILE}
 fi
 
+RESULT=0
 diff -q ${MASTER_US_TMP} ${BACKUP_US_TMP} 2>&1 > /dev/null || {
     RESULT=$? 
     OUTPUT=$(diff ${MASTER_US_TMP} ${BACKUP_US_TMP} 2>&1)
