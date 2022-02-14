@@ -3,6 +3,7 @@
 ## [VER=20220214a] - 2022/02/14
 
 ### 変更
+#### shield-json-check.sh
 #### json-check.sh
 * prefetch-codec-support-listを除外
 * 結果の重複出力を調整
