@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20211022a
+### VER=20220214a
 ####################
 
 ##### 変数 #####===================================================
@@ -104,7 +104,7 @@ fi
 
 BACKUP_JSON=${BACKUP_DIR}/$(ls -1t ${BACKUP_DIR} | grep backup | head -1)
 
-jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not) and (.key | test("system-test")| not)) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>" $7 "\n" }' > ${MASTER_TMP}
+jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not) and (.key | test("system-test")| not) and (.key | test("prefetch-codec-support-list")| not)) ' ${MASTER_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>" $7 "\n" }' > ${MASTER_TMP}
 
 while read line
 do
@@ -115,7 +115,7 @@ do
         echo "${key}<<>>${value}" >> ${MASTER_TMP2}
 done < ${MASTER_TMP}
 
-jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not) and (.key | test("system-test")| not)) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>" $7 "\n" }' > ${BACKUP_TMP}
+jq -c '.[]  | select((.key | test("license_last_login")| not) and (.key | test("ldap_cache_lastUpdate")| not) and (.key | test("last-restore")| not) and (.key | test("users_info")| not) and (.key | test("system-test")| not) and (.key | test("prefetch-codec-support-list")| not)) ' ${BACKUP_JSON} | awk -F'[{:,}]' '{ printf $3 "<<>>" $7 "\n" }' > ${BACKUP_TMP}
 
 while read line
 do

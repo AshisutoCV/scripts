@@ -22,6 +22,7 @@
 * [20210203b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210203b---20210203)
 
 ## shield-json-check.sh
+* [20220214a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220214a---20220214)
 * [20211022a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20211022a---20211022)
 * [20210831a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210831a---20210831)
 * [20210622a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210622a---20210622)
