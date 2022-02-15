@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220120a
+### VER=20220215a
 ####################
 
 function usage() {
@@ -2035,6 +2035,14 @@ if [ $lowres_flg -eq 1 ]; then
     log_message "[start] fix for low resources"
     sed -i -e 's/shield-cef:211219-Rel-21.11/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for low resources"
+fi
+
+if [[ "$BUILD" == "816.2" ]]; then
+    log_message "[start] fix for 21.11.816.2 votiro"
+    sed -i -e 's/es-system-settings:211219-Rel-21.11/es-system-settings:220214-11.30/g' ${ES_PATH}/shield/values.yaml
+    sed -i -e 's/shield-admin:211219-Rel-21.11/shield-admin:220213-14.06/g' ${ES_PATH}/shield/values.yaml
+    sed -i -e 's/shield-cdr-dispatcher:211219-Rel-21.11/shield-cdr-dispatcher:220213-14.02/g' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.11.816.2 votiro"
 fi
 
 #update or deploy NOT offline
