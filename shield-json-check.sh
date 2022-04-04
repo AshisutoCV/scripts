@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220214a
+### VER=20220405a
 ####################
 
 ##### 変数 #####===================================================
@@ -57,7 +57,7 @@ fi
 
 rm -f ${ERROR_FILE}
 
-if which kubectl > /dev/null 2>&1 ; then
+if [[ $(ps -ef | grep -v grep | grep -c kube-apiserver) -eq 1 ]] ; then
     CONSUL_BACKUP_POD=$(kubectl get pods --namespace=management | grep consul-backup | awk {'print $1'})
     kubectl exec -t --namespace=management ${CONSUL_BACKUP_POD} python /scripts/backup.py > /dev/null 2>&1
     sleep 10s
