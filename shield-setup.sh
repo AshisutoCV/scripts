@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220218a
+### VER=20220419a-dev
 ####################
 
 function usage() {
@@ -61,8 +61,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -515,15 +515,24 @@ function select_version() {
         elif [ "$BRANCH" == "Staging" ]; then
             VER=$(curl -s "https://ericom:${ERICOMPASS}@helmrepo.shield-service.net/staging/index.yaml" | grep ersion | grep -v api | sed -e ':loop; N; $!b loop; s/\n\s*version/ /g' | awk '{printf "%s %s\n", $4,$2}')
         else
-            VER=$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s\n", $2,$3}')
+            VER=$(curl -sL ${SCRIPTS_URL}/k8s-rel-ver.txt | grep -v CHART | awk '{printf "%s %s %s\n", $2,$3,$4}')
         fi
 
         echo "どのバージョンをセットアップしますか？"
         for i in $VER
         do
             n=$(( $n + 1 ))
-            if [ $((${n} % 2)) = 0 ]; then
-                m=$(( $n / 2 ))
+            if [ $((${n} % 3)) = 1 ]; then
+                if [ $n = 1 ]; then
+                    m=1
+                else
+                    m=$(( $n - 2 ))
+                fi
+                m=$n
+                CHART_VERSION=$i
+                vers_c[$m]=$CHART_VERSION
+            elif [ $((${n} % 3)) = 2 ]; then
+                #m=$(( $n / 3 ))
                 S_APP_VERSION=$i
                 vers_a[$m]=$S_APP_VERSION
                 if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
@@ -539,18 +548,20 @@ function select_version() {
                     if [[ $GIT_BRANCH == "Rel-" ]];then
                         GIT_BRANCH="Rel-${GBUILD}"
                     fi
-                    echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                    #echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                else
+                    : #echo "$m: Rel-$S_APP_VERSION" 
+                fi
+            elif [ $((${n} % 3)) = 0 ]; then
+                if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
+                    if [[ $i == "eol" ]]; then
+                        echo "$m: ${GIT_BRANCH}_Build:${BUILD} ※サポート終了"
+                    else
+                        echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                    fi
                 else
                     echo "$m: Rel-$S_APP_VERSION" 
                 fi
-            else
-                if [ $n = 1 ]; then
-                    m=1
-                else
-                    m=$(( $n - $m ))
-                fi
-                CHART_VERSION=$i
-                vers_c[$m]=$CHART_VERSION
             fi
         done
 
@@ -1821,6 +1832,11 @@ function change_resource() {
 
 function install_helm() {
     sed -i -e 's/sudo/sudo env PATH=$PATH/' install-helm.sh
+    if [[ "$BRANCH" == "Rel-20.05" ]] || [[ "$BRANCH" == "Rel-20.03" ]]  || [[ "$BRANCH" == "Rel-20.01" ]] ;then
+        if [[ $offline_flg -eq 0 ]]; then
+            sed -i -e 's/\$.ES_OFFLINE_REGISTRY_PREFIX.gcr.io\/kubernetes-helm/securebrowsing9/' install-helm.sh
+        fi
+    fi
     if which helm > /dev/null 2>&1 ; then
         log_message "[info] already installed helm"
         log_message "[start] re-install helm "
