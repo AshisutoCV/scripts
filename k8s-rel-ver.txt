@@ -1,14 +1,14 @@
 NAME                    CHART VERSION   APP VERSION     DESCRIPTION
-shield-repo/shield      21.11.816.3      21.11.816.3     A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      21.11.816.2      21.11.816.2     A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      21.04.758        21.04.758       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      21.01.744        21.01.744       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      21.01.743        21.01.743       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      21.01.742        21.01.742       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      20.10.685        20.10.685       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      20.07.669        20.07.669       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      20.07.667        20.07.667       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      20.05.650        20.05.650       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      20.05.649        20.05.649       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      20.03.639        20.03.639       A Helm chart for installing Ericom Shield for Kubernetes
-shield-repo/shield      20.01.622        20.01.622       A Helm chart for installing Ericom Shield for Kubernetes
+shield-repo/shield      21.11.816.3      21.11.816.3    ok
+shield-repo/shield      21.11.816.2      21.11.816.2    ok
+shield-repo/shield      21.04.758        21.04.758      ok
+shield-repo/shield      21.01.744        21.01.744      ok
+shield-repo/shield      21.01.743        21.01.743      ok
+shield-repo/shield      21.01.742        21.01.742      ok
+shield-repo/shield      20.10.685        20.10.685      eol
+shield-repo/shield      20.07.669        20.07.669      eol
+shield-repo/shield      20.07.667        20.07.667      eol
+shield-repo/shield      20.05.650        20.05.650      eol
+shield-repo/shield      20.05.649        20.05.649      eol
+shield-repo/shield      20.03.639        20.03.639      eol
+shield-repo/shield      20.01.622        20.01.622      eol
