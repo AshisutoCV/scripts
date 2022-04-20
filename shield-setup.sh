@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220419a-dev
+### VER=20220420a
 ####################
 
 function usage() {
@@ -61,8 +61,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -523,16 +523,10 @@ function select_version() {
         do
             n=$(( $n + 1 ))
             if [ $((${n} % 3)) = 1 ]; then
-                if [ $n = 1 ]; then
-                    m=1
-                else
-                    m=$(( $n - 2 ))
-                fi
                 m=$n
                 CHART_VERSION=$i
                 vers_c[$m]=$CHART_VERSION
             elif [ $((${n} % 3)) = 2 ]; then
-                #m=$(( $n / 3 ))
                 S_APP_VERSION=$i
                 vers_a[$m]=$S_APP_VERSION
                 if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
