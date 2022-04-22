@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220420a
+### VER=20220422a
 ####################
 
 function usage() {
@@ -61,8 +61,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -1966,10 +1966,10 @@ fi
 
 export BRANCH
 export BUILD
-echo $BRANCH > .es_branch
 log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
-echo ${S_APP_VERSION} > .es_version
+#echo $BRANCH > .es_branch
+#echo ${S_APP_VERSION} > .es_version
 
 if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
     old_flg=1
@@ -2259,6 +2259,9 @@ deploy_shield
 move_to_project
 
 check_start
+
+echo $BRANCH > .es_branch
+echo ${S_APP_VERSION} > .es_version
 
 #All fin
 fin 0
