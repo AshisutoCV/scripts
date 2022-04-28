@@ -263,7 +263,11 @@ function select_version() {
         do
             n=$(( $n + 1 ))
             if [ $((${n} % 3)) = 1 ]; then
-                m=$n
+                if [ $n = 1 ]; then
+                    m=1
+                else
+                    m=$(( $m + 1 ))
+                fi
                 CHART_VERSION=$i
                 vers_c[$m]=$CHART_VERSION
             elif [ $((${n} % 3)) = 2 ]; then
