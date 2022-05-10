@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220509a
+### VER=20220510a
 ####################
 
 function usage() {
@@ -673,9 +673,11 @@ function choose_network_interface() {
     local INTERFACES=($(find /sys/class/net -type l -not -lname '*virtual*' -printf '%f\n'))
     local INTERFACE_ADDRESSES=()
     local OPTIONS=()
-
-    INTERFACES+=($(cat /etc/netplan/00-installer-config.yaml | python3 -c "import yaml; import json; import sys; print(json.dumps(yaml.load(sys.stdin, Loader=yaml.SafeLoader), indent=2))" | jq -r '.network.vlans | keys' | jq -r '.[]'))
-
+    
+    if [ -f "/etc/netplan/00-installer-config.yaml" ]; then
+        INTERFACES+=($(cat /etc/netplan/00-installer-config.yaml | python3 -c "import yaml; import json; import sys; print(json.dumps(yaml.load(sys.stdin, Loader=yaml.SafeLoader), indent=2))" | jq -r '.network.vlans | keys' | jq -r '.[]'))
+    fi
+    
     if [ -f "/sys/class/net/bonding_masters" ]; then
         INTERFACES+=($(cat /sys/class/net/bonding_masters))
     fi
