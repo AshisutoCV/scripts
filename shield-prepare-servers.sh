@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220509a
+### VER=20220510a
 ####################
 
 function usage() {
@@ -142,7 +142,11 @@ function check_docker-ce(){
     TARGET_LIST=""
     while [ "$1" != "" ]
     do
-        RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `dpkg -l | grep docker-ce | grep -ce ii -ce hi`')
+        if [[ $OS == "Ubuntu" ]]; then
+            RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `dpkg -l | grep docker-ce | grep -ce ii -ce hi`')
+        elif [[ $OS == "RHEL" ]]; then
+            RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `yum list installed | grep -c docker-ce`')
+        fi
         if [[ $? -ne 0 ]];then
             log_message "[ERROR] 接続に失敗しました。ericomユーザのパスワード、またはノードへのssh権限をご確認ください。"
             fin 1
@@ -155,69 +159,79 @@ function check_docker-ce(){
         shift
     done
 
-    if [[ $(dpkg -l | grep docker-ce | grep -ce ii -ce hi) -gt 0 ]];then
-        TARGET_LIST+=" 127.0.0.1"
+    if [[ $OS == "Ubuntu" ]]; then
+        if [[ $(dpkg -l | grep docker-ce | grep -ce ii -ce hi) -gt 0 ]];then
+            TARGET_LIST+=" 127.0.0.1"
+        fi
+    elif [[ $OS == "RHEL" ]]; then
+        if [[ $(yum list installed | grep -c docker-ce) -gt 0 ]];then
+            TARGET_LIST+=" 127.0.0.1"
+        fi
     fi
 
-    if [[ ${TARGET_LIST} != "" ]];then
-        echo "TARGET_LIST: ${TARGET_LIST}"
-        log_message "[WARN] docker-ce が検出されました。"
-        echo "docker-ce をアンインストールして、再起動します。"
-        echo "再起動後、改めてshield-prepare-servers.shを実行してください。"
-        echo ""
-        while :
-        do
-            echo -n 'よろしいですか？ [y/N]:'
-                read ANSWER
-                case $ANSWER in
-                    "Y" | "y" | "yse" | "Yes" | "YES" )
-                        break
-                        ;;
-                    "" | "n" | "N" | "no" | "No" | "NO" )
-                        ;;
-                    * )
-                        echo "YまたはNで答えて下さい。"
-                        ;;
-                esac
-        done
 
-        for t in $TARGET_LIST ;
-        do
-            echo "T: $t"
-            log_message "[start] delete docker-ce on $t"
-            if [[ "$t" == "127.0.0.1" ]];then
-                RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket")
-            else
-                RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket && sudo reboot")
-            fi
-            echo $RET
-        done
-        log_message "[end] delete docker-ce"
-        change_dir
-        echo "対象ノードが全て再起動されたことを確認し、改めてshield-prepare-servers.shを実行してください。"
-        if [[ `echo "$TARGET_LIST" | grep '127.0.0.1'` ]] ; then 
-            echo ""
-            echo "このノードも再起動します。"
+    if [[ $OS == "Ubuntu" ]]; then
+        if [[ ${TARGET_LIST} != "" ]];then
+            echo "TARGET_LIST: ${TARGET_LIST}"
+            log_message "[WARN] docker-ce が検出されました。"
+            echo "docker-ce をアンインストールして、再起動します。"
+            echo "再起動後、改めてshield-prepare-servers.shを実行してください。"
             echo ""
             while :
             do
-                echo ""
                 echo -n 'よろしいですか？ [y/N]:'
-                read ANSWER
-                case $ANSWER in
-                    "Y" | "y" | "yse" | "Yes" | "YES" )
-                        break
-                        ;;
-                    "" | "n" | "N" | "no" | "No" | "NO" )
-                        ;;
-                    * )
-                        echo "YまたはNで答えて下さい。"
-                        ;;
-                esac
+                    read ANSWER
+                    case $ANSWER in
+                        "Y" | "y" | "yse" | "Yes" | "YES" )
+                            break
+                            ;;
+                        "" | "n" | "N" | "no" | "No" | "NO" )
+                            ;;
+                        * )
+                            echo "YまたはNで答えて下さい。"
+                            ;;
+                    esac
             done
-            sudo reboot
+
+            for t in $TARGET_LIST ;
+            do
+                echo "T: $t"
+                log_message "[start] delete docker-ce on $t"
+                if [[ "$t" == "127.0.0.1" ]];then
+                    RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket")
+                else
+                    RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket && sudo reboot")
+                fi
+                echo $RET
+            done
+            log_message "[end] delete docker-ce"
+
+            change_dir
+            echo "対象ノードが全て再起動されたことを確認し、改めてshield-prepare-servers.shを実行してください。"
+            if [[ `echo "$TARGET_LIST" | grep '127.0.0.1'` ]] ; then 
+                echo ""
+                echo "このノードも再起動します。"
+                echo ""
+                while :
+                do
+                    echo ""
+                    echo -n 'よろしいですか？ [y/N]:'
+                    read ANSWER
+                    case $ANSWER in
+                        "Y" | "y" | "yse" | "Yes" | "YES" )
+                            break
+                            ;;
+                        "" | "n" | "N" | "no" | "No" | "NO" )
+                            ;;
+                        * )
+                            echo "YまたはNで答えて下さい。"
+                            ;;
+                    esac
+                done
+                sudo reboot
+            fi
+            fin 1
         fi
-        fin 1
     fi
     change_dir
 }
@@ -593,25 +607,47 @@ function shield_prepare_servers() {
         echo -n "[sudo] password for ${USER}: "
         read -s SUDO_PASSWORD
         echo ""
-        expect -c "
-            spawn -noecho /bin/bash -c \"sudo -k -p checking pwd\"
-            expect \"checking\" {
-                send \"${SUDO_PASSWORD}\n\"
-            } \"/home/\" {
-                send \"\n\"
-            }
-            expect \"Sorry,\" {
-                expect \"checking\"            
-                send \"${SUDO_PASSWORD}\n\"
-                expect \"checking\"            
-                send \"${SUDO_PASSWORD}\n\"
-                expect \"incorrect\"
-                send \"echo 'パスワードが違います。再度入力してください。'\"
+        if [[ "${USER}" == "root" ]]; then
+            expect -c "
+                spawn -noecho /bin/bash -c \"sudo -k -p checking pwd\"
+                expect \"checking\" {
+                    send \"${SUDO_PASSWORD}\n\"
+                } \"/root\" {
+                    send \"\n\"
+                }
+                expect \"Sorry,\" {
+                    expect \"checking\"            
+                    send \"${SUDO_PASSWORD}\n\"
+                    expect \"checking\"            
+                    send \"${SUDO_PASSWORD}\n\"
+                    expect \"incorrect\"
+                    send \"echo 'パスワードが違います。再度入力してください。'\"
+                    exit 0
+                }
+                log_file sudo-ok.tmp
                 exit 0
-            }
-            log_file sudo-ok.tmp
-            exit 0
-        "
+            "
+        else
+            expect -c "
+                spawn -noecho /bin/bash -c \"sudo -k -p checking pwd\"
+                expect \"checking\" {
+                    send \"${SUDO_PASSWORD}\n\"
+                } \"/home/\" {
+                    send \"\n\"
+                }
+                expect \"Sorry,\" {
+                    expect \"checking\"            
+                    send \"${SUDO_PASSWORD}\n\"
+                    expect \"checking\"            
+                    send \"${SUDO_PASSWORD}\n\"
+                    expect \"incorrect\"
+                    send \"echo 'パスワードが違います。再度入力してください。'\"
+                    exit 0
+                }
+                log_file sudo-ok.tmp
+                exit 0
+            "
+        fi
         if [[ -f sudo-ok.tmp ]];then
             break
         fi
@@ -660,7 +696,10 @@ function install_expect(){
             echo "updateing apt....."
             sudo apt-get update -qq
             sudo apt-get install -y -qq expect >>"$LOGFILE" 2>&1
+        elif [[ $OS == "RHEL" ]];then
+            sudo yum install -y expect >>"$LOGFILE" 2>&1
         fi
+
         if ! which expect > /dev/null 2>&1 ;then
             failed_to_install "install expect"
         fi
@@ -669,6 +708,30 @@ function install_expect(){
     fi
     log_message "[end] install expect"
 
+}
+
+function install_fuse-libs(){
+    log_message "[start] install fuse-libs"
+    sudo yum install -y fuse-libs
+    log_message "[end] install expect"
+}
+
+function install_wget(){
+    log_message "[start] install wget"
+    if ! which wget > /dev/null 2>&1 ;then
+        if [[ $OS == "Ubuntu" ]]; then
+            sudo apt-get install -y -qq wget >>"$LOGFILE" 2>&1
+        elif [[ $OS == "RHEL" ]];then
+            sudo yum install -y wget >>"$LOGFILE" 2>&1
+        fi
+
+        if ! which wget > /dev/null 2>&1 ;then
+            failed_to_install "install wget"
+        fi
+    else
+        log_message "wget is already installed"
+    fi
+    log_message "[end] install wget"    
 }
 
 ######START#####
@@ -709,4 +772,8 @@ fi
 # get operation scripts
 get_shield-prepare-servers
 install_expect
+install_wget
+if [[ $OS == "RHEL" ]];then
+    install_fuse-libs
+fi
 shield_prepare_servers
