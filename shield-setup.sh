@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220510a
+### VER=20220720a
 ####################
 
 function usage() {
@@ -27,6 +27,8 @@ function usage() {
     exit 0
     ### for Develop only
     # [--version <Chart version>]
+    # [--spare]
+    # [--change-spare]
     ##
 }
 
@@ -57,6 +59,8 @@ CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 ERICOMPASS2="Ericom98765$"
+DOCKER_USER="ericomshield1"
+DOCKER_USER_SPARE="ericomshield9"
 CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
@@ -208,6 +212,8 @@ function check_args(){
     old_flg=0
     multi_flg=0
     lowres_flg=0
+    spare_flg=0
+    change_spare_flg=0
     #offline_flg=0
     S_APP_VERSION=""
 
@@ -221,6 +227,10 @@ function check_args(){
             usage
         elif [ "$1" == "--update" ] || [ "$1" == "--Update" ] ; then
             update_flg=1
+        elif [ "$1" == "--spare" ] || [ "$1" == "--Spare" ] ; then
+            spare_flg=1
+        elif [ "$1" == "--change-spare" ] || [ "$1" == "--Change-Spare" ] || [ "$1" == "--Change-spare" ] ; then
+            change_spare_flg=1
         elif [ "$1" == "--deploy" ] || [ "$1" == "--Deploy" ] ; then
             deploy_flg=1
         elif [ "$1" == "--get-custom-yaml" ] || [ "$1" == "--Get-custom-yaml" ] ; then
@@ -277,6 +287,8 @@ function check_args(){
     echo "deploy_flg: $deploy_flg" >> $LOGFILE
     echo "noget_flg: $noget_flg" >> $LOGFILE
     echo "spell_flg: $spell_flg" >> $LOGFILE
+    echo "spare_flg: $spare_flg" >> $LOGFILE
+    echo "change_spare_flg: $change_spare_flg" >> $LOGFILE
     echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
     echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
     echo "offline_flg: $offline_flg" >> $LOGFILE
@@ -1919,6 +1931,27 @@ function low_res_choice() {
         log_message "[end] resource choice."
 }
 
+function change_spare(){
+    if [[ $change_spare_flg -eq 1 ]];then
+        if [[ $(grep -c securebrowsing9 $ES_PATH/install-shield-from-container.sh) -gt 1 ]];then
+            sudo sed -i -e 's/securebrowsing9/securebrowsing/' $ES_PATH/install-shield-from-container.sh
+            echo "docker login" $DOCKER_USER
+            echo "$ERICOMPASS2" | docker login --username=$DOCKER_USER --password-stdin
+        else
+            sudo sed -i -e 's/securebrowsing/securebrowsing9/' $ES_PATH/install-shield-from-container.sh
+            echo "docker login" $DOCKER_USER_SPARE
+            echo "$ERICOMPASS2" | docker login --username=$DOCKER_USER_SPARE --password-stdin
+        fi
+        if [ $? == 0 ]; then
+            echo "Login Succeeded!"
+        else
+            log_message "Cannot Login to docker, exiting"
+            exit -1
+        fi
+    fi
+    fin 0
+}
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -1939,6 +1972,8 @@ fi
 # check args and set flags
 check_args $@
 flg_check
+
+change_spare
 
 # version select
 select_version
@@ -2019,6 +2054,28 @@ fi
 curl -s -OL ${SCRIPTS_URL_ES}/install-shield-from-container.sh
 sudo chmod +x install-shield-from-container.sh
 sudo sed -i -e '/.\/$ES_file_install_shield_local/d' install-shield-from-container.sh
+if [[ $spare_flg -eq 1 ]];then
+    sudo sed -i -e 's/securebrowsing/securebrowsing9/' install-shield-from-container.sh
+    #docker logout
+    echo "docker login" $DOCKER_USER_SPARE
+    echo "$ERICOMPASS2" | docker login --username=$DOCKER_USER_SPARE --password-stdin
+    if [ $? == 0 ]; then
+        echo "Login Succeeded!"
+    else
+        log_message "Cannot Login to docker, exiting"
+        exit -1
+    fi
+else
+    #docker logout
+    echo "docker login" $DOCKER_USER
+    echo "$ERICOMPASS2" | docker login --username=$DOCKER_USER --password-stdin
+    if [ $? == 0 ]; then
+        echo "Login Succeeded!"
+    else
+        log_message "Cannot Login to docker, exiting"
+        exit -1
+    fi    
+fi
 if [[ $offline_flg -eq 1 ]];then
     sudo ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" --registry $REGISTRY_OVA | tee -a $LOGFILE
 else
