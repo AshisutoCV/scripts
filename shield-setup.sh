@@ -1973,7 +1973,7 @@ fi
 check_args $@
 flg_check
 
-#change_spare
+change_spare
 
 # version select
 select_version
