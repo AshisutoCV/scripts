@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220720a
+### VER=20220721a
 ####################
 
 function usage() {
@@ -1973,7 +1973,7 @@ fi
 check_args $@
 flg_check
 
-change_spare
+#change_spare
 
 # version select
 select_version
