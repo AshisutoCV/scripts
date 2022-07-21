@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220720a
+### VER=20220721b
 ####################
 
 function usage() {
@@ -1948,8 +1948,8 @@ function change_spare(){
             log_message "Cannot Login to docker, exiting"
             exit -1
         fi
+        fin 0
     fi
-    fin 0
 }
 
 ######START#####
@@ -1973,7 +1973,7 @@ fi
 check_args $@
 flg_check
 
-change_spare
+#change_spare
 
 # version select
 select_version
