@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220721b
+### VER=20220808a
 ####################
 
 function usage() {
@@ -2045,6 +2045,15 @@ if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
     sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
 fi
 
+# install docker
+if [[ $offline_flg -eq 0 ]];then
+    log_message "[start] install docker"
+    curl -s -O ${SCRIPTS_URL_ES}/install-docker.sh
+    chmod +x install-docker.sh
+    check_docker
+    log_message "[end] install docker"
+fi
+
 # get&run install-shield-from-container
 if [ ls "$ES_PATH/.*" ] &>/dev/null; then
     echo "Keeping dot files"
@@ -2189,15 +2198,6 @@ EOF
     if [ -x "/usr/bin/docker" ]; then
         sudo systemctl restart docker
     fi
-fi
-
-# install docker
-if [[ $offline_flg -eq 0 ]];then
-    log_message "[start] install docker"
-    curl -s -O ${SCRIPTS_URL_ES}/install-docker.sh
-    chmod +x install-docker.sh
-    check_docker
-    log_message "[end] install docker"
 fi
 
 ### install-shield-local.sh
