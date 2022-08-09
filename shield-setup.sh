@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220808a
+### VER=20220809a-dev
 ####################
 
 function usage() {
@@ -1649,6 +1649,7 @@ function set_node_label() {
 function check_ha() {
     NUM_MNG=$(kubectl get nodes --show-labels |grep -c management)
     NUM_FARM=$(kubectl get nodes --show-labels |grep -c farm-services)
+    NUM_PROXY=$(kubectl get nodes --show-labels |grep -c proxy)
 
     if [[ $NUM_MNG -eq 3 ]];then
         if [ -f custom-management.yaml ]; then
@@ -1669,8 +1670,19 @@ function check_ha() {
                  sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-farm.yaml
              fi
         fi
-    elif [[ $NUM_MNG -eq 1 ]];then
+    elif [[ $NUM_FARM -eq 1 ]];then
              sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-farm.yaml
+    fi
+    if [[ $NUM_PROXY -eq 3 ]];then
+        if [ -f custom-proxy.yaml ]; then
+             if [[ $(grep -c antiAffinity custom-proxy.yaml) -ge 1 ]];then
+                 sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-proxy.yaml 
+             else
+                 sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-proxy.yaml
+             fi
+        fi
+    elif [[ $NUM_PROXY -eq 1 ]];then
+             sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-proxy.yaml
     fi
 }
 
