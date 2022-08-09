@@ -65,8 +65,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -424,7 +424,7 @@ function delete_all() {
         echo "curl -s -OL ${SCRIPTS_URL}/delete-all.sh"
         echo 'chmod +x delete-all.sh'
     fi
-    echo 'sudo ./delete-all.sh'
+    echo 'sudo -E ./delete-all.sh'
     echo ""
     echo '------------------------------------------------------------'
 }
@@ -807,7 +807,7 @@ function check_group() {
         log_message "一度ログオフした後、ログインをしなおして、スクリプトを再度実行してください。"
         log_message "================================================================================="
         log_message "[start] add group"
-        sudo usermod -aG docker "$USER"
+        sudo -E usermod -aG docker "$USER"
         log_message "[end] add group"
         rm -f .es_version
         rm -f .es_branch
@@ -828,7 +828,7 @@ function run_rancher() {
 }
 
 function pre_create_cluster() {
-    sudo chown -R $(whoami):$(whoami) ${HOME}/.kube
+    sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
     rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
     echo -n 'getting k8s version.'
     K8S_VER=""
@@ -995,7 +995,7 @@ function show_agent_cmd_old() {
      echo ""  | tee -a $CMDFILE
      echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
      echo ""  | tee -a $CMDFILE
-     echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
+     echo 'sudo -E ./configure-sysctl-values.sh'  | tee -a $CMDFILE
      echo ""  | tee -a $CMDFILE
      echo ""  | tee -a $CMDFILE
      if [[ $offline_flg -eq 0 ]]; then
@@ -1307,9 +1307,10 @@ function reget_kubeconfig() {
     if [ ! -d  ${HOME}/.kube ];then
         mkdir -p ${HOME}/.kube
     else
-        sudo chown -R $(whoami):$(whoami) ${HOME}/.kube
+        sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
     fi
     touch  ${HOME}/.kube/config
+    chmod 600 ${HOME}/.kube/config
     echo 'waiting....'
     sleep 30
 
@@ -1855,7 +1856,7 @@ function change_resource() {
 }
 
 function install_helm() {
-    sed -i -e 's/sudo/sudo env PATH=$PATH/' install-helm.sh
+    sed -i -e 's/sudo/sudo -E env PATH=$PATH/' install-helm.sh
     if [[ "$BRANCH" == "Rel-20.05" ]] || [[ "$BRANCH" == "Rel-20.03" ]]  || [[ "$BRANCH" == "Rel-20.01" ]] ;then
         if [[ $offline_flg -eq 0 ]]; then
             sed -i -e 's/\$.ES_OFFLINE_REGISTRY_PREFIX.gcr.io\/kubernetes-helm/securebrowsing9/' install-helm.sh
@@ -2098,12 +2099,12 @@ else
     fi    
 fi
 if [[ $offline_flg -eq 1 ]];then
-    sudo ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" --registry $REGISTRY_OVA | tee -a $LOGFILE
+    sudo -E ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" --registry $REGISTRY_OVA | tee -a $LOGFILE
 else
-    sudo ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" | tee -a $LOGFILE    
+    sudo -E ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" | tee -a $LOGFILE    
 fi
-sudo chown -R $(whoami):$(whoami) ${ES_PATH}
-sudo chown -R $(whoami):$(whoami) ${CURRENT_DIR}/.docker
+sudo -E chown -R $(whoami):$(whoami) ${ES_PATH}
+sudo -E chown -R $(whoami):$(whoami) ${CURRENT_DIR}/.docker
 chmod +x -R ${ES_PATH}/*.sh
 if [ -d "/tmp/dot" ] &>/dev/null; then
     mv /tmp/dot/.* $ES_PATH
@@ -2225,7 +2226,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #1.  Run configure-sysctl-values.sh
     log_message "[start] setting sysctl-values"
-    sudo ./configure-sysctl-values.sh | tee -a $LOGFILE
+    sudo -E ./configure-sysctl-values.sh | tee -a $LOGFILE
     if [ $? != 0 ]; then
            failed_to_install "install sysctl-values"
     fi
@@ -2269,7 +2270,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
-    sudo ./install-rancher-cli.sh
+    sudo -E ./install-rancher-cli.sh
     if [ $? != 0 ]; then
        failed_to_install "install rancher cli"
     fi
@@ -2280,7 +2281,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[start] create cluster"
     sed -i -e '/^wait_for_rancher/a sleep 5' create-cluster.sh
     sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
-    sudo ./create-cluster.sh
+    sudo -E ./create-cluster.sh
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
     fi

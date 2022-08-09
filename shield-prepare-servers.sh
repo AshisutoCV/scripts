@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220510a
+### VER=20220809a-dev
 ####################
 
 function usage() {
@@ -47,8 +47,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
@@ -170,7 +170,7 @@ function check_docker-ce(){
     fi
 
 
-    if [[ $OS == "Ubuntu" ]]; then
+    if [[ $OS == "Ubuntu" ]] && [[ ${CHKBRANCH} -lt 2207 ]]; then
         if [[ ${TARGET_LIST} != "" ]];then
             echo "TARGET_LIST: ${TARGET_LIST}"
             log_message "[WARN] docker-ce が検出されました。"
@@ -245,7 +245,12 @@ function get_shield-prepare-servers() {
         mv -f ./shield-prepare-servers ./org/shield-prepare-servers
     fi
     #curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/master/shield-prepare-servers
-    curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
+    echo ${CHKBRANCH}
+    if [[ ${CHKBRANCH} -lt 2207 ]]; then
+        curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
+    else
+        curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-22.07.921/shield-prepare-servers
+    fi
     chmod +x ${ES_PATH}/shield-prepare-servers
     log_message "[end] Getting shield-prepaer-servers."
 }

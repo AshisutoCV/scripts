@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220509a
+### VER=20220809a-dev
 ####################
 
 function usage() {
@@ -47,8 +47,8 @@ BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -427,7 +427,7 @@ function check_sysctl() {
     log_message "[start] check sysctl file"
     if [ $(diff -c configure-sysctl-values.sh configure-sysctl-values.sh_backup | wc -l) -gt 0 ]; then
         log_message "[start] exec sysctl script"
-        sudo ./configure-sysctl-values.sh
+        sudo -E ./configure-sysctl-values.sh
         echo '------------------------------------------------------------'
         echo "(下記を他のノードでも実行してください。)"
         echo ""
@@ -437,7 +437,7 @@ function check_sysctl() {
             echo "curl -s -OL ${SCRIPTS_URL_ES}/configure-sysctl-values.sh"
         fi
         echo 'chmod +x configure-sysctl-values.sh'
-        echo 'sudo ./configure-sysctl-values.sh'
+        echo 'sudo -E ./configure-sysctl-values.sh'
         echo ""
         echo '------------------------------------------------------------'
         while :
