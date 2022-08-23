@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220809a-dev
+### VER=20220822a-dev
 ####################
 
 function usage() {
@@ -1010,7 +1010,7 @@ function show_agent_cmd_old() {
          if [ ! -z $DOCKER0 ]; then 
              echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
+             echo "sudo sh -c \"cat /etc/docker/daemon.json | jq '.bip |= \\\"${DOCKER0}\\\"' | sudo tee /etc/docker/daemon.json\"" | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
          fi
          echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1045,7 +1045,7 @@ function show_agent_cmd() {
          if [ ! -z $DOCKER0 ]; then 
              echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
+             echo "sudo sh -c \"cat /etc/docker/daemon.json | jq '.bip |= \\\"${DOCKER0}\\\"' | sudo tee /etc/docker/daemon.json\"" | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "sudo systemctl restart docker"
          fi
