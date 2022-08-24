@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220822a-dev
+### VER=20220824a-dev
 ####################
 
 function usage() {
@@ -624,6 +624,7 @@ function shield_prepare() {
 
 function shield_prepare_servers() {
 
+    PREPARE_TARGET="$@"
     rm -f sudo-ok.tmp
     cd $CURRENT_DIR
     rm -f sudo-ok.tmp
@@ -686,7 +687,7 @@ function shield_prepare_servers() {
     echo ""
     expect -c "
         set timeout 600
-        spawn /bin/bash -c \"sudo -k -p sudo-pass: ${ES_PATH}/shield-prepare-servers -u ericom $1\"
+        spawn /bin/bash -c \"sudo -k -p sudo-pass: ${ES_PATH}/shield-prepare-servers -u ericom ${PREPARE_TARGET}\"
         expect \"sudo-pass:\" {
             send \"${SUDO_PASSWORD}\n\"
             expect \"password:\" 
