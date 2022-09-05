@@ -2,12 +2,13 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220824a-dev
+### VER=20220905a-dev
 ####################
 
 function usage() {
     echo ""
-    echo "USAGE: $0 "
+    echo "USAGE: $0 [--force]"
+    echo "    --force         : 既に実行済みのサーバで、強制的にshield-prepare-serversを再実行します。"
     echo ""
     exit 0
     ### for Develop only
@@ -158,11 +159,21 @@ function check_docker-ce(){
             TARGET_LIST+=" $1"
         fi
 
-        #.es_prepareを確認
-        RET_NUM2=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `ls /home/ericom/.es_prepare 2>/dev/null | grep -c .es_prepare`')
-        RET_NUM2=`echo ${RET_NUM2} | sed -e "s/[\r\n]\+//g"`
-        echo "RET_NUM2: ${RET_NUM2}"
-        if [[ $RET_NUM2 -eq 0 ]];then
+        if [[ $force_flg -ne 1 ]];then
+            #.es_prepareを確認
+            RET_NUM2=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `ls /home/ericom/.es_prepare 2>/dev/null | grep -c .es_prepare`')
+            RET_NUM2=`echo ${RET_NUM2} | sed -e "s/[\r\n]\+//g"`
+            echo "RET_NUM2(.es_prepare): ${RET_NUM2}" >> $LOGFILE
+            RET_NUM3=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `ps -ef | grep -v grep | grep -c rancher`')
+            RET_NUM3=`echo ${RET_NUM3} | sed -e "s/[\r\n]\+//g"`
+            echo "RET_NUM3(ps rancher): ${RET_NUM3}" >> $LOGFILE
+            if [[ $RET_NUM2 -eq 0 ]] && [[ $RET_NUM3 -eq 0 ]];then
+                TARGET_LIST2+=" $1"
+            elif [[ $RET_NUM2 -ne 0 ]] && [[ $RET_NUM3 -eq 0 ]];then
+                log_message "[ERROR] /home/ericom/.es_prepare が検出されました。shield-prepare-servers.shを強制再実行したい場合は、--force オプションを付けて実行してください。"
+                fin 1
+            fi
+        else
             TARGET_LIST2+=" $1"
         fi
 
@@ -322,6 +333,7 @@ function check_args(){
     args=""
     ver_flg=0
     set_flg=0
+    force_flg=0
     S_APP_VERSION=""
 
     echo "args: $@" >> $LOGFILE
@@ -334,6 +346,8 @@ function check_args(){
             usage
         elif [ "$1" == "--set" ] ; then
             set_flg=1
+        elif [ "$1" == "--force" ] || [ "$1" == "--Force" ] || [ "$1" == "-f" ]; then
+            force_flg=1
         elif [ "$1" == "-v" ] || [ "$1" == "--version" ] || [ "$1" == "--Version" ]; then
             shift
             S_APP_VERSION="$1"
@@ -354,6 +368,7 @@ function check_args(){
     echo "args: $args" >> $LOGFILE
     echo "ver_flg: $ver_flg" >> $LOGFILE
     echo "set_flg: $set_flg" >> $LOGFILE
+    echo "force_flg: $set_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "////////////////////////////////" >> $LOGFILE
 }
@@ -610,12 +625,12 @@ function shield_prepare() {
     check_docker-ce ${ANSWERips}
 
     if [[ ${CHKBRANCH} -ge 2207 ]]; then
-        echo "ge2207"
+        #echo "ge2207"
         if [[ "${TARGET_LIST2}" != "" ]];then
             shield_prepare_servers ${TARGET_LIST2}
         fi
     else
-        echo "lt2207"
+        #echo "lt2207"
         shield_prepare_servers ${ANSWERips}
     fi
 
