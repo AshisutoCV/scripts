@@ -413,7 +413,7 @@ function delete_all() {
         curl -s -L ${SCRIPTS_URL}/delete-all.sh -o ${ES_PATH}/delete-all.sh
         chmod +x ${ES_PATH}/delete-all.sh
     fi
-    ${ES_PATH}/delete-all.sh | tee -a $LOGFILE
+    sudo -E ${ES_PATH}/delete-all.sh | tee -a $LOGFILE
 
     log_message "[end] deletel all object"
 
