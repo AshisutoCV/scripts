@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220822a-dev
+### VER=20220912a-dev
 ####################
 
 function usage() {
@@ -2145,6 +2145,7 @@ fi
 
 #update or deploy NOT offline
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
+        chmod 600 ${HOME}/.kube/config
         run_rancher
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
