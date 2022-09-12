@@ -2,8 +2,14 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220905a-dev
+### VER=20220912a-dev
 ####################
+
+# SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
+if [ -n "$PASSWORD" ]; then
+  cat <<< "$PASSWORD"
+  exit 0
+fi
 
 function usage() {
     echo ""
@@ -54,11 +60,7 @@ SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 
-# SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
-if [ -n "$PASSWORD" ]; then
-  cat <<< "$PASSWORD"
-  exit 0
-fi
+
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
