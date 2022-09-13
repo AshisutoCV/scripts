@@ -1,5 +1,22 @@
 # Changelog
 
+## [VER=20220912a] - 2022/09/12
+
+### 変更
+#### shield-setup.sh
+#### shield-update.sh
+#### shield-prepare-servers.sh
+* 22.08（Ubuntu20.04対応）に合わせて各種処理修正。
+* - sodo -E に変更
+* - shield-prepare-serversの処理対象を調整
+* - cefイメージ差し替え処理を修正
+* - .kube/configの権限調整を追加
+* bip変更時、他ノードのdaemon.jsonの書き換えでログ設定を消してしまう問題を修正。
+* delete-allの対象として.esparepareを追加
+* バージョンアップ時にshield-prepare-serversで不要な警告表示を抑制
+
+--------------------------------------------------------------
+
 ## [VER=20220809a] - 2022/08/09
 
 ### 変更
