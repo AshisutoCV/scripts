@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220912a-dev
+### VER=20220912a
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -54,8 +54,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
