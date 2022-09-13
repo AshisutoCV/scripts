@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220809a
+### VER=20220912a
 ####################
 
 function usage() {
@@ -27,6 +27,8 @@ function usage() {
     exit 0
     ### for Develop only
     # [--version <Chart version>]
+    # [--spare]
+    # [--change-spare]
     ##
 }
 
@@ -57,6 +59,8 @@ CMDFILE="command.txt"
 BRANCH="Rel"
 ERICOMPASS="Ericom123$"
 ERICOMPASS2="Ericom98765$"
+DOCKER_USER="ericomshield1"
+DOCKER_USER_SPARE="ericomshield9"
 CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
@@ -208,6 +212,8 @@ function check_args(){
     old_flg=0
     multi_flg=0
     lowres_flg=0
+    spare_flg=0
+    change_spare_flg=0
     #offline_flg=0
     S_APP_VERSION=""
 
@@ -221,6 +227,10 @@ function check_args(){
             usage
         elif [ "$1" == "--update" ] || [ "$1" == "--Update" ] ; then
             update_flg=1
+        elif [ "$1" == "--spare" ] || [ "$1" == "--Spare" ] ; then
+            spare_flg=1
+        elif [ "$1" == "--change-spare" ] || [ "$1" == "--Change-Spare" ] || [ "$1" == "--Change-spare" ] ; then
+            change_spare_flg=1
         elif [ "$1" == "--deploy" ] || [ "$1" == "--Deploy" ] ; then
             deploy_flg=1
         elif [ "$1" == "--get-custom-yaml" ] || [ "$1" == "--Get-custom-yaml" ] ; then
@@ -277,6 +287,8 @@ function check_args(){
     echo "deploy_flg: $deploy_flg" >> $LOGFILE
     echo "noget_flg: $noget_flg" >> $LOGFILE
     echo "spell_flg: $spell_flg" >> $LOGFILE
+    echo "spare_flg: $spare_flg" >> $LOGFILE
+    echo "change_spare_flg: $change_spare_flg" >> $LOGFILE
     echo "uninstall_flg: $uninstall_flg" >> $LOGFILE
     echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
     echo "offline_flg: $offline_flg" >> $LOGFILE
@@ -401,7 +413,7 @@ function delete_all() {
         curl -s -L ${SCRIPTS_URL}/delete-all.sh -o ${ES_PATH}/delete-all.sh
         chmod +x ${ES_PATH}/delete-all.sh
     fi
-    ${ES_PATH}/delete-all.sh | tee -a $LOGFILE
+    sudo -E ${ES_PATH}/delete-all.sh | tee -a $LOGFILE
 
     log_message "[end] deletel all object"
 
@@ -412,7 +424,7 @@ function delete_all() {
         echo "curl -s -OL ${SCRIPTS_URL}/delete-all.sh"
         echo 'chmod +x delete-all.sh'
     fi
-    echo 'sudo ./delete-all.sh'
+    echo 'sudo -E ./delete-all.sh'
     echo ""
     echo '------------------------------------------------------------'
 }
@@ -795,7 +807,7 @@ function check_group() {
         log_message "一度ログオフした後、ログインをしなおして、スクリプトを再度実行してください。"
         log_message "================================================================================="
         log_message "[start] add group"
-        sudo usermod -aG docker "$USER"
+        sudo -E usermod -aG docker "$USER"
         log_message "[end] add group"
         rm -f .es_version
         rm -f .es_branch
@@ -816,7 +828,7 @@ function run_rancher() {
 }
 
 function pre_create_cluster() {
-    sudo chown -R $(whoami):$(whoami) ${HOME}/.kube
+    sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
     rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
     echo -n 'getting k8s version.'
     K8S_VER=""
@@ -983,7 +995,7 @@ function show_agent_cmd_old() {
      echo ""  | tee -a $CMDFILE
      echo 'chmod +x configure-sysctl-values.sh'  | tee -a $CMDFILE
      echo ""  | tee -a $CMDFILE
-     echo 'sudo ./configure-sysctl-values.sh'  | tee -a $CMDFILE
+     echo 'sudo -E ./configure-sysctl-values.sh'  | tee -a $CMDFILE
      echo ""  | tee -a $CMDFILE
      echo ""  | tee -a $CMDFILE
      if [[ $offline_flg -eq 0 ]]; then
@@ -998,7 +1010,7 @@ function show_agent_cmd_old() {
          if [ ! -z $DOCKER0 ]; then 
              echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
+             echo "sudo sh -c \"cat /etc/docker/daemon.json | jq '.bip |= \\\"${DOCKER0}\\\"' | sudo tee /etc/docker/daemon.json\"" | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
          fi
          echo './install-docker.sh'  | tee -a $CMDFILE
@@ -1033,7 +1045,7 @@ function show_agent_cmd() {
          if [ ! -z $DOCKER0 ]; then 
              echo "sudo mkdir -p /etc/docker" | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
-             echo "sudo sh -c \"echo '{\\\"bip\\\": \\\"${DOCKER0}\\\"}' > /etc/docker/daemon.json\"" | tee -a $CMDFILE
+             echo "sudo sh -c \"cat /etc/docker/daemon.json | jq '.bip |= \\\"${DOCKER0}\\\"' | sudo tee /etc/docker/daemon.json\"" | tee -a $CMDFILE
              echo ""  | tee -a $CMDFILE
              echo "sudo systemctl restart docker"
          fi
@@ -1295,9 +1307,10 @@ function reget_kubeconfig() {
     if [ ! -d  ${HOME}/.kube ];then
         mkdir -p ${HOME}/.kube
     else
-        sudo chown -R $(whoami):$(whoami) ${HOME}/.kube
+        sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
     fi
     touch  ${HOME}/.kube/config
+    chmod 600 ${HOME}/.kube/config
     echo 'waiting....'
     sleep 30
 
@@ -1843,7 +1856,7 @@ function change_resource() {
 }
 
 function install_helm() {
-    sed -i -e 's/sudo/sudo env PATH=$PATH/' install-helm.sh
+    sed -i -e 's/sudo/sudo -E env PATH=$PATH/' install-helm.sh
     if [[ "$BRANCH" == "Rel-20.05" ]] || [[ "$BRANCH" == "Rel-20.03" ]]  || [[ "$BRANCH" == "Rel-20.01" ]] ;then
         if [[ $offline_flg -eq 0 ]]; then
             sed -i -e 's/\$.ES_OFFLINE_REGISTRY_PREFIX.gcr.io\/kubernetes-helm/securebrowsing9/' install-helm.sh
@@ -1931,6 +1944,27 @@ function low_res_choice() {
         log_message "[end] resource choice."
 }
 
+function change_spare(){
+    if [[ $change_spare_flg -eq 1 ]];then
+        if [[ $(grep -c securebrowsing9 $ES_PATH/install-shield-from-container.sh) -gt 1 ]];then
+            sudo sed -i -e 's/securebrowsing9/securebrowsing/' $ES_PATH/install-shield-from-container.sh
+            echo "docker login" $DOCKER_USER
+            echo "$ERICOMPASS2" | docker login --username=$DOCKER_USER --password-stdin
+        else
+            sudo sed -i -e 's/securebrowsing/securebrowsing9/' $ES_PATH/install-shield-from-container.sh
+            echo "docker login" $DOCKER_USER_SPARE
+            echo "$ERICOMPASS2" | docker login --username=$DOCKER_USER_SPARE --password-stdin
+        fi
+        if [ $? == 0 ]; then
+            echo "Login Succeeded!"
+        else
+            log_message "Cannot Login to docker, exiting"
+            exit -1
+        fi
+        fin 0
+    fi
+}
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -1951,6 +1985,8 @@ fi
 # check args and set flags
 check_args $@
 flg_check
+
+change_spare
 
 # version select
 select_version
@@ -2022,6 +2058,15 @@ if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
     sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
 fi
 
+# install docker
+if [[ $offline_flg -eq 0 ]];then
+    log_message "[start] install docker"
+    curl -s -O ${SCRIPTS_URL_ES}/install-docker.sh
+    chmod +x install-docker.sh
+    check_docker
+    log_message "[end] install docker"
+fi
+
 # get&run install-shield-from-container
 if [ ls "$ES_PATH/.*" ] &>/dev/null; then
     echo "Keeping dot files"
@@ -2031,13 +2076,35 @@ fi
 curl -s -OL ${SCRIPTS_URL_ES}/install-shield-from-container.sh
 sudo chmod +x install-shield-from-container.sh
 sudo sed -i -e '/.\/$ES_file_install_shield_local/d' install-shield-from-container.sh
-if [[ $offline_flg -eq 1 ]];then
-    sudo ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" --registry $REGISTRY_OVA | tee -a $LOGFILE
+if [[ $spare_flg -eq 1 ]];then
+    sudo sed -i -e 's/securebrowsing/securebrowsing9/' install-shield-from-container.sh
+    #docker logout
+    echo "docker login" $DOCKER_USER_SPARE
+    echo "$ERICOMPASS2" | docker login --username=$DOCKER_USER_SPARE --password-stdin
+    if [ $? == 0 ]; then
+        echo "Login Succeeded!"
+    else
+        log_message "Cannot Login to docker, exiting"
+        exit -1
+    fi
 else
-    sudo ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" | tee -a $LOGFILE    
+    #docker logout
+    echo "docker login" $DOCKER_USER
+    echo "$ERICOMPASS2" | docker login --username=$DOCKER_USER --password-stdin
+    if [ $? == 0 ]; then
+        echo "Login Succeeded!"
+    else
+        log_message "Cannot Login to docker, exiting"
+        exit -1
+    fi    
 fi
-sudo chown -R $(whoami):$(whoami) ${ES_PATH}
-sudo chown -R $(whoami):$(whoami) ${CURRENT_DIR}/.docker
+if [[ $offline_flg -eq 1 ]];then
+    sudo -E ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" --registry $REGISTRY_OVA | tee -a $LOGFILE
+else
+    sudo -E ./install-shield-from-container.sh -p $ERICOMPASS2 --version "Rel-${S_APP_VERSION}" | tee -a $LOGFILE    
+fi
+sudo -E chown -R $(whoami):$(whoami) ${ES_PATH}
+sudo -E chown -R $(whoami):$(whoami) ${CURRENT_DIR}/.docker
 chmod +x -R ${ES_PATH}/*.sh
 if [ -d "/tmp/dot" ] &>/dev/null; then
     mv /tmp/dot/.* $ES_PATH
@@ -2060,7 +2127,11 @@ fi
 
 if [ $lowres_flg -eq 1 ]; then
     log_message "[start] fix for low resources"
-    sed -i -e 's/shield-cef:211219-Rel-21.11/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
+    if [[ "$(echo "$BUILD < 921" | bc)" -eq 1 ]];then
+        sed -i -e 's/shield-cef:.*/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
+    elif [[ "$(echo "$BUILD >= 921" | bc)" -eq 1 ]];then
+        sed -i -e 's/shield-cef:.*/shield-cef:Rel-22.06-11.08-3840x2160/g' ${ES_PATH}/shield/values.yaml
+    fi
     log_message "[end] fix for low resources"
 fi
 
@@ -2074,6 +2145,7 @@ fi
 
 #update or deploy NOT offline
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
+        chmod 600 ${HOME}/.kube/config
         run_rancher
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
@@ -2146,15 +2218,6 @@ EOF
     fi
 fi
 
-# install docker
-if [[ $offline_flg -eq 0 ]];then
-    log_message "[start] install docker"
-    curl -s -O ${SCRIPTS_URL_ES}/install-docker.sh
-    chmod +x install-docker.sh
-    check_docker
-    log_message "[end] install docker"
-fi
-
 ### install-shield-local.sh
 ##################      MAIN: EVERYTHING STARTS HERE: ##########################
 log_message "***************     Ericom Shield Installer ..."
@@ -2168,7 +2231,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #1.  Run configure-sysctl-values.sh
     log_message "[start] setting sysctl-values"
-    sudo ./configure-sysctl-values.sh | tee -a $LOGFILE
+    sudo -E ./configure-sysctl-values.sh | tee -a $LOGFILE
     if [ $? != 0 ]; then
            failed_to_install "install sysctl-values"
     fi
@@ -2212,7 +2275,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
-    sudo ./install-rancher-cli.sh
+    sudo -E ./install-rancher-cli.sh
     if [ $? != 0 ]; then
        failed_to_install "install rancher cli"
     fi
@@ -2223,7 +2286,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[start] create cluster"
     sed -i -e '/^wait_for_rancher/a sleep 5' create-cluster.sh
     sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
-    sudo ./create-cluster.sh
+    sudo -E ./create-cluster.sh
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
     fi

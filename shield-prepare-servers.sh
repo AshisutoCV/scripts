@@ -2,12 +2,19 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220510a
+### VER=20220912a
 ####################
+
+# SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
+if [ -n "$PASSWORD" ]; then
+  cat <<< "$PASSWORD"
+  exit 0
+fi
 
 function usage() {
     echo ""
-    echo "USAGE: $0 "
+    echo "USAGE: $0 [--force]"
+    echo "    --force         : 既に実行済みのサーバで、強制的にshield-prepare-serversを再実行します。"
     echo ""
     exit 0
     ### for Develop only
@@ -53,11 +60,7 @@ SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 
-# SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
-if [ -n "$PASSWORD" ]; then
-  cat <<< "$PASSWORD"
-  exit 0
-fi
+
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -140,6 +143,7 @@ function check_docker-ce(){
     export DISPLAY=dummy:0
 
     TARGET_LIST=""
+    TARGET_LIST2=""
     while [ "$1" != "" ]
     do
         if [[ $OS == "Ubuntu" ]]; then
@@ -156,6 +160,25 @@ function check_docker-ce(){
         if [[ $RET_NUM -gt 0 ]];then
             TARGET_LIST+=" $1"
         fi
+
+        if [[ $force_flg -ne 1 ]];then
+            #.es_prepareを確認
+            RET_NUM2=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `ls /home/ericom/.es_prepare 2>/dev/null | grep -c .es_prepare`')
+            RET_NUM2=`echo ${RET_NUM2} | sed -e "s/[\r\n]\+//g"`
+            echo "RET_NUM2(.es_prepare): ${RET_NUM2}" >> $LOGFILE
+            RET_NUM3=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 'echo `ps -ef | grep -v grep | grep -c rancher`')
+            RET_NUM3=`echo ${RET_NUM3} | sed -e "s/[\r\n]\+//g"`
+            echo "RET_NUM3(ps rancher): ${RET_NUM3}" >> $LOGFILE
+            if [[ $RET_NUM2 -eq 0 ]] && [[ $RET_NUM3 -eq 0 ]];then
+                TARGET_LIST2+=" $1"
+            elif [[ $RET_NUM2 -ne 0 ]] && [[ $RET_NUM3 -eq 0 ]];then
+                log_message "[ERROR] /home/ericom/.es_prepare が検出されました。shield-prepare-servers.shを強制再実行したい場合は、--force オプションを付けて実行してください。"
+                fin 1
+            fi
+        else
+            TARGET_LIST2+=" $1"
+        fi
+
         shift
     done
 
@@ -170,10 +193,10 @@ function check_docker-ce(){
     fi
 
 
-    if [[ $OS == "Ubuntu" ]]; then
+    if [[ $OS == "Ubuntu" ]] && [[ ${CHKBRANCH} -lt 2207 ]]; then
         if [[ ${TARGET_LIST} != "" ]];then
             echo "TARGET_LIST: ${TARGET_LIST}"
-            log_message "[WARN] docker-ce が検出されました。"
+            log_message "[WARN] 旧環境でdocker-ce が検出されました。"
             echo "docker-ce をアンインストールして、再起動します。"
             echo "再起動後、改めてshield-prepare-servers.shを実行してください。"
             echo ""
@@ -245,7 +268,12 @@ function get_shield-prepare-servers() {
         mv -f ./shield-prepare-servers ./org/shield-prepare-servers
     fi
     #curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/master/shield-prepare-servers
-    curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
+    echo ${CHKBRANCH}
+    if [[ ${CHKBRANCH} -lt 2207 ]]; then
+        curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
+    else
+        curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-22.08.934/shield-prepare-servers
+    fi
     chmod +x ${ES_PATH}/shield-prepare-servers
     log_message "[end] Getting shield-prepaer-servers."
 }
@@ -307,6 +335,7 @@ function check_args(){
     args=""
     ver_flg=0
     set_flg=0
+    force_flg=0
     S_APP_VERSION=""
 
     echo "args: $@" >> $LOGFILE
@@ -319,6 +348,8 @@ function check_args(){
             usage
         elif [ "$1" == "--set" ] ; then
             set_flg=1
+        elif [ "$1" == "--force" ] || [ "$1" == "--Force" ] || [ "$1" == "-f" ]; then
+            force_flg=1
         elif [ "$1" == "-v" ] || [ "$1" == "--version" ] || [ "$1" == "--Version" ]; then
             shift
             S_APP_VERSION="$1"
@@ -339,6 +370,7 @@ function check_args(){
     echo "args: $args" >> $LOGFILE
     echo "ver_flg: $ver_flg" >> $LOGFILE
     echo "set_flg: $set_flg" >> $LOGFILE
+    echo "force_flg: $set_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "////////////////////////////////" >> $LOGFILE
 }
@@ -564,7 +596,6 @@ function check_shield_prepare_servers() {
 function all_fin(){
     cd $CURRENT_DIR
 
-    TARGET_LIST=""
     while [ "$1" != "" ]
     do
         RET_NUM=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$1 "sudo echo ${S_APP_VERSION} | sudo tee ${ES_PREPARE} && sudo chown ericom:ericom ${ES_PREPARE}")
@@ -579,7 +610,7 @@ function all_fin(){
     fin 0
 }
 
-function shield_prepare_servers() {
+function shield_prepare() {
 
     if [ -f $TEMP_ANSIBLE ];then
         rm -f $TEMP_ANSIBLE
@@ -595,6 +626,22 @@ function shield_prepare_servers() {
 
     check_docker-ce ${ANSWERips}
 
+    if [[ ${CHKBRANCH} -ge 2207 ]]; then
+        #echo "ge2207"
+        if [[ "${TARGET_LIST2}" != "" ]];then
+            shield_prepare_servers ${TARGET_LIST2}
+        fi
+    else
+        #echo "lt2207"
+        shield_prepare_servers ${ANSWERips}
+    fi
+
+    all_fin ${ANSWERips}
+}
+
+function shield_prepare_servers() {
+
+    PREPARE_TARGET="$@"
     rm -f sudo-ok.tmp
     cd $CURRENT_DIR
     rm -f sudo-ok.tmp
@@ -657,7 +704,7 @@ function shield_prepare_servers() {
     echo ""
     expect -c "
         set timeout 600
-        spawn /bin/bash -c \"sudo -k -p sudo-pass: ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips}\"
+        spawn /bin/bash -c \"sudo -k -p sudo-pass: ${ES_PATH}/shield-prepare-servers -u ericom ${PREPARE_TARGET}\"
         expect \"sudo-pass:\" {
             send \"${SUDO_PASSWORD}\n\"
             expect \"password:\" 
@@ -676,12 +723,10 @@ function shield_prepare_servers() {
             exit 0
         }
     " | tee $TEMP_ANSIBLE
-    #sudo ${ES_PATH}/shield-prepare-servers -u ericom ${ANSWERips} | tee $TEMP_ANSIBLE
     echo ""
     echo "================================================================================="
 
     check_shield_prepare_servers
-    all_fin ${ANSWERips}
 }
 
 function install_expect(){
@@ -776,4 +821,6 @@ install_wget
 if [[ $OS == "RHEL" ]];then
     install_fuse-libs
 fi
-shield_prepare_servers
+
+shield_prepare
+
