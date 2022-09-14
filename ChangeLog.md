@@ -4,6 +4,7 @@
 
 ### 変更
 #### shield-setup.sh
+#### delete-all.sh
 #### shield-update.sh
 #### shield-prepare-servers.sh
 * 22.08（Ubuntu20.04対応）に合わせて各種処理修正。
