@@ -4,6 +4,15 @@
 
 ### 変更
 #### shield-setup.sh
+* cefの使用リソース抑止イメージの利用をDefaultに変更。
+
+--------------------------------------------------------------
+
+
+## [VER=20220912a] - 2022/09/12
+
+### 変更
+#### shield-setup.sh
 #### delete-all.sh
 #### shield-update.sh
 #### shield-prepare-servers.sh
