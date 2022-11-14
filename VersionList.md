@@ -24,6 +24,7 @@
 * [20220106a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220106a---20220106)
 
 ## shield-update.sh
+* [20221114a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20221114a---20221114)
 * [20220912a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220912a---20220912)
 * [20220509a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220509a---20220509)
 * [20220106a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220106a---20220106)

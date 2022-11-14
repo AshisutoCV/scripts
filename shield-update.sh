@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220912a
+### VER=20221114a
 ####################
 
 function usage() {
@@ -359,7 +359,7 @@ function change_dir(){
     else
         log_message "[start] change dir"
         log_message "pwd: $(pwd)"
-        find ${CURRENT_DIR} -maxdepth 1 -name \*.sh -not -name shield-setup.sh -not -name shield-update.sh | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
+        find ${CURRENT_DIR} -maxdepth 1 -name \*.sh -not -name shield-setup.sh -not -name shield-update.sh -not -name kka_cache_del.sh -not -name kka_monitoring_log.sh | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
         find ${CURRENT_DIR} -maxdepth 1 -name .es_\* -not -name .es_custom_env -not -name .es_prepare | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
         find ${CURRENT_DIR} -maxdepth 1 -name .ra_\* | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
         find ${CURRENT_DIR} -maxdepth 1 -name \*.yaml\* | xargs -I {} mv -f {} ${ES_PATH}/ > /dev/null 2>&1
