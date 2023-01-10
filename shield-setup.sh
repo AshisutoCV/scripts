@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20221013a
+### VER=20230110a
 ####################
 
 function usage() {
@@ -65,8 +65,9 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/low-yaml"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -2123,14 +2124,27 @@ if [[ "$BUILD" == "758" ]]; then
     log_message "[end] fix for 21.04.758"
 fi
 
-if [ $lowres_flg -eq 1 ]; then
-    log_message "[start] fix for low resources"
-    if [[ "$(echo "$BUILD < 921" | bc)" -eq 1 ]];then
-        sed -i -e 's/shield-cef:.*/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
-    elif [[ "$(echo "$BUILD >= 921" | bc)" -eq 1 ]];then
-        sed -i -e 's/shield-cef:.*/shield-cef:Rel-22.06-11.08-3840x2160/g' ${ES_PATH}/shield/values.yaml
+#low resource
+if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
+    sed -i -e '/remoteBrowserLowMemMode/d' ~/ericomshield/custom-farm.yaml
+    sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ~/ericomshield/custom-farm.yaml
+    if [ $lowres_flg -eq 1 ]; then
+        log_message "[start] fix for low resources"
+        sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: true\n/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for low resources"
+    elif [ $lowres_flg -eq 0 ]; then
+        sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
+    fi    
+else
+    if [ $lowres_flg -eq 1 ]; then
+        log_message "[start] fix for low resources"
+        if [[ "$(echo "$BUILD < 921" | bc)" -eq 1 ]];then
+            sed -i -e 's/shield-cef:.*/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
+        elif [[ "$(echo "$BUILD >= 921" | bc)" -eq 1 ]];then
+            sed -i -e 's/shield-cef:.*/shield-cef:Rel-22.06-11.08-3840x2160/g' ${ES_PATH}/shield/values.yaml
+        fi
+        log_message "[end] fix for low resources"
     fi
-    log_message "[end] fix for low resources"
 fi
 
 #if [[ "$BUILD" == "816.2" ]]; then
