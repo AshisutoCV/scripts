@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20221013a
+### VER=20230111a
 ####################
 
 function usage() {
@@ -81,6 +81,11 @@ else
     offline_flg=0
 fi
 
+function apt-unlock(){
+    sudo rm /var/lib/apt/lists/lock
+    sudo rm /var/lib/dpkg/lock
+    sudo rm /var/lib/dpkg/lock-frontend
+}
 
 function check_ericom_user(){
     # ericomユーザ存在確認
@@ -1963,6 +1968,8 @@ function change_spare(){
     fi
 }
 
+
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -2045,13 +2052,13 @@ if [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
     low_res_choice
 fi
 
-
 # check ubuntu env
 if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
     if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
         sudo add-apt-repository universe
     fi
     sudo apt-mark unhold docker-ce | tee -a $LOGFILE
+    apt-unlock
     sudo apt-get update -qq
     sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
 fi
@@ -2164,6 +2171,7 @@ fi
 log_message "[start] install jq"
 if ! which jq > /dev/null 2>&1 ;then
     if [[ $OS == "Ubuntu" ]]; then
+        apt-unlock
         sudo apt-get install -y -qq jq >>"$LOGFILE" 2>&1
     elif [[ $OS == "RHEL" ]]; then
         sudo yum -y -q install epel-release
