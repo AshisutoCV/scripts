@@ -18,7 +18,7 @@ echo "=========================================="
 sudo systemctl unmask docker.service
 sudo systemctl unmask docker.socket
 
-while [[ ( sudo systemctl status docker.service docker.socket | grep -c running ) -ne 0 ]];
+while [[ $(sudo systemctl status docker.service docker.socket | grep -c running) -ne 0 ]];
 do
     sudo systemctl stop docker.service docker.socket
 done
