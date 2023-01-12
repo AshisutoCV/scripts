@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20230111a
+### VER=20230112a
 ####################
 
 function usage() {
@@ -127,7 +127,7 @@ function failed_to_install() {
         log_message "[end] rollback"
     elif [ "$2" == "all" ]; then
         log_message "[start] rollback"
-        delete_all
+        delete_all_old
         log_message "[end] rollback"
     elif [ "$2" == "ver" ]; then
         log_message "[start] rollback"
@@ -368,7 +368,6 @@ function flg_check(){
         done
         uninstall_shield
         delete_all
-        fin 0
     fi
     # update_flg parent check
     if [ $update_flg -eq 1 ];then
@@ -412,7 +411,7 @@ function uninstall_shield() {
 }
 
 function delete_all() {
-    log_message "[start] deletel all object"
+    echo "[start] deletel all object"
 
     if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-all.sh ]]; then
         curl -s -L ${SCRIPTS_URL}/delete-all.sh -o ${ES_PATH}/delete-all.sh
@@ -420,7 +419,7 @@ function delete_all() {
     fi
     sudo -E ${ES_PATH}/delete-all.sh | tee -a $LOGFILE
 
-    log_message "[end] deletel all object"
+    echo "[end] deletel all object"
 
     echo '------------------------------------------------------------'
     echo "(【必要に応じて】, 下記を他のノードでも実行してください。)"
@@ -430,6 +429,29 @@ function delete_all() {
         echo 'chmod +x delete-all.sh'
     fi
     echo 'sudo -E ./delete-all.sh'
+    echo ""
+    echo '------------------------------------------------------------'
+}
+
+function delete_all_old() {
+    log_message "[start] deletel all object"
+
+    if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-all-1.sh ]]; then
+        curl -s -L ${SCRIPTS_URL}/delete-all-1.sh -o ${ES_PATH}/delete-all-1.sh
+        chmod +x ${ES_PATH}/delete-all-1.sh
+    fi
+    sudo -E ${ES_PATH}/delete-all-1.sh | tee -a $LOGFILE
+
+    log_message "[end] deletel all object"
+
+    echo '------------------------------------------------------------'
+    echo "(【必要に応じて】, 下記を他のノードでも実行してください。)"
+    echo ""
+    if [[ $offline_flg -eq 0 ]]; then
+        echo "curl -s -OL ${SCRIPTS_URL}/delete-all-1.sh"
+        echo 'chmod +x delete-all-1.sh'
+    fi
+    echo 'sudo -E ./delete-all-1.sh'
     echo ""
     echo '------------------------------------------------------------'
 }
