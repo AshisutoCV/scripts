@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20230112a
+### VER=20230113a
 ####################
 
 function usage() {
@@ -431,6 +431,7 @@ function delete_all() {
     echo 'sudo -E ./delete-all.sh'
     echo ""
     echo '------------------------------------------------------------'
+    exit 0
 }
 
 function delete_all_old() {
