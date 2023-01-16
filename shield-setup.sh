@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20230113a
+### VER=20230117a
 ####################
 
 function usage() {
@@ -413,7 +413,7 @@ function uninstall_shield() {
 function delete_all() {
     echo "[start] deletel all object"
 
-    if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-all.sh ]]; then
+    if [[ $offline_flg -eq 0 ]] ; then
         curl -s -L ${SCRIPTS_URL}/delete-all.sh -o ${ES_PATH}/delete-all.sh
         chmod +x ${ES_PATH}/delete-all.sh
     fi
