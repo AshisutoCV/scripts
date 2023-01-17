@@ -2152,6 +2152,25 @@ if [[ "$BUILD" == "758" ]]; then
     sed -i -e 's/icap-server:210426-Rel-21.04/icap-server:210819-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.04.758"
 fi
+if [[ "$BRANCH" == "Rel-22.08" ]]; then
+    log_message "[start] fix for 22.08"
+    sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230108-OnPrem-22.08' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 22.08"
+elif [[ "$BRANCH" == "Rel-21.11" ]]; then
+    log_message "[start] fix for 21.11"
+    sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230111-Rel-21.11' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.11"
+elif [[ "$BRANCH" == "Rel-21.04" ]]; then
+    log_message "[start] fix for 21.04"
+    sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230111-Rel-21.04' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.04"
+elif [[ "$BRANCH" == "Rel-21.01" ]]; then
+    log_message "[start] fix for 21.01"
+    sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230111-Rel-21.01' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.01"
+fi
+
+
 
 #low resource
 if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
