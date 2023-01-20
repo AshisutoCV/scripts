@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20220912a
+### VER=20230111a
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -221,9 +221,9 @@ function check_docker-ce(){
                 echo "T: $t"
                 log_message "[start] delete docker-ce on $t"
                 if [[ "$t" == "127.0.0.1" ]];then
-                    RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket")
+                    RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo rm /var/lib/apt/lists/lock && sudo rm /var/lib/dpkg/lock && sudo rm /var/lib/dpkg/lock-frontend && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket")
                 else
-                    RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket && sudo reboot")
+                    RET=$(exec setsid ssh -t -oStrictHostKeyChecking=no ericom@$t "sudo systemctl disable --now docker && sudo rm /var/lib/apt/lists/lock && sudo rm /var/lib/dpkg/lock && sudo rm /var/lib/dpkg/lock-frontend && sudo apt-get -y --allow-change-held-packages remove docker-ce* containerd.io && sudo systemctl unmask docker.service && sudo systemctl unmask docker.socket && sudo reboot")
                 fi
                 echo $RET
             done
@@ -729,6 +729,12 @@ function shield_prepare_servers() {
     check_shield_prepare_servers
 }
 
+function apt-unlock(){
+    sudo rm /var/lib/apt/lists/lock
+    sudo rm /var/lib/dpkg/lock
+    sudo rm /var/lib/dpkg/lock-frontend
+}
+
 function install_expect(){
     # install_expect
     log_message "[start] install expect"
@@ -739,6 +745,7 @@ function install_expect(){
     if ! which expect > /dev/null 2>&1 ;then
         if [[ $OS == "Ubuntu" ]]; then
             echo "updateing apt....."
+            apt-unlock
             sudo apt-get update -qq
             sudo apt-get install -y -qq expect >>"$LOGFILE" 2>&1
         elif [[ $OS == "RHEL" ]];then
@@ -765,6 +772,7 @@ function install_wget(){
     log_message "[start] install wget"
     if ! which wget > /dev/null 2>&1 ;then
         if [[ $OS == "Ubuntu" ]]; then
+            apt-unlock
             sudo apt-get install -y -qq wget >>"$LOGFILE" 2>&1
         elif [[ $OS == "RHEL" ]];then
             sudo yum install -y wget >>"$LOGFILE" 2>&1

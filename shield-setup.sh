@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20221013a
+### VER=20230117b
 ####################
 
 function usage() {
@@ -81,6 +81,11 @@ else
     offline_flg=0
 fi
 
+function apt-unlock(){
+    sudo rm /var/lib/apt/lists/lock
+    sudo rm /var/lib/dpkg/lock
+    sudo rm /var/lib/dpkg/lock-frontend
+}
 
 function check_ericom_user(){
     # ericomユーザ存在確認
@@ -122,7 +127,7 @@ function failed_to_install() {
         log_message "[end] rollback"
     elif [ "$2" == "all" ]; then
         log_message "[start] rollback"
-        delete_all
+        delete_all_old
         log_message "[end] rollback"
     elif [ "$2" == "ver" ]; then
         log_message "[start] rollback"
@@ -363,7 +368,6 @@ function flg_check(){
         done
         uninstall_shield
         delete_all
-        fin 0
     fi
     # update_flg parent check
     if [ $update_flg -eq 1 ];then
@@ -407,15 +411,15 @@ function uninstall_shield() {
 }
 
 function delete_all() {
-    log_message "[start] deletel all object"
+    echo "[start] deletel all object"
 
-    if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-all.sh ]]; then
+    if [[ $offline_flg -eq 0 ]] ; then
         curl -s -L ${SCRIPTS_URL}/delete-all.sh -o ${ES_PATH}/delete-all.sh
         chmod +x ${ES_PATH}/delete-all.sh
     fi
     sudo -E ${ES_PATH}/delete-all.sh | tee -a $LOGFILE
 
-    log_message "[end] deletel all object"
+    echo "[end] deletel all object"
 
     echo '------------------------------------------------------------'
     echo "(【必要に応じて】, 下記を他のノードでも実行してください。)"
@@ -425,6 +429,30 @@ function delete_all() {
         echo 'chmod +x delete-all.sh'
     fi
     echo 'sudo -E ./delete-all.sh'
+    echo ""
+    echo '------------------------------------------------------------'
+    exit 0
+}
+
+function delete_all_old() {
+    log_message "[start] deletel all object"
+
+    if [[ $offline_flg -eq 0 ]] && [[ ! -f ${ES_PATH}/delete-all-1.sh ]]; then
+        curl -s -L ${SCRIPTS_URL}/delete-all-1.sh -o ${ES_PATH}/delete-all-1.sh
+        chmod +x ${ES_PATH}/delete-all-1.sh
+    fi
+    sudo -E ${ES_PATH}/delete-all-1.sh | tee -a $LOGFILE
+
+    log_message "[end] deletel all object"
+
+    echo '------------------------------------------------------------'
+    echo "(【必要に応じて】, 下記を他のノードでも実行してください。)"
+    echo ""
+    if [[ $offline_flg -eq 0 ]]; then
+        echo "curl -s -OL ${SCRIPTS_URL}/delete-all-1.sh"
+        echo 'chmod +x delete-all-1.sh'
+    fi
+    echo 'sudo -E ./delete-all-1.sh'
     echo ""
     echo '------------------------------------------------------------'
 }
@@ -1963,6 +1991,8 @@ function change_spare(){
     fi
 }
 
+
+
 ######START#####
 log_message "###### START ###########################################################"
 
@@ -2045,13 +2075,13 @@ if [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
     low_res_choice
 fi
 
-
 # check ubuntu env
 if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
     if [[ $(grep -r --include '*.list' '^deb ' /etc/apt/sources.list* | grep -c universe) -eq 0 ]];then
         sudo add-apt-repository universe
     fi
     sudo apt-mark unhold docker-ce | tee -a $LOGFILE
+    apt-unlock
     sudo apt-get update -qq
     sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
 fi
@@ -2122,15 +2152,47 @@ if [[ "$BUILD" == "758" ]]; then
     sed -i -e 's/icap-server:210426-Rel-21.04/icap-server:210819-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.04.758"
 fi
+if [[ "$BRANCH" == "Rel-22.08" ]]; then
+    log_message "[start] fix for 22.08"
+    sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230108-OnPrem-22.08' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 22.08"
+elif [[ "$BRANCH" == "Rel-21.11" ]]; then
+    log_message "[start] fix for 21.11"
+    sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230111-Rel-21.11' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.11"
+elif [[ "$BRANCH" == "Rel-21.04" ]]; then
+    log_message "[start] fix for 21.04"
+    sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230111-Rel-21.04' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.04"
+elif [[ "$BRANCH" == "Rel-21.01" ]]; then
+    log_message "[start] fix for 21.01"
+    sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230111-Rel-21.01' ${ES_PATH}/shield/values.yaml
+    log_message "[end] fix for 21.01"
+fi
 
-if [ $lowres_flg -eq 1 ]; then
-    log_message "[start] fix for low resources"
-    if [[ "$(echo "$BUILD < 921" | bc)" -eq 1 ]];then
-        sed -i -e 's/shield-cef:.*/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
-    elif [[ "$(echo "$BUILD >= 921" | bc)" -eq 1 ]];then
-        sed -i -e 's/shield-cef:.*/shield-cef:Rel-22.06-11.08-3840x2160/g' ${ES_PATH}/shield/values.yaml
+
+
+#low resource
+if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
+    sed -i -e '/remoteBrowserLowMemMode/d' ~/ericomshield/custom-farm.yaml
+    sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ~/ericomshield/custom-farm.yaml
+    if [ $lowres_flg -eq 1 ]; then
+        log_message "[start] fix for low resources"
+        sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: true\n/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for low resources"
+    elif [ $lowres_flg -eq 0 ]; then
+        sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
+    fi    
+else
+    if [ $lowres_flg -eq 1 ]; then
+        log_message "[start] fix for low resources"
+        if [[ "$(echo "$BUILD < 921" | bc)" -eq 1 ]];then
+            sed -i -e 's/shield-cef:.*/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
+        elif [[ "$(echo "$BUILD >= 921" | bc)" -eq 1 ]];then
+            sed -i -e 's/shield-cef:.*/shield-cef:Rel-22.06-11.08-3840x2160/g' ${ES_PATH}/shield/values.yaml
+        fi
+        log_message "[end] fix for low resources"
     fi
-    log_message "[end] fix for low resources"
 fi
 
 #if [[ "$BUILD" == "816.2" ]]; then
@@ -2164,6 +2226,7 @@ fi
 log_message "[start] install jq"
 if ! which jq > /dev/null 2>&1 ;then
     if [[ $OS == "Ubuntu" ]]; then
+        apt-unlock
         sudo apt-get install -y -qq jq >>"$LOGFILE" 2>&1
     elif [[ $OS == "RHEL" ]]; then
         sudo yum -y -q install epel-release
