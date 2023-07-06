@@ -2190,6 +2190,7 @@ else
             sed -i -e 's/shield-cef:.*/shield-cef:Rel-21.11-3840x2160/g' ${ES_PATH}/shield/values.yaml
         elif [[ "$(echo "$BUILD >= 921" | bc)" -eq 1 ]];then
             sed -i -e 's/shield-cef:.*/shield-cef:Rel-22.06-11.08-3840x2160/g' ${ES_PATH}/shield/values.yaml
+            #shield-cef:220804-08.48-1141
         fi
         log_message "[end] fix for low resources"
     fi
