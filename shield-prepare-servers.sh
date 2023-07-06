@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20230111a
+### VER=20230706a
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -353,6 +353,8 @@ function check_args(){
         elif [ "$1" == "-v" ] || [ "$1" == "--version" ] || [ "$1" == "--Version" ]; then
             shift
             S_APP_VERSION="$1"
+            S_APP_VERSION=${S_APP_VERSION//Rel-/}
+            S_APP_VERSION=${S_APP_VERSION//rel-/}
             ver_flg=1
         else
             args="${args} ${1}"
