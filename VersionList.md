@@ -2,6 +2,7 @@
 ***
 
 ## shield-setup.sh
+* [20230706a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20230111a---20230706)
 * [20230117b](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20230117b---20230120)
 * [20221013a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20221013a---20221013)
 * [20220912a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220912a---20220912)
