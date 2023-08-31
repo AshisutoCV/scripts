@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20230117b
+### VER=20230706a
 ####################
 
 function usage() {
@@ -2168,6 +2168,16 @@ elif [[ "$BRANCH" == "Rel-21.01" ]]; then
     log_message "[start] fix for 21.01"
     sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230111-Rel-21.01' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.01"
+fi
+
+# br_res fix for 2305~ farm yaml
+if [[ $(grep -c rb_resources custom-farm.yaml) != 0 ]]; then
+    sed -i  -e 's/^#.*rb_resources/  rb_resources/' custom-farm.yaml
+    sed -i  -e 's/^#.*rb_limits/    rb_limits/' custom-farm.yaml
+    sed -i  -e 's/^#.*cpu:.*/      cpu: 4/' custom-farm.yaml
+    sed -i  -e 's/^#.*memory:.*/      memory: 3Gi/' custom-farm.yaml
+else
+    sed -i -z 's/farm-services:\n/farm-services:\n  rb_resources:\n    rb_limits:\n      cpu: 4\n      memory: 3Gi\n/g' custom-farm.yaml
 fi
 
 
