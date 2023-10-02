@@ -2156,7 +2156,7 @@ if [[ "$BRANCH" == "Rel-23.05" ]]; then
     log_message "[start] fix for 23.05"
     sed -i -e '/esRemoteBrowser:/c\    esRemoteBrowser: securebrowsing\/shield-cef:230718-Rel-23.05' ${ES_PATH}/shield/values.yaml
     #shield-cef:OnPrem23.05-230626-16.44
-    sed -i -e '/esIcap:/c\    esRemoteBrowser: securebrowsing\/icap-server:23.05-230927-SHIELD-19596' ${ES_PATH}/shield/values.yaml
+    sed -i -e '/esIcap:/c\    esIcap: securebrowsing\/icap-server:23.05-230927-SHIELD-19596' ${ES_PATH}/shield/values.yaml
     #icap-server:230329-07.17-2154
     log_message "[end] fix for 23.05"
 elif [[ "$BRANCH" == "Rel-22.08" ]]; then
