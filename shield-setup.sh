@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20230706a
+### VER=20231002a-dev
 ####################
 
 function usage() {
@@ -65,8 +65,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -2152,7 +2152,14 @@ if [[ "$BUILD" == "758" ]]; then
     sed -i -e 's/icap-server:210426-Rel-21.04/icap-server:210819-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.04.758"
 fi
-if [[ "$BRANCH" == "Rel-22.08" ]]; then
+if [[ "$BRANCH" == "Rel-23.05" ]]; then
+    log_message "[start] fix for 23.05"
+    sed -i -e '/esRemoteBrowser:/c\    esRemoteBrowser: securebrowsing\/shield-cef:230718-Rel-23.05' ${ES_PATH}/shield/values.yaml
+    #shield-cef:OnPrem23.05-230626-16.44
+    sed -i -e '/esIcap:/c\    esRemoteBrowser: securebrowsing\/icap-server:23.05-230927-SHIELD-19596' ${ES_PATH}/shield/values.yaml
+    #icap-server:230329-07.17-2154
+    log_message "[end] fix for 23.05"
+elif [[ "$BRANCH" == "Rel-22.08" ]]; then
     log_message "[start] fix for 22.08"
     sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230108-OnPrem-22.08' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 22.08"
