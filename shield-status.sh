@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20200313a
+### VER=20240115a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -116,10 +116,10 @@ do
 done
 
 if [[ $quiet_flg -ne 1 ]]; then
-    echo "${STATELIST[@]}" | jq -c . | grep "active"
+    echo "${STATELIST[@]}" | jq -c . | grep -w "active"
     echo ""
 fi
-NONACTIVE=$(echo "${STATELIST[@]}" | jq -c . |  grep -c -v "active")
+NONACTIVE=$(echo "${STATELIST[@]}" | jq -c . |  grep -c -w -v "active")
 
 if [ $NONACTIVE -eq 0 ]; then
     if [[ $quiet_flg -ne 1 ]]; then
@@ -129,7 +129,7 @@ if [ $NONACTIVE -eq 0 ]; then
 else
     if [[ $quiet_flg -ne 1 ]]; then
         echo "----------------------------------------------------------"
-        echo "${STATELIST[@]}" | jq -c . |  grep -v "active"
+        echo "${STATELIST[@]}" | jq -c . |  grep -w -v "active"
         echo "----------------------------------------------------------"
         echo "$NONACTIVE workload are not Active."
         echo "----------------------------------------------------------"
