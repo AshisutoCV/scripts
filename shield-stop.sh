@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20211001a
+### VER=20240117a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -190,6 +190,53 @@ function ln_resolv() {
     fi
 }
 
+
+function stop-f_preCheck() {
+    if [ $force_flg -eq 1 ]; then
+    num_notready_nodes=$(kubectl get node | grep -c NotReady)
+        if [ $num_notready_nodes -ge 1 ]; then
+            log_message "NotReadyNodesが存在します。"
+            kubectl get node -o wide >> $LOGFILE
+            echo ""
+            echo ""
+            echo "【Shield-stop.sh -f 処理エラー】"
+            echo ""
+            echo "一部のShieldサーバが停止中のステータスであることを事前チェック処理で検知したため、Shield-stop.sh -f 処理を中断終了しました。"
+            echo "shield-stop.sh -f 処理を行うためには、全てのShieldサーバが起動中のステータスである必要があります。"
+            echo "以下のコマンドでShieldサーバのステータスを確認を行い、停止中ステータス(NotReady)のShieldサーバの状態を改善した後、"
+            echo "再度、実行してください。"
+            echo ""
+            echo '$ kubectl get node -o wide'
+            echo ""
+            echo "もし停止中ステータス(NotReady)のShieldサーバの状態を改善できない状態で、Shield-stop.sh -f 処理を行う必要が有る場合には、"
+            echo "サポートセンターへお問合せください。"
+
+            fin 1
+        fi
+
+        ${ES_PATH}/shield-status.sh --system -q
+        abnomal_system_workloads=$?
+        if [ $abnomal_system_workloads -ne 0 ];then
+            log_message "Activeでないsystem系Workloadが存在します。"
+            ${ES_PATH}/shield-status.sh --system >> $LOGFILE
+            echo ""
+            echo ""
+            echo "【Shield-stop.sh -f 処理エラー】"
+            echo ""
+            echo "一部system系workloadがActiveステータスでないことを事前チェック処理で検知したため、Shield-stop.sh -f 処理を中断終了しました。"
+            echo "shield-stop.sh -f 処理を行うためには、全てのsystem系workloadがActiveステータスである必要があります。"
+            echo "以下のコマンドでsystem系workloadのステータス状態の確認が可能です。"
+            echo ""
+            echo '$ ~/ericomshield/shield-status.sh --system'
+            echo ""
+            echo "一部system系workloadがActiveステータスでない原因については、多岐に渡りますので、サポートセンターへお問合せください。"
+
+            fin 1
+        fi
+    fi
+}
+
+
 log_message "###### START ###########################################################"
 
 
@@ -221,6 +268,7 @@ echo "force_flg: $force_flg" >> $LOGFILE
 echo "args: $args" >> $LOGFILE
 echo "////////////////////////////////" >> $LOGFILE
 
+stop-f_preCheck
 
 stop_shield
 if [[ $OS == "Ubuntu" ]]; then
