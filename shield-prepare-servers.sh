@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240205a
+### VER=20240213a
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -707,7 +707,8 @@ function shield_prepare_servers() {
 
 
     if  [[ "$PASSWORD" =~ "\$" ]]; then
-        PASSWORD=$(echo $PASSWORD | sed -e 's/\$/\\\$/g' )
+        E_PASSWORD=$(echo $PASSWORD | sed -e 's/\$/\\\$/g' )
+        echo ${E_PASSWORD}
     fi
 
     rm -f sudo-ok.tmp
@@ -718,14 +719,14 @@ function shield_prepare_servers() {
         expect \"sudo-pass:\" {
             send \"${SUDO_PASSWORD}\n\"
             expect \"password:\" 
-            send \"${PASSWORD}\n\"
+            send \"${E_PASSWORD}\n\"
             expect \"password]:\"
             send \"\n\"
             expect \"PLAY RECAP\"
             expect \"==========\"
             exit 0   
         } \"password:\" {
-            send \"${PASSWORD}\n\"
+            send \"${E_PASSWORD}\n\"
             expect \"password]:\"
             send \"\n\"
             expect \"PLAY RECAP\"
