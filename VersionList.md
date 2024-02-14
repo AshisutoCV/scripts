@@ -20,6 +20,7 @@
 * [20210622a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20210622a---20210622)
 
 ## shield-prepare-servers.sh
+* [20240213a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20240213a---20240213)
 * [20230706a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20230111a---20230706)
 * [20230111a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20230111a---20230120)
 * [20220912a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220912a---20220912)
