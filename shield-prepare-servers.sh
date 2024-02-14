@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240213a
+### VER=20240215a
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -709,6 +709,8 @@ function shield_prepare_servers() {
     if  [[ "$PASSWORD" =~ "\$" ]]; then
         E_PASSWORD=$(echo $PASSWORD | sed -e 's/\$/\\\$/g' )
         echo ${E_PASSWORD}
+    else
+        E_PASSWORD=${PASSWORD}
     fi
 
     rm -f sudo-ok.tmp
