@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240115a
+### VER=20240214a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -21,6 +21,18 @@ if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 elif [ -f ${ES_PATH}/.es_branch ]; then
     BRANCH=$(cat ${ES_PATH}/.es_branch)
+fi
+
+if [ -f .es_version ]; then
+    S_APP_VERSION=$(cat .es_version)
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    GBUILD=${BUILD[0]}.${BUILD[1]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
 fi
 
 function usage() {
@@ -62,58 +74,109 @@ else
     APITOKEN=$(cat .ra_apitoken)
 fi
 
-if [[ system_flg -ne 1 ]];then
-    PROJECTNAME="Default"
-    if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
-        NAMESPACES="management proxy elk farm-services"
-    else
-        NAMESPACES="management proxy elk farm-services common"
-    fi
-else
-    PROJECTNAME="System"
-    NAMESPACES="cattle-system ingress-nginx kube-system"
-fi
-PROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
-    -H 'content-type: application/json' \
-    -H "Authorization: Bearer $APITOKEN" \
-    | jq -r '.data[].id')
-
-
-
-WORKLOADS=()
-#ERR_NSs=()
-for NAMESPACE in $NAMESPACES
-do
-    WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/cluster/${CLUSTERID}/namespaces/${NAMESPACE}/yaml" \
-        -H 'content-type: application/json' \
-        -H "Authorization: Bearer $APITOKEN" \
-        | jq -c ' .items[] | [ .kind, .metadata.namespace,.metadata.name ]' 2> /dev/null | grep -v Service | grep -v ConfigMap)) || {
-        if [[ $quiet_flg -ne 1 ]]; then
-            echo "Not deploy ${NAMESPACE}."
+if [[ "$(echo "$BUILD < 5000" | bc)" -eq 1 ]]; then
+    ####23.05まで###############################################################
+    if [[ system_flg -ne 1 ]];then
+        PROJECTNAME="Default"
+        if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
+            NAMESPACES="management proxy elk farm-services"
+        else
+            NAMESPACES="management proxy elk farm-services common"
         fi
-        ERR_FLG=1
-        #ERR_NSs+="$NAMESPACE"
-    }
-done
-
-if [[ $ERR_FLG -eq 1 ]];then
-    if [[ $quiet_flg -ne 1 ]]; then
-        echo "exit."
+    else
+        PROJECTNAME="System"
+        NAMESPACES="cattle-system ingress-nginx kube-system"
     fi
-    exit 99
-fi
-
-STATELIST=()
-for WORKLOAD in "${WORKLOADS[@]}"
-do
-        KIND=$(echo $WORKLOAD | jq -c .[0] | sed -e s/\"//g)
-        SPACE=$(echo $WORKLOAD | jq -c .[1] | sed -e s/\"//g)
-        NAME=$(echo $WORKLOAD | jq -c .[2] | sed -e s/\"//g)
-        STATELIST+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads/${KIND,,}:${SPACE,,}:${NAME,,}" \
+    PROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
-        | jq -c '[ .namespaceId, .name, .state ] '))
-done
+        | jq -r '.data[].id')
+
+
+
+    WORKLOADS=()
+    #ERR_NSs=()
+    for NAMESPACE in $NAMESPACES
+    do
+        WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/cluster/${CLUSTERID}/namespaces/${NAMESPACE}/yaml" \
+            -H 'content-type: application/json' \
+            -H "Authorization: Bearer $APITOKEN" \
+            | jq -c ' .items[] | [ .kind, .metadata.namespace,.metadata.name ]' 2> /dev/null | grep -v Service | grep -v ConfigMap)) || {
+            if [[ $quiet_flg -ne 1 ]]; then
+                echo "Not deploy ${NAMESPACE}."
+            fi
+            ERR_FLG=1
+            #ERR_NSs+="$NAMESPACE"
+        }
+    done
+
+    if [[ $ERR_FLG -eq 1 ]];then
+        if [[ $quiet_flg -ne 1 ]]; then
+            echo "exit."
+        fi
+        exit 99
+    fi
+
+    STATELIST=()
+    for WORKLOAD in "${WORKLOADS[@]}"
+    do
+            KIND=$(echo $WORKLOAD | jq -c .[0] | sed -e s/\"//g)
+            SPACE=$(echo $WORKLOAD | jq -c .[1] | sed -e s/\"//g)
+            NAME=$(echo $WORKLOAD | jq -c .[2] | sed -e s/\"//g)
+            STATELIST+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads/${KIND,,}:${SPACE,,}:${NAME,,}" \
+            -H 'content-type: application/json' \
+            -H "Authorization: Bearer $APITOKEN" \
+            | jq -c '[ .namespaceId, .name, .state ] '))
+    done
+else
+####23.13以降###############################################################
+    if [[ system_flg -ne 1 ]];then
+        PROJECTNAME="Shield"
+        #NAMESPACES="management proxy elk farm-services common"
+    else
+        PROJECTNAME="System"
+        #NAMESPACES="cattle-system ingress-nginx kube-system"
+    fi
+    PROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
+        -H 'Accept: application/json' \
+        -H 'Content-type: application/json' \
+        -H "Authorization: Bearer $APITOKEN" \
+        | jq -c '.data[].id' | grep -v local |sed 's/"//g' )
+
+
+    WORKLOADS=()
+    #ERR_NSs=()
+    #for NAMESPACE in $NAMESPACES
+    #do
+        WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads" \
+            -H 'Accept: application/json' \
+            -H 'content-type: application/json' \
+            -H "Authorization: Bearer $APITOKEN" \
+            | jq -c ' .data[].id' | sed 's/"//g')) || {
+            if [[ $quiet_flg -ne 1 ]]; then
+                echo "Not deploy ${NAMESPACE}."
+            fi
+            ERR_FLG=1
+            #ERR_NSs+="$NAMESPACE"
+        }
+    #done
+
+    if [[ $ERR_FLG -eq 1 ]];then
+        if [[ $quiet_flg -ne 1 ]]; then
+            echo "exit."
+        fi
+        exit 99
+    fi
+
+    STATELIST=()
+    for WORKLOAD in "${WORKLOADS[@]}"
+    do
+            STATELIST+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads/${WORKLOAD}" \
+            -H 'content-type: application/json' \
+            -H "Authorization: Bearer $APITOKEN" \
+            | jq -c '[ .namespaceId, .name, .state ] '))
+    done
+fi
 
 if [[ $quiet_flg -ne 1 ]]; then
     echo "${STATELIST[@]}" | jq -c . | grep -w "active"

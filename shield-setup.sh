@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20231002a
+### VER=20240214a-dev
 ####################
 
 function usage() {
@@ -65,8 +65,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -2354,7 +2354,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
-    sudo -E ./install-rancher-cli.sh
+    sudo -E -H ./install-rancher-cli.sh
     if [ $? != 0 ]; then
        failed_to_install "install rancher cli"
     fi
@@ -2363,8 +2363,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #6.  create-cluster.sh
     log_message "[start] create cluster"
-    sed -i -e '/^wait_for_rancher/a sleep 5' create-cluster.sh
-    sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
+    sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
+#    sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
+    sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
     sudo -E ./create-cluster.sh
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
