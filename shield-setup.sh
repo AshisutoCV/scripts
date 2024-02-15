@@ -857,7 +857,7 @@ function run_rancher() {
 
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
-    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
+    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null
     echo -n 'getting k8s version.'
     K8S_VER=""
     wait_count=0
@@ -926,7 +926,7 @@ function create_cluster() {
                   "enabled":true
                 },
                 "rancherKubernetesEngineConfig": {
-                  "addonJobTimeout": 30,
+                  "addonJobTimeout": 45,
                   "ignoreDockerVersion": true,
                   "sshAgentAuth": false,
                   "type": "rancherKubernetesEngineConfig",
@@ -998,7 +998,9 @@ function create_cluster() {
         log_message "[end] Extract clusterid "
     fi
 }
-
+function create_project(){
+    rancher project create --cluster "$CLUSTERNAME" --description "The Shield project" "Shield"
+}
 function show_agent_cmd_old() {
      echo ""  | tee -a $CMDFILE
      if [[ $offline_flg -eq 0 ]];then
@@ -1783,16 +1785,23 @@ function move_to_project() {
         log_message ".raファイルがありません。"
         failed_to_install "move_to_project" "all"
     fi
-    log_message "[start] get Default project id"
-    DEFPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=Default" \
+    if [[ "$(echo "$BUILD < 5000" | bc)" -eq 1 ]]; then
+        PROJECTNAME="Default"
+    else
+        PROJECTNAME="Shield"
+    fi
+
+    log_message "[start] get ${PROJECTNAME} project id"
+    TOPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
+        -H 'Accept: application/json' \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
         | jq -r '.data[].id')
-    log_message "DEFPROJECTID: $DEFPROJECTID"
-    log_message "[end] get Default project id"
+    log_message "TOPROJECTID: $TOPROJECTID"
+    log_message "[end] get ${PROJECTNAME} project id"
 
-    # move namespases to Default project
-    log_message "[start] Move namespases to Default project"
+    # move namespases to Target project
+    log_message "[start] Move namespases to ${PROJECTNAME} project"
 
     if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
@@ -1806,14 +1815,14 @@ function move_to_project() {
             -H 'content-type: application/json' \
             -H "Authorization: Bearer $APITOKEN" \
             --data-binary '{
-                "projectId":"'$DEFPROJECTID'"
+                "projectId":"'$TOPROJECTID'"
               }' \
            >>"$LOGFILE" 2>&1
 
-        log_message "move namespases to Default project/ ${NAMESPACE} "
+        log_message "move namespases to ${PROJECTNAME} project/ ${NAMESPACE} "
     done
 
-    log_message "[end] Move namespases to Default project"
+    log_message "[end] Move namespases to ${PROJECTNAME} project"
 }
 
 function check_start() {
@@ -2372,6 +2381,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     fi
     pre_create_cluster
     create_cluster
+    if [[ "$(echo "$BUILD < 5000" | bc)" -eq 1 ]]; then
+        create_project
+    fi
     create_cluster_cmd
     log_message "[end] create cluster"
     step
@@ -2387,6 +2399,34 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     echo
     echo "Please Create your cluster, Set Labels, Set ~/.kube/config and come back...."
     exit 0
+fi
+
+rancher_version=$(bash "./run-rancher.sh" --print-app-version)
+echo "Rancher Version: $rancher_version"
+rancher_running=$(docker ps | grep -c rancher/rancher:)
+echo "Rancher Running: $rancher_running"
+
+if [ $rancher_running -ge 1 ]; then
+    rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
+    echo "Rancher $rancher_version Running: $rancher_running_version"
+    if [ $rancher_running_version -lt 1 ]; then
+        echo "Stopping Old Version of Rancher Server"
+        docker stop $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+        sleep 5
+        rancher_running=$(docker ps | grep -c rancher/rancher:)
+        if [ $rancher_running_version -lt 1 ]; then
+            echo "Stopping(force) Old Version of Rancher Server"
+            docker rm -f $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+        fi
+        #run "New" Version of Rancher Server
+        log_message "***************     Running Rancher Server"
+        if ! source "./run-rancher.sh"; then
+            log_message "*************** run-rancher.sh Failed, Exiting!"
+            exit 1
+        fi
+        #ideally wait until Rancher is up again
+        sleep 30
+    fi
 fi
 
 #7. install-helm.sh
