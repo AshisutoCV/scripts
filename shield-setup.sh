@@ -218,6 +218,7 @@ function check_args(){
     old_flg=0
     multi_flg=0
     lowres_flg=0
+    wayland_flg=0
     spare_flg=0
     change_spare_flg=0
     #offline_flg=0
@@ -299,6 +300,7 @@ function check_args(){
     echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
     echo "offline_flg: $offline_flg" >> $LOGFILE
     echo "lowres_flg: $lowres_flg" >> $LOGFILE
+    echo "wayland_flg: $wayland_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
     echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
@@ -1979,6 +1981,52 @@ function low_res_choice() {
         echo "lowres_flg: $lowres_flg" >> $LOGFILE
         log_message "[end] resource choice."
 }
+function low_res_choice2() {
+        log_message "[start] resource choice."
+        while :
+        do
+            echo ""
+            echo "========================================================================================="
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo 'Rel-23.15以降、低メモリ消費のWaylandブラウザがデフォルトとなっています。'
+            echo '旧バージョンの高解像度_8Kディスプレイに対応したブラウザコンテナを選択する場合や'
+            echo '旧バージョンのデフォルトブラウザも引き続きご利用になれます。'
+            echo '必要に応じてリソース要件を確認の上、選択してください。'
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo ""
+            echo '1) 通常インストール（Waylandブラウザ）'
+            echo '2) 旧バージョン：デフォルトブラウザ(低解像度)'
+            echo '3) 旧バージョン：高解像度_8Kディスプレイ対応版'
+            echo ""
+            echo -n "番号で選んでください："
+            read ANSWERNORES
+            echo "AMSWERNORES: $ANSWERNORES" >> $LOGFILE
+
+            case $ANSWERNORES in
+                "1")
+                    wayland_flg=1
+                    lowres_flg=0
+                    break
+                    ;;
+                "2")
+                    lowres_flg=1
+                    wayland_flg=0
+                    break
+                    ;;
+                "3")
+                    lowres_flg=0
+                    wayland_flg=0
+                    break
+                    ;;
+                *)
+                    echo "番号が正しくありません。"
+                    ;;
+            esac
+        done
+        echo "lowres_flg: $lowres_flg" >> $LOGFILE
+        echo "wayland_flg: $wayland_flg" >> $LOGFILE
+        log_message "[end] resource choice."
+}
 
 function change_spare(){
     if [[ $change_spare_flg -eq 1 ]];then
@@ -2081,7 +2129,9 @@ if [[ "$BUILD" == "667" ]]; then
 fi
 
 # 21.11.816.2 resource choice
-if [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
+if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+    low_res_choice2
+elif [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
     low_res_choice
 fi
 
@@ -2201,15 +2251,22 @@ fi
 
 #low resource
 if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
-    sed -i -e '/remoteBrowserLowMemMode/d' ~/ericomshield/custom-farm.yaml
-    sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ~/ericomshield/custom-farm.yaml
+    sed -i -e '/remoteBrowserLowMemMode/d' ${ES_PATH}/custom-farm.yaml
+    sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ${ES_PATH}/custom-farm.yaml
     if [ $lowres_flg -eq 1 ]; then
         log_message "[start] fix for low resources"
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: true\n/g' ${ES_PATH}/custom-farm.yaml
         log_message "[end] fix for low resources"
     elif [ $lowres_flg -eq 0 ]; then
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
-    fi    
+    fi
+    if [ $wayland_flg -eq 1 ]; then
+        log_message "[start] fix for wayland"
+        sed -i -e 's/#  onPremDefaultWayland: true/  onPremDefaultWayland: true/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for waykand"
+    elif [ $wayland_flg -eq 0 ]; then
+        sed -1 -e 's/^  onPremDefaultWayland: true/#  onPremDefaultWayland: true/g' ${ES_PATH}/custom-farm.yaml
+    fi
 else
     if [ $lowres_flg -eq 1 ]; then
         log_message "[start] fix for low resources"
@@ -2364,6 +2421,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
+    sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield.log_\"/' install-rancher-cli.sh
     sudo -E -H ./install-rancher-cli.sh
     if [ $? != 0 ]; then
        failed_to_install "install rancher cli"
@@ -2382,7 +2440,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     fi
     pre_create_cluster
     create_cluster
-    if [[ "$(echo "$BUILD < 5000" | bc)" -eq 1 ]]; then
+    if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
         create_project
     fi
     create_cluster_cmd
