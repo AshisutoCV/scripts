@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20231002a
+### VER=20240214a-dev
 ####################
 
 function usage() {
@@ -65,8 +65,8 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -217,6 +217,7 @@ function check_args(){
     old_flg=0
     multi_flg=0
     lowres_flg=0
+    wayland_flg=0
     spare_flg=0
     change_spare_flg=0
     #offline_flg=0
@@ -298,6 +299,7 @@ function check_args(){
     echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
     echo "offline_flg: $offline_flg" >> $LOGFILE
     echo "lowres_flg: $lowres_flg" >> $LOGFILE
+    echo "wayland_flg: $wayland_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
     echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
@@ -857,7 +859,7 @@ function run_rancher() {
 
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
-    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
+    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null
     echo -n 'getting k8s version.'
     K8S_VER=""
     wait_count=0
@@ -926,7 +928,7 @@ function create_cluster() {
                   "enabled":true
                 },
                 "rancherKubernetesEngineConfig": {
-                  "addonJobTimeout": 30,
+                  "addonJobTimeout": 45,
                   "ignoreDockerVersion": true,
                   "sshAgentAuth": false,
                   "type": "rancherKubernetesEngineConfig",
@@ -998,7 +1000,9 @@ function create_cluster() {
         log_message "[end] Extract clusterid "
     fi
 }
-
+function create_project(){
+    rancher project create --cluster "$CLUSTERNAME" --description "The Shield project" "Shield"
+}
 function show_agent_cmd_old() {
      echo ""  | tee -a $CMDFILE
      if [[ $offline_flg -eq 0 ]];then
@@ -1783,16 +1787,23 @@ function move_to_project() {
         log_message ".raファイルがありません。"
         failed_to_install "move_to_project" "all"
     fi
-    log_message "[start] get Default project id"
-    DEFPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=Default" \
+    if [[ "$(echo "$BUILD < 5000" | bc)" -eq 1 ]]; then
+        PROJECTNAME="Default"
+    else
+        PROJECTNAME="Shield"
+    fi
+
+    log_message "[start] get ${PROJECTNAME} project id"
+    TOPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
+        -H 'Accept: application/json' \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
         | jq -r '.data[].id')
-    log_message "DEFPROJECTID: $DEFPROJECTID"
-    log_message "[end] get Default project id"
+    log_message "TOPROJECTID: $TOPROJECTID"
+    log_message "[end] get ${PROJECTNAME} project id"
 
-    # move namespases to Default project
-    log_message "[start] Move namespases to Default project"
+    # move namespases to Target project
+    log_message "[start] Move namespases to ${PROJECTNAME} project"
 
     if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
@@ -1806,14 +1817,14 @@ function move_to_project() {
             -H 'content-type: application/json' \
             -H "Authorization: Bearer $APITOKEN" \
             --data-binary '{
-                "projectId":"'$DEFPROJECTID'"
+                "projectId":"'$TOPROJECTID'"
               }' \
            >>"$LOGFILE" 2>&1
 
-        log_message "move namespases to Default project/ ${NAMESPACE} "
+        log_message "move namespases to ${PROJECTNAME} project/ ${NAMESPACE} "
     done
 
-    log_message "[end] Move namespases to Default project"
+    log_message "[end] Move namespases to ${PROJECTNAME} project"
 }
 
 function check_start() {
@@ -1969,6 +1980,52 @@ function low_res_choice() {
         echo "lowres_flg: $lowres_flg" >> $LOGFILE
         log_message "[end] resource choice."
 }
+function low_res_choice2() {
+        log_message "[start] resource choice."
+        while :
+        do
+            echo ""
+            echo "========================================================================================="
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo 'Rel-23.15以降、低メモリ消費のWaylandブラウザがデフォルトとなっています。'
+            echo '旧バージョンの高解像度_8Kディスプレイに対応したブラウザコンテナを選択する場合や'
+            echo '旧バージョンのデフォルトブラウザも引き続きご利用になれます。'
+            echo '必要に応じてリソース要件を確認の上、選択してください。'
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo ""
+            echo '1) 通常インストール（Waylandブラウザ）'
+            echo '2) 旧バージョン：デフォルトブラウザ(低解像度)'
+            echo '3) 旧バージョン：高解像度_8Kディスプレイ対応版'
+            echo ""
+            echo -n "番号で選んでください："
+            read ANSWERNORES
+            echo "AMSWERNORES: $ANSWERNORES" >> $LOGFILE
+
+            case $ANSWERNORES in
+                "1")
+                    wayland_flg=1
+                    lowres_flg=0
+                    break
+                    ;;
+                "2")
+                    lowres_flg=1
+                    wayland_flg=0
+                    break
+                    ;;
+                "3")
+                    lowres_flg=0
+                    wayland_flg=0
+                    break
+                    ;;
+                *)
+                    echo "番号が正しくありません。"
+                    ;;
+            esac
+        done
+        echo "lowres_flg: $lowres_flg" >> $LOGFILE
+        echo "wayland_flg: $wayland_flg" >> $LOGFILE
+        log_message "[end] resource choice."
+}
 
 function change_spare(){
     if [[ $change_spare_flg -eq 1 ]];then
@@ -2071,7 +2128,9 @@ if [[ "$BUILD" == "667" ]]; then
 fi
 
 # 21.11.816.2 resource choice
-if [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
+if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+    low_res_choice2
+elif [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
     low_res_choice
 fi
 
@@ -2191,15 +2250,22 @@ fi
 
 #low resource
 if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
-    sed -i -e '/remoteBrowserLowMemMode/d' ~/ericomshield/custom-farm.yaml
-    sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ~/ericomshield/custom-farm.yaml
+    sed -i -e '/remoteBrowserLowMemMode/d' ${ES_PATH}/custom-farm.yaml
+    sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ${ES_PATH}/custom-farm.yaml
     if [ $lowres_flg -eq 1 ]; then
         log_message "[start] fix for low resources"
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: true\n/g' ${ES_PATH}/custom-farm.yaml
         log_message "[end] fix for low resources"
     elif [ $lowres_flg -eq 0 ]; then
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
-    fi    
+    fi
+    if [ $wayland_flg -eq 1 ]; then
+        log_message "[start] fix for wayland"
+        sed -i -e 's/#  onPremDefaultWayland: true/  onPremDefaultWayland: true/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for waykand"
+    elif [ $wayland_flg -eq 0 ]; then
+        sed -1 -e 's/^  onPremDefaultWayland: true/#  onPremDefaultWayland: true/g' ${ES_PATH}/custom-farm.yaml
+    fi
 else
     if [ $lowres_flg -eq 1 ]; then
         log_message "[start] fix for low resources"
@@ -2354,7 +2420,8 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
-    sudo -E ./install-rancher-cli.sh
+    sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield.log_\"/' install-rancher-cli.sh
+    sudo -E -H ./install-rancher-cli.sh
     if [ $? != 0 ]; then
        failed_to_install "install rancher cli"
     fi
@@ -2363,14 +2430,18 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #6.  create-cluster.sh
     log_message "[start] create cluster"
-    sed -i -e '/^wait_for_rancher/a sleep 5' create-cluster.sh
-    sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
+    sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
+#    sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
+    sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
     sudo -E ./create-cluster.sh
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
     fi
     pre_create_cluster
     create_cluster
+    if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+        create_project
+    fi
     create_cluster_cmd
     log_message "[end] create cluster"
     step
@@ -2386,6 +2457,34 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     echo
     echo "Please Create your cluster, Set Labels, Set ~/.kube/config and come back...."
     exit 0
+fi
+
+rancher_version=$(bash "./run-rancher.sh" --print-app-version)
+echo "Rancher Version: $rancher_version"
+rancher_running=$(docker ps | grep -c rancher/rancher:)
+echo "Rancher Running: $rancher_running"
+
+if [ $rancher_running -ge 1 ]; then
+    rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
+    echo "Rancher $rancher_version Running: $rancher_running_version"
+    if [ $rancher_running_version -lt 1 ]; then
+        echo "Stopping Old Version of Rancher Server"
+        docker stop $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+        sleep 5
+        rancher_running=$(docker ps | grep -c rancher/rancher:)
+        if [ $rancher_running_version -lt 1 ]; then
+            echo "Stopping(force) Old Version of Rancher Server"
+            docker rm -f $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+        fi
+        #run "New" Version of Rancher Server
+        log_message "***************     Running Rancher Server"
+        if ! source "./run-rancher.sh"; then
+            log_message "*************** run-rancher.sh Failed, Exiting!"
+            exit 1
+        fi
+        #ideally wait until Rancher is up again
+        sleep 30
+    fi
 fi
 
 #7. install-helm.sh
