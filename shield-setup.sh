@@ -874,7 +874,7 @@ function check_rancher_ver(){
     echo "Rancher Running: $rancher_running"
 
     if [ $rancher_running -ge 1 ]; then
-        rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null
+        rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
         rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
         echo "Rancher $rancher_version Running: $rancher_running_version"
         if [ $rancher_running_version -lt 1 ]; then
@@ -900,7 +900,7 @@ function check_rancher_ver(){
 
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
-    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null
+    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
     echo -n 'getting k8s version.'
     K8S_VER=""
     wait_count=0
@@ -2475,7 +2475,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
-    sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield.log_\"/' install-rancher-cli.sh
+    sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield\/ericomshield.log\"/' install-rancher-cli.sh
     sudo -E -H ./install-rancher-cli.sh
 
     if [ $? != 0 ]; then

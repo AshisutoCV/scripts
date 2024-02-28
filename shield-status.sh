@@ -17,14 +17,14 @@ BRANCH="Rel"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 
-if [ -f .es_branch-tmp ]; then
-    BRANCH=$(cat .es_branch-tmp)
-elif [ -f ${ES_PATH}/.es_branch-tmp ]; then
-    BRANCH=$(cat ${ES_PATH}/.es_branch-tmp)
+if [ -f .es_branch ]; then
+    BRANCH=$(cat .es_branch)
+elif [ -f ${ES_PATH}/.es_branch ]; then
+    BRANCH=$(cat ${ES_PATH}/.es_branch)
 fi
 
-if [ -f .es_version-tmp ]; then
-    S_APP_VERSION=$(cat .es_version-tmp)
+if [ -f .es_version ]; then
+    S_APP_VERSION=$(cat .es_version)
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
     GBUILD=${BUILD[0]}.${BUILD[1]}
@@ -35,14 +35,14 @@ if [ -f .es_version-tmp ]; then
     fi
 fi
 
-if [ -f .es_branch ]; then
-    BRANCH=$(cat .es_branch)
-elif [ -f ${ES_PATH}/.es_branch ]; then
-    BRANCH=$(cat ${ES_PATH}/.es_branch)
+if [ -f .es_branch-tmp ]; then
+    BRANCH=$(cat .es_branch-tmp)
+elif [ -f ${ES_PATH}/.es_branch-tmp ]; then
+    BRANCH=$(cat ${ES_PATH}/.es_branch-tmp)
 fi
 
-if [ -f .es_version ]; then
-    S_APP_VERSION=$(cat .es_version)
+if [ -f .es_version-tmp ]; then
+    S_APP_VERSION=$(cat .es_version-tmp)
     BUILD=()
     BUILD=(${S_APP_VERSION//./ })
     GBUILD=${BUILD[0]}.${BUILD[1]}
@@ -150,10 +150,10 @@ else
 ####23.13以降###############################################################
     if [[ system_flg -ne 1 ]];then
         PROJECTNAME="Shield"
-        #NAMESPACES="management proxy elk farm-services common"
+        NAMESPACES="management proxy elk farm-services common"
     else
         PROJECTNAME="System"
-        #NAMESPACES="cattle-system ingress-nginx kube-system"
+        NAMESPACES="cattle-system ingress-nginx kube-system"
     fi
     PROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
         -H 'Accept: application/json' \
@@ -163,21 +163,40 @@ else
 
 
     WORKLOADS=()
-    #ERR_NSs=()
-    #for NAMESPACE in $NAMESPACES
-    #do
-        WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads" \
+
+    CHK_RAAPI=$(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads" \
             -H 'Accept: application/json' \
             -H 'content-type: application/json' \
             -H "Authorization: Bearer $APITOKEN" \
-            | jq -c ' .data[].id' | sed 's/"//g')) || {
-            if [[ $quiet_flg -ne 1 ]]; then
-                echo "Not deploy ${NAMESPACE}."
-            fi
-            ERR_FLG=1
-            #ERR_NSs+="$NAMESPACE"
-        }
-    #done
+            | grep -c "404")
+
+    if [[ $CHK_RAAPI -eq 1 ]];then
+        for NAMESPACE in $NAMESPACES
+        do
+            WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/cluster/${CLUSTERID}/namespaces/${NAMESPACE}/yaml" \
+                -H 'content-type: application/json' \
+                -H "Authorization: Bearer $APITOKEN" \
+                | jq -c ' .items[] | [ .kind, .metadata.namespace,.metadata.name ]' 2> /dev/null | grep -v Service | grep -v ConfigMap)) || {
+                if [[ $quiet_flg -ne 1 ]]; then
+                    echo "Not deploy ${NAMESPACE}."
+                fi
+                ERR_FLG=1
+                #ERR_NSs+="$NAMESPACE"
+            }
+        done
+    else
+        WORKLOADS+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads" \
+                -H 'Accept: application/json' \
+                -H 'content-type: application/json' \
+                -H "Authorization: Bearer $APITOKEN" \
+                | jq -c ' .data[].id' | sed 's/"//g')) || {
+                if [[ $quiet_flg -ne 1 ]]; then
+                    echo "Not deploy ${NAMESPACE}."
+                fi
+                ERR_FLG=1
+                #ERR_NSs+="$NAMESPACE"
+            }
+    fi
 
     if [[ $ERR_FLG -eq 1 ]];then
         if [[ $quiet_flg -ne 1 ]]; then
@@ -187,13 +206,27 @@ else
     fi
 
     STATELIST=()
-    for WORKLOAD in "${WORKLOADS[@]}"
-    do
-            STATELIST+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads/${WORKLOAD}" \
-            -H 'content-type: application/json' \
-            -H "Authorization: Bearer $APITOKEN" \
-            | jq -c '[ .namespaceId, .name, .state ] '))
-    done
+
+    if [[ $CHK_RAAPI -eq 1 ]];then
+        for WORKLOAD in "${WORKLOADS[@]}"
+        do
+                KIND=$(echo $WORKLOAD | jq -c .[0] | sed -e s/\"//g)
+                SPACE=$(echo $WORKLOAD | jq -c .[1] | sed -e s/\"//g)
+                NAME=$(echo $WORKLOAD | jq -c .[2] | sed -e s/\"//g)
+                STATELIST+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads/${KIND,,}:${SPACE,,}:${NAME,,}" \
+                -H 'content-type: application/json' \
+                -H "Authorization: Bearer $APITOKEN" \
+                | jq -c '[ .namespaceId, .name, .state ] '))
+        done
+    else
+        for WORKLOAD in "${WORKLOADS[@]}"
+        do
+                STATELIST+=($(curl -s -k "${RANCHERURL}/v3/project/${PROJECTID}/workloads/${WORKLOAD}" \
+                -H 'content-type: application/json' \
+                -H "Authorization: Bearer $APITOKEN" \
+                | jq -c '[ .namespaceId, .name, .state ] '))
+        done
+    fi
 fi
 
 if [[ $quiet_flg -ne 1 ]]; then
