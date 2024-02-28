@@ -2135,7 +2135,7 @@ if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
     KUBE_RESERVED_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep kube_reserved_mem | awk -F'[: ]' '{print $NF}')
     SYS_RESERVED_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep sys_reserved_cpu | awk -F'[: ]' '{print $NF}')
     SYS_RESERVED_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep sys_reserved_mem | awk -F'[: ]' '{print $NF}')
-fia
+fi
 
 #read ra files
 if [ -f .ra_rancherurl ] || [ -f .ra_clusterid ] || [ -f .ra_apitoken ];then
