@@ -2135,7 +2135,7 @@ if [ -f ${CURRENT_DIR}/.es_custom_env ]; then
     KUBE_RESERVED_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep kube_reserved_mem | awk -F'[: ]' '{print $NF}')
     SYS_RESERVED_CPU=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep sys_reserved_cpu | awk -F'[: ]' '{print $NF}')
     SYS_RESERVED_MEM=$(cat ${CURRENT_DIR}/.es_custom_env | grep -v '^\s*#' | grep sys_reserved_mem | awk -F'[: ]' '{print $NF}')
-fi
+fia
 
 #read ra files
 if [ -f .ra_rancherurl ] || [ -f .ra_clusterid ] || [ -f .ra_apitoken ];then
@@ -2150,6 +2150,8 @@ log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
 #echo $BRANCH > .es_branch
 #echo ${S_APP_VERSION} > .es_version
+echo $BRANCH > .es_branch-tmp
+echo ${S_APP_VERSION} > .es_version-tmp
 
 if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
     old_flg=1
@@ -2535,9 +2537,6 @@ if [[ $offline_flg -eq 0 ]]; then
     fi
     step
 fi
-
-echo $BRANCH > .es_branch-tmp
-echo ${S_APP_VERSION} > .es_version-tmp
 
 # set node label
 set_node_label
