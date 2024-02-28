@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240215a
+### VER=20240228a-dev
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -54,8 +54,9 @@ CLUSTERNAME="shield-cluster"
 STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
 SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
@@ -86,7 +87,7 @@ function check_ericom_user(){
             sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
         fi
-        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+        if sudo [ -f ${ES_PATH_ERICOM}/.es_prepare ];then
             log_message "[info] Move .es_prepare flg file..."
             sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
@@ -411,8 +412,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PREPARE" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
+    if sudo [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(sudo cat $ES_PREPARE)"
     else
         #log_message "[error] shield-prepare-serversが未実行のようです。"
         #echo "=================================================================="
@@ -778,7 +779,7 @@ function install_expect(){
 function install_fuse-libs(){
     log_message "[start] install fuse-libs"
     sudo yum install -y fuse-libs
-    log_message "[end] install expect"
+    log_message "[end] install fuse-libs"
 }
 
 function install_wget(){
@@ -798,6 +799,12 @@ function install_wget(){
         log_message "wget is already installed"
     fi
     log_message "[end] install wget"    
+}
+
+function install_libfuse2(){
+    log_message "[start] install libfuse2"
+    sudo apt install libfuse2
+    log_message "[end] install libfuse2"
 }
 
 ######START#####
@@ -839,6 +846,7 @@ fi
 get_shield-prepare-servers
 install_expect
 install_wget
+install_libfuse2
 if [[ $OS == "RHEL" ]];then
     install_fuse-libs
 fi

@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240214a-dev
+### VER=20240228a-dev
 ####################
 
 function usage() {
@@ -66,8 +66,12 @@ STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
+
+rm -f .es_branch-tmp
+rm -f .es_version-tmp
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -99,7 +103,7 @@ function check_ericom_user(){
             sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
         fi
-        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+        if sudo [ -f ${ES_PATH_ERICOM}/.es_prepare ];then
             log_message "[info] Move .es_prepare flg file..."
             sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
@@ -408,6 +412,8 @@ function uninstall_shield() {
     ${ES_PATH}/delete-shield.sh -s | tee -a $LOGFILE
     rm -f .es_version
     rm -f .es_branch
+    rm -f .es_branch-tmp
+    rm -f .es_version-tmp
 
     log_message "[end] uninstall shield"
 }
@@ -493,8 +499,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PREPARE" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
+    if sudo [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(sudo cat $ES_PREPARE)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
         echo "=================================================================="
@@ -822,6 +828,8 @@ function check_group() {
                 log_message "================================================================================="
                 rm -f .es_version
                 rm -f .es_branch
+                rm -f .es_branch-tmp
+                rm -f .es_version-tmp
                 fin 1
             fi
             docker_flg=1
@@ -841,6 +849,8 @@ function check_group() {
         log_message "[end] add group"
         rm -f .es_version
         rm -f .es_branch
+        rm -f .es_branch-tmp
+        rm -f .es_version-tmp
         fin 0
     fi
 
@@ -857,9 +867,40 @@ function run_rancher() {
     fi
 }
 
+function check_rancher_ver(){
+    rancher_version=$(bash "./run-rancher.sh" --print-app-version)
+    echo "Rancher Version: $rancher_version"
+    rancher_running=$(docker ps | grep -c rancher/rancher:)
+    echo "Rancher Running: $rancher_running"
+
+    if [ $rancher_running -ge 1 ]; then
+        rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
+        rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
+        echo "Rancher $rancher_version Running: $rancher_running_version"
+        if [ $rancher_running_version -lt 1 ]; then
+            echo "Stopping Old Version of Rancher Server"
+            docker stop $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            sleep 5
+            rancher_running=$(docker ps | grep -c rancher/rancher:)
+            if [ $rancher_running_version -lt 1 ]; then
+                echo "Stopping(force) Old Version of Rancher Server"
+                docker rm -f $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            fi
+            #run "New" Version of Rancher Server
+            log_message "***************     Running Rancher Server"
+            if ! source "./run-rancher.sh"; then
+                log_message "*************** run-rancher.sh Failed, Exiting!"
+                exit 1
+            fi
+            #ideally wait until Rancher is up again
+            sleep 30
+        fi
+    fi
+}
+
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
-    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null
+    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
     echo -n 'getting k8s version.'
     K8S_VER=""
     wait_count=0
@@ -1931,8 +1972,8 @@ function mod_cluster_dns() {
 
 function check_prepare() {
 
-    if [ -f ${ES_PREPARE} ] ;then
-        PREPARE_VER=$(cat ${ES_PREPARE})
+    if sudo [ -f ${ES_PREPARE} ] ;then
+        PREPARE_VER=$(sudo cat ${ES_PREPARE})
         if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
@@ -1987,7 +2028,7 @@ function low_res_choice2() {
             echo ""
             echo "========================================================================================="
             echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
-            echo 'Rel-23.15以降、低メモリ消費のWaylandブラウザがデフォルトとなっています。'
+            echo 'Rel-23.13以降、低メモリ消費のWaylandブラウザがデフォルトとなっています。'
             echo '旧バージョンの高解像度_8Kディスプレイに対応したブラウザコンテナを選択する場合や'
             echo '旧バージョンのデフォルトブラウザも引き続きご利用になれます。'
             echo '必要に応じてリソース要件を確認の上、選択してください。'
@@ -2109,6 +2150,8 @@ log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
 #echo $BRANCH > .es_branch
 #echo ${S_APP_VERSION} > .es_version
+echo $BRANCH > .es_branch-tmp
+echo ${S_APP_VERSION} > .es_version-tmp
 
 if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
     old_flg=1
@@ -2142,7 +2185,7 @@ if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
     sudo apt-mark unhold docker-ce | tee -a $LOGFILE
     apt-unlock
     sudo apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
+    #sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
 fi
 
 # install docker
@@ -2246,25 +2289,31 @@ else
     sed -i -z 's/farm-services:\n/farm-services:\n  rb_resources:\n    rb_limits:\n      cpu: 4\n      memory: 3Gi\n/g' custom-farm.yaml
 fi
 
-
-
 #low resource
 if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
     sed -i -e '/remoteBrowserLowMemMode/d' ${ES_PATH}/custom-farm.yaml
+    sed -i -e '/onPremDefaultWayland/d' ${ES_PATH}/custom-farm.yaml
     sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ${ES_PATH}/custom-farm.yaml
+
+    #LowMemMode
     if [ $lowres_flg -eq 1 ]; then
         log_message "[start] fix for low resources"
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: true\n/g' ${ES_PATH}/custom-farm.yaml
         log_message "[end] fix for low resources"
-    elif [ $lowres_flg -eq 0 ]; then
-        sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
     fi
+
+    #HighMemMode
+    if [ $lowres_flg -eq 0 ]; then
+        log_message "[start] fix for High resources"
+        sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for High resources"
+    fi
+
+    #WaylandMode
     if [ $wayland_flg -eq 1 ]; then
         log_message "[start] fix for wayland"
-        sed -i -e 's/#  onPremDefaultWayland: true/  onPremDefaultWayland: true/g' ${ES_PATH}/custom-farm.yaml
-        log_message "[end] fix for waykand"
-    elif [ $wayland_flg -eq 0 ]; then
-        sed -1 -e 's/^  onPremDefaultWayland: true/#  onPremDefaultWayland: true/g' ${ES_PATH}/custom-farm.yaml
+        sed -z -i 's/farm-services:\n/farm-services:\n  onPremDefaultWayland: true\n/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for wayland"
     fi
 else
     if [ $lowres_flg -eq 1 ]; then
@@ -2279,6 +2328,8 @@ else
     fi
 fi
 
+
+
 #if [[ "$BUILD" == "816.2" ]]; then
 #    log_message "[start] fix for 21.11.816.2 votiro"
 #    sed -i -e 's/es-system-settings:211219-Rel-21.11/es-system-settings:220214-11.30/g' ${ES_PATH}/shield/values.yaml
@@ -2291,6 +2342,7 @@ fi
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         chmod 600 ${HOME}/.kube/config
         run_rancher
+        check_rancher_ver
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
             wait_for_tiller
@@ -2300,6 +2352,9 @@ fi
         fi
         #check_system_project
         check_system_project
+        if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+            create_project
+        fi
         deploy_shield
         move_to_project
         check_start
@@ -2420,8 +2475,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
-    sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield.log_\"/' install-rancher-cli.sh
+    sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield\/ericomshield.log\"/' install-rancher-cli.sh
     sudo -E -H ./install-rancher-cli.sh
+
     if [ $? != 0 ]; then
        failed_to_install "install rancher cli"
     fi
@@ -2431,8 +2487,11 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     #6.  create-cluster.sh
     log_message "[start] create cluster"
     sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
-#    sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
-    sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+    if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+        sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+    else
+        sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
+    fi
     sudo -E ./create-cluster.sh
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
@@ -2459,33 +2518,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     exit 0
 fi
 
-rancher_version=$(bash "./run-rancher.sh" --print-app-version)
-echo "Rancher Version: $rancher_version"
-rancher_running=$(docker ps | grep -c rancher/rancher:)
-echo "Rancher Running: $rancher_running"
-
-if [ $rancher_running -ge 1 ]; then
-    rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
-    echo "Rancher $rancher_version Running: $rancher_running_version"
-    if [ $rancher_running_version -lt 1 ]; then
-        echo "Stopping Old Version of Rancher Server"
-        docker stop $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
-        sleep 5
-        rancher_running=$(docker ps | grep -c rancher/rancher:)
-        if [ $rancher_running_version -lt 1 ]; then
-            echo "Stopping(force) Old Version of Rancher Server"
-            docker rm -f $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
-        fi
-        #run "New" Version of Rancher Server
-        log_message "***************     Running Rancher Server"
-        if ! source "./run-rancher.sh"; then
-            log_message "*************** run-rancher.sh Failed, Exiting!"
-            exit 1
-        fi
-        #ideally wait until Rancher is up again
-        sleep 30
-    fi
-fi
+check_rancher_ver
 
 #7. install-helm.sh
 install_helm
@@ -2519,6 +2552,8 @@ move_to_project
 
 check_start
 
+rm -f .es_branch-tmp
+rm -f .es_version-tmp
 echo $BRANCH > .es_branch
 echo ${S_APP_VERSION} > .es_version
 
