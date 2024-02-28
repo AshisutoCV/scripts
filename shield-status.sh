@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240214a-dev
+### VER=20240228a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -16,6 +16,24 @@ fi
 BRANCH="Rel"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
+
+if [ -f .es_branch-tmp ]; then
+    BRANCH=$(cat .es_branch-tmp)
+elif [ -f ${ES_PATH}/.es_branch-tmp ]; then
+    BRANCH=$(cat ${ES_PATH}/.es_branch-tmp)
+fi
+
+if [ -f .es_version-tmp ]; then
+    S_APP_VERSION=$(cat .es_version-tmp)
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    GBUILD=${BUILD[0]}.${BUILD[1]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
+fi
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)

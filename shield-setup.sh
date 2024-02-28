@@ -70,6 +70,9 @@ cd $CURRENT_DIR
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
+rm -f .es_branch-tmp
+rm -f .es_version-tmp
+
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
 elif [ -f ${ES_PATH}/.es_branch ]; then
@@ -100,7 +103,7 @@ function check_ericom_user(){
             sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
         fi
-        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+        if sudo [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
             log_message "[info] Move .es_prepare flg file..."
             sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
@@ -409,6 +412,8 @@ function uninstall_shield() {
     ${ES_PATH}/delete-shield.sh -s | tee -a $LOGFILE
     rm -f .es_version
     rm -f .es_branch
+    rm -f .es_branch-tmp
+    rm -f .es_version-tmp
 
     log_message "[end] uninstall shield"
 }
@@ -494,8 +499,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PREPARE" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
+    if sudo [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(sudo cat $ES_PREPARE)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
         echo "=================================================================="
@@ -823,6 +828,8 @@ function check_group() {
                 log_message "================================================================================="
                 rm -f .es_version
                 rm -f .es_branch
+                rm -f .es_branch-tmp
+                rm -f .es_version-tmp
                 fin 1
             fi
             docker_flg=1
@@ -842,6 +849,8 @@ function check_group() {
         log_message "[end] add group"
         rm -f .es_version
         rm -f .es_branch
+        rm -f .es_branch-tmp
+        rm -f .es_version-tmp
         fin 0
     fi
 
@@ -1932,8 +1941,8 @@ function mod_cluster_dns() {
 
 function check_prepare() {
 
-    if [ -f ${ES_PREPARE} ] ;then
-        PREPARE_VER=$(cat ${ES_PREPARE})
+    if sudo [ -f ${ES_PREPARE} ] ;then
+        PREPARE_VER=$(sudo cat ${ES_PREPARE})
         if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
@@ -1988,7 +1997,7 @@ function low_res_choice2() {
             echo ""
             echo "========================================================================================="
             echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
-            echo 'Rel-23.15以降、低メモリ消費のWaylandブラウザがデフォルトとなっています。'
+            echo 'Rel-23.13以降、低メモリ消費のWaylandブラウザがデフォルトとなっています。'
             echo '旧バージョンの高解像度_8Kディスプレイに対応したブラウザコンテナを選択する場合や'
             echo '旧バージョンのデフォルトブラウザも引き続きご利用になれます。'
             echo '必要に応じてリソース要件を確認の上、選択してください。'
@@ -2143,7 +2152,7 @@ if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
     sudo apt-mark unhold docker-ce | tee -a $LOGFILE
     apt-unlock
     sudo apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
+    #sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
 fi
 
 # install docker
@@ -2247,25 +2256,31 @@ else
     sed -i -z 's/farm-services:\n/farm-services:\n  rb_resources:\n    rb_limits:\n      cpu: 4\n      memory: 3Gi\n/g' custom-farm.yaml
 fi
 
-
-
 #low resource
 if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
     sed -i -e '/remoteBrowserLowMemMode/d' ${ES_PATH}/custom-farm.yaml
+    sed -i -e '/onPremDefaultWayland/d' ${ES_PATH}/custom-farm.yaml
     sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ${ES_PATH}/custom-farm.yaml
+
+    #LowMemMode
     if [ $lowres_flg -eq 1 ]; then
         log_message "[start] fix for low resources"
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: true\n/g' ${ES_PATH}/custom-farm.yaml
         log_message "[end] fix for low resources"
-    elif [ $lowres_flg -eq 0 ]; then
-        sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
     fi
+
+    #HighMemMode
+    if [ $lowres_flg -eq 0 ]; then
+        log_message "[start] fix for High resources"
+        sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for High resources"
+    fi
+
+　　#WaylandMode
     if [ $wayland_flg -eq 1 ]; then
         log_message "[start] fix for wayland"
-        sed -i -e 's/#  onPremDefaultWayland: true/  onPremDefaultWayland: true/g' ${ES_PATH}/custom-farm.yaml
-        log_message "[end] fix for waykand"
-    elif [ $wayland_flg -eq 0 ]; then
-        sed -1 -e 's/^  onPremDefaultWayland: true/#  onPremDefaultWayland: true/g' ${ES_PATH}/custom-farm.yaml
+        sed -z -i 's/farm-services:\n/farm-services:\n  onPremDefaultWayland: true\n/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for wayland"
     fi
 else
     if [ $lowres_flg -eq 1 ]; then
@@ -2279,6 +2294,8 @@ else
         log_message "[end] fix for low resources"
     fi
 fi
+
+
 
 #if [[ "$BUILD" == "816.2" ]]; then
 #    log_message "[start] fix for 21.11.816.2 votiro"
@@ -2506,6 +2523,9 @@ if [[ $offline_flg -eq 0 ]]; then
     step
 fi
 
+echo $BRANCH > .es_branch-tmp
+echo ${S_APP_VERSION} > .es_version-tmp
+
 # set node label
 set_node_label
 
@@ -2520,6 +2540,8 @@ move_to_project
 
 check_start
 
+rm -f .es_branch-tmp
+rm -f .es_version-tmp
 echo $BRANCH > .es_branch
 echo ${S_APP_VERSION} > .es_version
 
