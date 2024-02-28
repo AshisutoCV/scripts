@@ -103,7 +103,7 @@ function check_ericom_user(){
             sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
         fi
-        if sudo [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+        if sudo [ -f ${ES_PATH_ERICOM}/.es_prepare ];then
             log_message "[info] Move .es_prepare flg file..."
             sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
@@ -2275,7 +2275,7 @@ if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
         log_message "[end] fix for High resources"
     fi
-    
+
     #WaylandMode
     if [ $wayland_flg -eq 1 ]; then
         log_message "[start] fix for wayland"
@@ -2318,6 +2318,9 @@ fi
         fi
         #check_system_project
         check_system_project
+        if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+            create_project
+        fi
         deploy_shield
         move_to_project
         check_start
