@@ -2440,6 +2440,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[start] install rancher cli"
     sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield.log_\"/' install-rancher-cli.sh
     sudo -E -H ./install-rancher-cli.sh
+
     if [ $? != 0 ]; then
        failed_to_install "install rancher cli"
     fi
@@ -2449,8 +2450,11 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     #6.  create-cluster.sh
     log_message "[start] create cluster"
     sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
-#    sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
-    sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+    if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+        sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+    else
+        sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
+    fi
     sudo -E ./create-cluster.sh
     if [ $? != 0 ]; then
        failed_to_install "create cluster"

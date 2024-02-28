@@ -87,7 +87,7 @@ function check_ericom_user(){
             sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
         fi
-        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+        if sudo [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
             log_message "[info] Move .es_prepare flg file..."
             sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
@@ -192,8 +192,8 @@ function select_version() {
     echo "=================================================================="
 
 
-    if [ -f "$ES_PREPARE" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
+    if sudo [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(sudo cat $ES_PREPARE)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
         echo "=================================================================="
@@ -561,8 +561,8 @@ function change_to_root(){
 
 function pre_check_prepare() {
 
-    if [ -f $ES_PREPARE ] ;then
-        PREPARE_VER=$(cat $ES_PREPARE )
+    if sudo [ -f $ES_PREPARE ] ;then
+        PREPARE_VER=$(sudo cat $ES_PREPARE )
         NOW_S_APP_VERSION=$(cat ${ES_PATH}/.es_version)
         if [[ ${PREPARE_VER} != $NOW_S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
@@ -578,8 +578,8 @@ function pre_check_prepare() {
 
 function check_prepare() {
 
-    if [ -f $ES_PREPARE ] ;then
-        PREPARE_VER=$(cat $ES_PREPARE)
+    if sudo [ -f $ES_PREPARE ] ;then
+        PREPARE_VER=$(sudo cat $ES_PREPARE)
         if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
