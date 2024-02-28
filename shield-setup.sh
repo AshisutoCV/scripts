@@ -867,6 +867,37 @@ function run_rancher() {
     fi
 }
 
+function check_rancher_ver(){
+    rancher_version=$(bash "./run-rancher.sh" --print-app-version)
+    echo "Rancher Version: $rancher_version"
+    rancher_running=$(docker ps | grep -c rancher/rancher:)
+    echo "Rancher Running: $rancher_running"
+
+    if [ $rancher_running -ge 1 ]; then
+        rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null
+        rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
+        echo "Rancher $rancher_version Running: $rancher_running_version"
+        if [ $rancher_running_version -lt 1 ]; then
+            echo "Stopping Old Version of Rancher Server"
+            docker stop $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            sleep 5
+            rancher_running=$(docker ps | grep -c rancher/rancher:)
+            if [ $rancher_running_version -lt 1 ]; then
+                echo "Stopping(force) Old Version of Rancher Server"
+                docker rm -f $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            fi
+            #run "New" Version of Rancher Server
+            log_message "***************     Running Rancher Server"
+            if ! source "./run-rancher.sh"; then
+                log_message "*************** run-rancher.sh Failed, Exiting!"
+                exit 1
+            fi
+            #ideally wait until Rancher is up again
+            sleep 30
+        fi
+    fi
+}
+
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
     rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null
@@ -2309,6 +2340,7 @@ fi
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         chmod 600 ${HOME}/.kube/config
         run_rancher
+        check_rancher_ver
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
             wait_for_tiller
@@ -2484,33 +2516,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     exit 0
 fi
 
-rancher_version=$(bash "./run-rancher.sh" --print-app-version)
-echo "Rancher Version: $rancher_version"
-rancher_running=$(docker ps | grep -c rancher/rancher:)
-echo "Rancher Running: $rancher_running"
-
-if [ $rancher_running -ge 1 ]; then
-    rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
-    echo "Rancher $rancher_version Running: $rancher_running_version"
-    if [ $rancher_running_version -lt 1 ]; then
-        echo "Stopping Old Version of Rancher Server"
-        docker stop $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
-        sleep 5
-        rancher_running=$(docker ps | grep -c rancher/rancher:)
-        if [ $rancher_running_version -lt 1 ]; then
-            echo "Stopping(force) Old Version of Rancher Server"
-            docker rm -f $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
-        fi
-        #run "New" Version of Rancher Server
-        log_message "***************     Running Rancher Server"
-        if ! source "./run-rancher.sh"; then
-            log_message "*************** run-rancher.sh Failed, Exiting!"
-            exit 1
-        fi
-        #ideally wait until Rancher is up again
-        sleep 30
-    fi
-fi
+check_rancher_ver
 
 #7. install-helm.sh
 install_helm
