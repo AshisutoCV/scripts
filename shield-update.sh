@@ -87,7 +87,7 @@ function check_ericom_user(){
             sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
         fi
-        if sudo [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+        if sudo [ -f ${ES_PATH_ERICOM}/.es_prepare ];then
             log_message "[info] Move .es_prepare flg file..."
             sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare

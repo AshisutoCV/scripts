@@ -2275,8 +2275,8 @@ if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
         log_message "[end] fix for High resources"
     fi
-
-　　#WaylandMode
+    
+    #WaylandMode
     if [ $wayland_flg -eq 1 ]; then
         log_message "[start] fix for wayland"
         sed -z -i 's/farm-services:\n/farm-services:\n  onPremDefaultWayland: true\n/g' ${ES_PATH}/custom-farm.yaml
