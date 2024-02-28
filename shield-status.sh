@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240228a-dev
+### VER=20240228a-Dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
