@@ -874,7 +874,7 @@ function check_rancher_ver(){
     echo "Rancher Running: $rancher_running"
 
     if [ $rancher_running -ge 1 ]; then
-        rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
+        rancher login --token $(cat ${ES_PATH}/.ra_apitoken) --skip-verify $(cat ${ES_PATH}/.ra_rancherurl) </dev/null >/dev/null 2>&1
         rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
         echo "Rancher $rancher_version Running: $rancher_running_version"
         if [ $rancher_running_version -lt 1 ]; then
@@ -900,6 +900,17 @@ function check_rancher_ver(){
 
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
+    #RancherCLI用トークンを発行(Never)
+    if [ ! -f .ra_apitoken ];then
+        result=$(curl -k -X POST `cat ${ES_PATH}/.esrancherurl`'/v3/token' \
+                  -H 'content-type: application/json' \
+                  -d '{
+                    "type":"token",
+                    "description":"KKA_Shield_Script",
+                    "name":"KKA_Shield_Script"
+                  }' --user `cat ${ES_PATH}/.esranchertoken` | jq -r '.')
+                echo "$result" | jq -r '.token' > ${ES_PATH}/.esranchertoken
+                log_message "KKA_Shield_Script TOKEN: ${ES_PATH}/.esranchertoken"
     rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
     echo -n 'getting k8s version.'
     K8S_VER=""

@@ -53,6 +53,23 @@ else
     offline_flg=0
 fi
 
+if [ -f .es_branch-tmp ]; then
+    BRANCH=$(cat .es_branch-tmp)
+elif [ -f ${ES_PATH}/.es_branch-tmp ]; then
+    BRANCH=$(cat ${ES_PATH}/.es_branch-tmp)
+fi
+
+if [ -f .es_version-tmp ]; then
+    S_APP_VERSION=$(cat .es_version-tmp)
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    GBUILD=${BUILD[0]}.${BUILD[1]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
+fi
 
 deploy_flg=0
 spell_flg=0
