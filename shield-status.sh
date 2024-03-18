@@ -65,6 +65,7 @@ function usage() {
     ##
 }
 
+rancher_ps_zero_flg=0
 rancher_ps_allactive_cnt=1
 rancher_ps_str=""
 system_flg=0
@@ -145,14 +146,24 @@ function check_start_system(){
 function check_count(){
     rancher_ps_str=`rancher ps --project $(rancher projects | grep ${PROJECTNAME} | awk '{print $1}')`
 
-    #activeステータス以外の数をカウントして変数に格納。
-    rancher_ps_allactive_cnt=`echo "$rancher_ps_str" | awk '{print $4}' | grep -c -v -e active -e STATE -e succeeded`
+    #未展開の状態を検知。
+    rancher_ps_zero_flg=`echo "$rancher_ps_str" | awk '{print $4}' | grep -c -v -e STATE`
+    if [[ rancher_ps_zero_flg -eq 0 ]];then
+        if [[ $quiet_flg -ne 1 ]]; then
+            echo "Nothing active yet."
+            exit 10
+        else
+            exit 10
+        fi
+    fi
 
+    #activeステータス以外の数をカウントして変数に格納。
+    rancher_ps_not_active_cnt=`echo "$rancher_ps_str" | awk '{print $4}' | grep -c -v -e active -e STATE -e succeeded`
 }
 
 function check_login(){
     #Rancher未ログインの場合、ログイン処理を行う。
-    rancher_login_flg=`rancher ps | grep -c NAMESPACE` >/dev/null 2>&1
+    rancher_login_flg=$(rancher ps 2>/dev/null | grep -c NAMESPACE) 
     if [ $rancher_login_flg == 0 ]; then
         rancher login --token $(cat ${ES_PATH}/.ra_apitoken) --skip-verify $(cat ${ES_PATH}/.ra_rancherurl) </dev/null >/dev/null 2>&1
     fi
@@ -167,7 +178,7 @@ function check_status(){
         echo "$rancher_ps_str" | head -n 1; echo "$rancher_ps_str" | tail -n +2 | sort
         echo "----------------------------------------------------------"
 
-        if [ $rancher_ps_allactive_cnt == 0 ]; then
+        if [ $rancher_ps_not_active_cnt == 0 ]; then
             echo "All workloads are Active !"
             echo "----------------------------------------------------------"
             exit 0
@@ -176,12 +187,12 @@ function check_status(){
             echo
             echo "$rancher_ps_str" | head -n 1; echo "$rancher_ps_str" | tail -n +2 | sort | grep -v -e active -e succeeded
             echo "----------------------------------------------------------"
-            echo "$rancher_ps_allactive_cnt workload are not Active."
+            echo "$rancher_ps_not_active_cnt workload are not Active."
             echo "----------------------------------------------------------"
             exit 10
         fi
     else
-        if [ $rancher_ps_allactive_cnt == 0 ]; then
+        if [ $rancher_ps_not_active_cnt == 0 ]; then
             exit 0
         else
             exit 10
