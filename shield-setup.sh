@@ -874,8 +874,6 @@ function check_rancher_ver(){
     echo "Rancher Running: $rancher_running"
 
     if [ $rancher_running -ge 1 ]; then
-        rancher login --token $(cat ${ES_PATH}/.ra_apitoken) --skip-verify $(cat ${ES_PATH}/.ra_rancherurl) </dev/null >/dev/null 2>&1
-        rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
         echo "Rancher $rancher_version Running: $rancher_running_version"
         if [ $rancher_running_version -lt 1 ]; then
             echo "Stopping Old Version of Rancher Server"
@@ -2353,8 +2351,8 @@ fi
 #update or deploy NOT offline
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         chmod 600 ${HOME}/.kube/config
-        run_rancher
         check_rancher_ver
+        run_rancher
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
             wait_for_tiller
