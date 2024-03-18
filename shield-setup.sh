@@ -911,6 +911,7 @@ function pre_create_cluster() {
                   }' --user `cat ${ES_PATH}/.esranchertoken` | jq -r '.')
                 echo "$result" | jq -r '.token' > ${ES_PATH}/.esranchertoken
                 log_message "KKA_Shield_Script TOKEN: ${ES_PATH}/.esranchertoken"
+    fi
     rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
     echo -n 'getting k8s version.'
     K8S_VER=""
