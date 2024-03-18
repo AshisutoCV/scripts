@@ -2481,6 +2481,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[end] set Rancer URL & ports"
 
     #4.  run-rancher.sh
+    check_rancher_ver
     run_rancher
 
     #5.  install-rancher-cli
@@ -2527,8 +2528,6 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     echo "Please Create your cluster, Set Labels, Set ~/.kube/config and come back...."
     exit 0
 fi
-
-check_rancher_ver
 
 #7. install-helm.sh
 install_helm
