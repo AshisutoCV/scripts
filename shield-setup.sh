@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240327a-dev
+### VER=20240327b-dev
 ####################
 
 function usage() {
@@ -869,7 +869,7 @@ function run_rancher() {
 
 function check_rancher_ver(){
     #nowDEV
-    sed -i -e 's/^APP_VERSION=.*$/APP_VERSION="v2.4.17"/' run-rancher.sh
+    #sed -i -e 's/^APP_VERSION=.*$/APP_VERSION="v2.4.17"/' run-rancher.sh
     rancher_version=$(bash "./run-rancher.sh" --print-app-version)
     echo "Rancher Version: $rancher_version"
     rancher_running=$(docker ps | grep -c rancher/rancher:)
@@ -1053,9 +1053,11 @@ function create_cluster() {
         log_message "[end] Extract clusterid "
     fi
 }
+
 function create_project(){
     rancher project create --cluster "$CLUSTERNAME" --description "The Shield project" "Shield"
 }
+
 function show_agent_cmd_old() {
      echo ""  | tee -a $CMDFILE
      if [[ $offline_flg -eq 0 ]];then
@@ -2219,7 +2221,7 @@ curl -s -OL ${SCRIPTS_URL_ES}/install-shield-from-container.sh
 sudo chmod +x install-shield-from-container.sh
 sudo sed -i -e '/.\/$ES_file_install_shield_local/d' install-shield-from-container.sh
 #nowDEV
-sudo sed -i -e '/docker cp shield-cli\:\/usr\/bin\/rancher/d' install-shield-from-container.sh
+#sudo sed -i -e '/docker cp shield-cli\:\/usr\/bin\/rancher/d' install-shield-from-container.sh
 if [[ $spare_flg -eq 1 ]];then
     sudo sed -i -e 's/securebrowsing/securebrowsing9/' install-shield-from-container.sh
     #docker logout
@@ -2503,7 +2505,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[start] create cluster"
     sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
     if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
-        sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+    #nowDEV
+        #sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+        :
     else
         sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
     fi
@@ -2511,11 +2515,12 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
     fi
-    pre_create_cluster
-    create_cluster
-    if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
-        create_project
-    fi
+    #nowDEV
+    #pre_create_cluster
+    #create_cluster
+    #if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+    #    create_project
+    #fi
     create_cluster_cmd
     log_message "[end] create cluster"
     step
