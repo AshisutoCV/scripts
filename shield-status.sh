@@ -163,8 +163,10 @@ function check_count(){
 
 function check_login(){
     #Rancher未ログインの場合、ログイン処理を行う。
+    echo "check_login"
     rancher_login_flg=$(rancher ps 2>/dev/null | grep -c NAMESPACE) 
     if [ $rancher_login_flg == 0 ]; then
+        echo "re_login"
         rancher login --token $(cat ${ES_PATH}/.ra_apitoken) --skip-verify $(cat ${ES_PATH}/.ra_rancherurl) </dev/null >/dev/null 2>&1
     fi
 }
