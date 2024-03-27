@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240327b-dev
+### VER=20240327c-dev
 ####################
 
 function usage() {
@@ -2516,7 +2516,8 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
        failed_to_install "create cluster"
     fi
     #nowDEV
-    #pre_create_cluster
+    pre_create_cluster
+    CLUSTERID=$(rancher clusters | grep -v ID | awk '{print $2}')
     #create_cluster
     #if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
     #    create_project
