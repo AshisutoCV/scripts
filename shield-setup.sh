@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240317a-dev
+### VER=20240327a-dev
 ####################
 
 function usage() {
@@ -868,6 +868,7 @@ function run_rancher() {
 }
 
 function check_rancher_ver(){
+    sed -i -e 's/^APP_VERSION=.*$/APP_VERSION="v2.4.17"/' run-rancher.sh
     rancher_version=$(bash "./run-rancher.sh" --print-app-version)
     echo "Rancher Version: $rancher_version"
     rancher_running=$(docker ps | grep -c rancher/rancher:)
@@ -2216,6 +2217,7 @@ fi
 curl -s -OL ${SCRIPTS_URL_ES}/install-shield-from-container.sh
 sudo chmod +x install-shield-from-container.sh
 sudo sed -i -e '/.\/$ES_file_install_shield_local/d' install-shield-from-container.sh
+sudo sed -i -e '/docker cp shield-cli\:\/usr\/bin\/rancher/d' install-shield-from-container.sh
 if [[ $spare_flg -eq 1 ]];then
     sudo sed -i -e 's/securebrowsing/securebrowsing9/' install-shield-from-container.sh
     #docker logout
