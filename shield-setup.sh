@@ -891,7 +891,7 @@ function check_rancher_ver(){
                 fi
             fi
             log_message "***************     Installing Rancher CLI"
-            if ! source "./install-rancher-cli.sh"; then
+            if ! "./install-rancher-cli.sh"; then
                 log_message "*************** install-rancher-cli.sh Failed, Exiting!"
                 exit 1
             fi
