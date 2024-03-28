@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240327f-dev
+### VER=20240328-dev
 ####################
 
 function usage() {
@@ -868,27 +868,36 @@ function run_rancher() {
 }
 
 function check_rancher_ver(){
-    #nowDEV
-    #sed -i -e 's/^APP_VERSION=.*$/APP_VERSION="v2.4.17"/' run-rancher.sh
     rancher_version=$(bash "./run-rancher.sh" --print-app-version)
     echo "Rancher Version: $rancher_version"
     rancher_running=$(docker ps | grep -c rancher/rancher:)
     echo "Rancher Running: $rancher_running"
 
     if [ $rancher_running -ge 1 ]; then
+        rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
         echo "Rancher $rancher_version Running: $rancher_running_version"
         if [ $rancher_running_version -lt 1 ]; then
             echo "Stopping Old Version of Rancher Server"
-            docker stop $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            rancher_container_id=$(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            docker stop $rancher_container_id
             sleep 5
             rancher_running=$(docker ps | grep -c rancher/rancher:)
-            if [ $rancher_running_version -lt 1 ]; then
+            if [ $rancher_running -ge 1 ]; then
+                rancher_container_id=$(docker ps | grep rancher/rancher: | awk '{ print $1 }')
                 echo "Stopping(force) Old Version of Rancher Server"
-                docker rm -f $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+                # if $rancher_container_id is not empty
+                if [ -n $rancher_container_id ]; then
+                    docker rm -f $rancher_container_id
+                fi
+            fi
+            log_message "***************     Installing Rancher CLI"
+            if ! source "./install-rancher-cli.sh"; then
+                log_message "*************** install-rancher-cli.sh Failed, Exiting!"
+                exit 1
             fi
             #run "New" Version of Rancher Server
             log_message "***************     Running Rancher Server"
-            if ! source "./run-rancher.sh"; then
+            if ! "./run-rancher.sh" --update; then
                 log_message "*************** run-rancher.sh Failed, Exiting!"
                 exit 1
             fi
@@ -2371,7 +2380,7 @@ fi
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         chmod 600 ${HOME}/.kube/config
         check_rancher_ver
-        run_rancher
+        #run_rancher
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
             wait_for_tiller
@@ -2517,8 +2526,8 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
 
     #4.  run-rancher.sh
     #nowDEV
-    check_rancher_ver
     run_rancher
+    check_rancher_ver
 
 
     #6.  create-cluster.sh
