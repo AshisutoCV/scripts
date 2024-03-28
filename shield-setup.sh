@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240328a-dev
+### VER=20240328c-dev
 ####################
 
 function usage() {
@@ -881,7 +881,7 @@ function check_rancher_ver(){
             rancher_container_id=$(docker ps | grep rancher/rancher: | awk '{ print $1 }')
             docker stop $rancher_container_id
             sleep 5
-            rancher_running=$(docker ps | grep -c rancher/rancher:)
+            rancher_running=$(docker ps -a | grep -c rancher/rancher:)
             if [ $rancher_running -ge 1 ]; then
                 rancher_container_id=$(docker ps | grep rancher/rancher: | awk '{ print $1 }')
                 echo "Stopping(force) Old Version of Rancher Server"
@@ -891,7 +891,7 @@ function check_rancher_ver(){
                 fi
             fi
             log_message "***************     Installing Rancher CLI"
-            if ! "./install-rancher-cli.sh"; then
+            if ! "sudo -E ./install-rancher-cli.sh"; then
                 log_message "*************** install-rancher-cli.sh Failed, Exiting!"
                 exit 1
             fi
