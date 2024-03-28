@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240228a-dev
+### VER=20240328a-dev
 ####################
 
 function usage() {
@@ -373,8 +373,8 @@ function change_dir(){
 }
 
 function mv_rancher_store(){
-    if [[ $CHKBRANCH -lt 1911 ]];then
-        : 
+    if [[ $CHKBRANCH -lt 1911 ]] || [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]];then
+        :
     else
         if [ -d ${CURRENT_DIR}/rancher-store ];then
             log_message "[start] move rancher-store"
