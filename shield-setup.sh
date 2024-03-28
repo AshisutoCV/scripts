@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240328c-dev
+### VER=20240328d-dev
 ####################
 
 function usage() {
@@ -891,14 +891,16 @@ function check_rancher_ver(){
                 fi
             fi
             log_message "***************     Installing Rancher CLI"
-            if ! "sudo -E ./install-rancher-cli.sh"; then
-                log_message "*************** install-rancher-cli.sh Failed, Exiting!"
+            sudo -E ./install-rancher-cli.sh
+            if [[ $? -ne 0  ]] ;then
+                failed_to_install "*************** install-rancher-cli.sh Failed, Exiting!"
                 exit 1
             fi
             #run "New" Version of Rancher Server
             log_message "***************     Running Rancher Server"
-            if ! "./run-rancher.sh" --update; then
-                log_message "*************** run-rancher.sh Failed, Exiting!"
+            ./run-rancher.sh --update
+            if [[ $? -ne 0  ]] ;then
+                failed_to_install "*************** run-rancher.sh Failed, Exiting!"
                 exit 1
             fi
             #ideally wait until Rancher is up again
