@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240228a-Dev
+### VER=20240328d-dev
 ####################
 
 function usage() {
@@ -67,6 +67,7 @@ CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 rm -f .es_branch-tmp
@@ -873,22 +874,33 @@ function check_rancher_ver(){
     echo "Rancher Running: $rancher_running"
 
     if [ $rancher_running -ge 1 ]; then
-        rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
         rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
         echo "Rancher $rancher_version Running: $rancher_running_version"
         if [ $rancher_running_version -lt 1 ]; then
             echo "Stopping Old Version of Rancher Server"
-            docker stop $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            rancher_container_id=$(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            docker stop $rancher_container_id
             sleep 5
-            rancher_running=$(docker ps | grep -c rancher/rancher:)
-            if [ $rancher_running_version -lt 1 ]; then
+            rancher_running=$(docker ps -a | grep -c rancher/rancher:)
+            if [ $rancher_running -ge 1 ]; then
+                rancher_container_id=$(docker ps -a | grep rancher/rancher: | awk '{ print $1 }')
                 echo "Stopping(force) Old Version of Rancher Server"
-                docker rm -f $(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+                # if $rancher_container_id is not empty
+                if [ -n $rancher_container_id ]; then
+                    docker rm -f $rancher_container_id
+                fi
+            fi
+            log_message "***************     Installing Rancher CLI"
+            sudo -E ./install-rancher-cli.sh
+            if [[ $? -ne 0  ]] ;then
+                failed_to_install "*************** install-rancher-cli.sh Failed, Exiting!"
+                exit 1
             fi
             #run "New" Version of Rancher Server
             log_message "***************     Running Rancher Server"
-            if ! source "./run-rancher.sh"; then
-                log_message "*************** run-rancher.sh Failed, Exiting!"
+            ./run-rancher.sh --update
+            if [[ $? -ne 0  ]] ;then
+                failed_to_install "*************** run-rancher.sh Failed, Exiting!"
                 exit 1
             fi
             #ideally wait until Rancher is up again
@@ -899,6 +911,23 @@ function check_rancher_ver(){
 
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
+    sudo -E chown -R $(whoami):$(whoami) ${HOME}/.rancher
+    sudo -E chown -R $(whoami):$(whoami) ${ES_PATH}/.esranchertoken
+    sudo -E chown -R $(whoami):$(whoami) ${ES_PATH}/.esprojectid    
+    #RancherCLI用トークンを発行(Never)
+    if [ ! -f .ra_apitoken ];then
+        result=$(curl -k -X POST `cat ${ES_PATH}/.esrancherurl`'/v3/token' \
+                  -H 'content-type: application/json' \
+                  -d '{
+                    "type":"token",
+                    "description":"KKA_Shield_Script",
+                    "name":"KKA_Shield_Script"
+                  }' --user `cat ${ES_PATH}/.esranchertoken` | jq -r '.')
+                echo "$result" | jq -r '.token' > ${ES_PATH}/.esranchertoken
+                log_message "KKA_Shield_Script TOKEN: ${ES_PATH}/.esranchertoken"
+                cp -f .esranchertoken .ra_apitoken
+                APITOKEN=$(cat .ra_apitoken)
+    fi
     rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
     echo -n 'getting k8s version.'
     K8S_VER=""
@@ -1040,9 +1069,14 @@ function create_cluster() {
         log_message "[end] Extract clusterid "
     fi
 }
+
 function create_project(){
     rancher project create --cluster "$CLUSTERNAME" --description "The Shield project" "Shield"
+    PROJECTID=$(rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)</dev/null 2>/dev/null | grep Shield | awk '{print $3}')
+    log_message "PROJECTID: $PROJECTID"
+    rancher login --context ${PROJECTID} --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) 
 }
+
 function show_agent_cmd_old() {
      echo ""  | tee -a $CMDFILE
      if [[ $offline_flg -eq 0 ]];then
@@ -1761,8 +1795,13 @@ function check_ha() {
 
 function check_system_project() {
     log_message "[start] Waiting System Project is Actived"
-    while :
+    check_count=0
+    while [[ $check_count -lt 30 ]]
     do
+        check_count=$((check_count + 1))
+        if [[ $check_count -ge 16 ]];then
+            failed_to_install "[Timeout] System project status not All Actived"
+        fi
         for i in 1 2 3 
         do
             ./shield-status.sh --system -q
@@ -2205,6 +2244,8 @@ fi
 curl -s -OL ${SCRIPTS_URL_ES}/install-shield-from-container.sh
 sudo chmod +x install-shield-from-container.sh
 sudo sed -i -e '/.\/$ES_file_install_shield_local/d' install-shield-from-container.sh
+#nowDEV
+#sudo sed -i -e '/docker cp shield-cli\:\/usr\/bin\/rancher/d' install-shield-from-container.sh
 if [[ $spare_flg -eq 1 ]];then
     sudo sed -i -e 's/securebrowsing/securebrowsing9/' install-shield-from-container.sh
     #docker logout
@@ -2340,8 +2381,8 @@ fi
 #update or deploy NOT offline
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         chmod 600 ${HOME}/.kube/config
-        run_rancher
         check_rancher_ver
+        #run_rancher
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
             wait_for_tiller
@@ -2470,7 +2511,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[end] set Rancer URL & ports"
 
     #4.  run-rancher.sh
-    run_rancher
+    #nowDEV
+    #check_rancher_ver
+    #run_rancher
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
@@ -2483,11 +2526,19 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[end] install rancher cli"
     step
 
+    #4.  run-rancher.sh
+    #nowDEV
+    run_rancher
+    check_rancher_ver
+
+
     #6.  create-cluster.sh
     log_message "[start] create cluster"
     sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
     if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+    #nowDEV
         sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+        #:
     else
         sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
     fi
@@ -2495,7 +2546,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
     fi
+    #nowDEV
     pre_create_cluster
+    CLUSTERID=$(rancher clusters | grep -v ID | awk '{print $2}')
     create_cluster
     if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
         create_project
@@ -2516,8 +2569,6 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     echo "Please Create your cluster, Set Labels, Set ~/.kube/config and come back...."
     exit 0
 fi
-
-check_rancher_ver
 
 #7. install-helm.sh
 install_helm
