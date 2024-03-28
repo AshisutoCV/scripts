@@ -883,7 +883,7 @@ function check_rancher_ver(){
             sleep 5
             rancher_running=$(docker ps -a | grep -c rancher/rancher:)
             if [ $rancher_running -ge 1 ]; then
-                rancher_container_id=$(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+                rancher_container_id=$(docker ps -a | grep rancher/rancher: | awk '{ print $1 }')
                 echo "Stopping(force) Old Version of Rancher Server"
                 # if $rancher_container_id is not empty
                 if [ -n $rancher_container_id ]; then
