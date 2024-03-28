@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240327c-dev
+### VER=20240327f-dev
 ####################
 
 function usage() {
@@ -900,6 +900,9 @@ function check_rancher_ver(){
 
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
+    sudo -E chown -R $(whoami):$(whoami) ${HOME}/.rancher
+    sudo -E chown -R $(whoami):$(whoami) ${ES_PATH}/.esranchertoken
+    sudo -E chown -R $(whoami):$(whoami) ${ES_PATH}/.esprojectid    
     #RancherCLI用トークンを発行(Never)
     if [ ! -f .ra_apitoken ];then
         result=$(curl -k -X POST `cat ${ES_PATH}/.esrancherurl`'/v3/token' \
@@ -911,6 +914,8 @@ function pre_create_cluster() {
                   }' --user `cat ${ES_PATH}/.esranchertoken` | jq -r '.')
                 echo "$result" | jq -r '.token' > ${ES_PATH}/.esranchertoken
                 log_message "KKA_Shield_Script TOKEN: ${ES_PATH}/.esranchertoken"
+                cp -f .esranchertoken .ra_apitoken
+                APITOKEN=$(cat .ra_apitoken)
     fi
     rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
     echo -n 'getting k8s version.'
@@ -1056,6 +1061,9 @@ function create_cluster() {
 
 function create_project(){
     rancher project create --cluster "$CLUSTERNAME" --description "The Shield project" "Shield"
+    PROJECTID=$(rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)</dev/null 2>/dev/null | grep Shield | awk '{print $3}')
+    log_message "PROJECTID: $PROJECTID"
+    rancher login --context ${PROJECTID} --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) 
 }
 
 function show_agent_cmd_old() {
@@ -1776,8 +1784,13 @@ function check_ha() {
 
 function check_system_project() {
     log_message "[start] Waiting System Project is Actived"
-    while :
+    check_count=0
+    while [[ $check_count -lt 30 ]]
     do
+        check_count=$((check_count + 1))
+        if [[ $check_count -ge 16 ]];then
+            failed_to_install "[Timeout] System project status not All Actived"
+        fi
         for i in 1 2 3 
         do
             ./shield-status.sh --system -q
@@ -2487,8 +2500,9 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[end] set Rancer URL & ports"
 
     #4.  run-rancher.sh
-    check_rancher_ver
-    run_rancher
+    #nowDEV
+    #check_rancher_ver
+    #run_rancher
 
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
@@ -2501,13 +2515,19 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[end] install rancher cli"
     step
 
+    #4.  run-rancher.sh
+    #nowDEV
+    check_rancher_ver
+    run_rancher
+
+
     #6.  create-cluster.sh
     log_message "[start] create cluster"
     sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
     if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
     #nowDEV
-        #sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
-        :
+        sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+        #:
     else
         sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
     fi
@@ -2518,10 +2538,10 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     #nowDEV
     pre_create_cluster
     CLUSTERID=$(rancher clusters | grep -v ID | awk '{print $2}')
-    #create_cluster
-    #if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
-    #    create_project
-    #fi
+    create_cluster
+    if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+        create_project
+    fi
     create_cluster_cmd
     log_message "[end] create cluster"
     step
