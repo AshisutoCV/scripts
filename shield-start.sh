@@ -27,7 +27,7 @@ cd $CURRENT_DIR
 
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 
