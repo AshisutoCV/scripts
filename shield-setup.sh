@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240328d-dev
+### VER=20240404a-dev
 ####################
 
 function usage() {
@@ -1796,10 +1796,10 @@ function check_ha() {
 function check_system_project() {
     log_message "[start] Waiting System Project is Actived"
     check_count=0
-    while [[ $check_count -lt 30 ]]
+    while [[ $check_count -lt 100 ]]
     do
         check_count=$((check_count + 1))
-        if [[ $check_count -ge 16 ]];then
+        if [[ $check_count -ge 60 ]];then
             failed_to_install "[Timeout] System project status not All Actived"
         fi
         for i in 1 2 3 
@@ -1810,6 +1810,7 @@ function check_system_project() {
         if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
             break
         fi
+        sleep 1
     done
     log_message "[end] Waiting System Project is Actived"
 }

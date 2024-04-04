@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240317a-dev
+### VER=20240404a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -26,8 +26,8 @@ CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -44,20 +44,10 @@ fi
 
 if [ -f .es_branch-tmp ]; then
     BRANCH=$(cat .es_branch-tmp)
-elif [ -f ${ES_PATH}/.es_branch-tmp ]; then
-    BRANCH=$(cat ${ES_PATH}/.es_branch-tmp)
 fi
 
 if [ -f .es_version-tmp ]; then
-    S_APP_VERSION=$(cat .es_version-tmp)
-    BUILD=()
-    BUILD=(${S_APP_VERSION//./ })
-    GBUILD=${BUILD[0]}.${BUILD[1]}
-    if [[ ${BUILD[3]} ]] ;then
-        BUILD=${BUILD[2]}.${BUILD[3]}
-    else
-        BUILD=${BUILD[2]}
-    fi
+    GITVER=$(cat .es_version-tmp)
 fi
 
 export BRANCH
