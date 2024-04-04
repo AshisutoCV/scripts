@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240328d-dev
+### VER=20240404a-dev
 ####################
 
 function usage() {
@@ -66,8 +66,8 @@ STEP_BY_STEP="false"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/2315"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 rm -f .es_branch-tmp
@@ -1796,10 +1796,10 @@ function check_ha() {
 function check_system_project() {
     log_message "[start] Waiting System Project is Actived"
     check_count=0
-    while [[ $check_count -lt 30 ]]
+    while [[ $check_count -lt 100 ]]
     do
         check_count=$((check_count + 1))
-        if [[ $check_count -ge 16 ]];then
+        if [[ $check_count -ge 60 ]];then
             failed_to_install "[Timeout] System project status not All Actived"
         fi
         for i in 1 2 3 
@@ -1810,6 +1810,7 @@ function check_system_project() {
         if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
             break
         fi
+        sleep 1
     done
     log_message "[end] Waiting System Project is Actived"
 }
