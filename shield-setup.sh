@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240404a-dev
+### VER=20240514a-dev
 ####################
 
 function usage() {
@@ -2383,7 +2383,9 @@ fi
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         chmod 600 ${HOME}/.kube/config
         check_rancher_ver
-        #run_rancher
+        if [[ "$(echo "$BUILD > 5000" | bc)" -eq 0 ]]; then
+            run_rancher
+        fi
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
             wait_for_tiller
