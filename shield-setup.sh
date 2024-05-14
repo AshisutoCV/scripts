@@ -863,7 +863,14 @@ function run_rancher() {
     else
         log_message "[start] run rancher"
         ./run-rancher.sh | tee -a $LOGFILE
-        log_message "[end] run rancher"
+        #ideally wait until Rancher is up again
+        sleep 10
+        if [[ "pong" == $(curl -s -k "${RANCHERURL}/ping") ]]; then
+                log_message "[end] run rancher"
+        else
+            sleep 20
+            log_message "[end] run rancher"
+        fi
     fi
 }
 
