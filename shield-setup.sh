@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240514a-dev
+### VER=20240515a-dev
 ####################
 
 function usage() {
@@ -2601,8 +2601,8 @@ fi
 # set node label
 set_node_label
 
+#Check System Project Status
 #check_system_project
-check_system_project
 
 #6. Deploy Shield
 deploy_shield
