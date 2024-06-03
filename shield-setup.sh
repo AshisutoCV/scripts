@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240515a-dev
+### VER=20240603a-dev
 ####################
 
 function usage() {
@@ -67,7 +67,7 @@ CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/update-test"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 rm -f .es_branch-tmp
@@ -467,6 +467,7 @@ function delete_all_old() {
 
 function select_version() {
     ### attention common setup&update&shield-prepare-servers ###
+    CRTVER=""
     CHART_VERSION=""
     VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ; then
@@ -481,6 +482,7 @@ function select_version() {
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]] ; then
         log_message "現在インストールされているバージョン: N/A"
+        CRTVER=""
     else
         BUILD=()
         BUILD=(${VERSION_DEPLOYED//./ })
@@ -495,6 +497,7 @@ function select_version() {
             GIT_BRANCH="Rel-${GBUILD}"
         fi
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
+        CRTVER="${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
 
@@ -567,6 +570,9 @@ function select_version() {
         fi
 
         echo "どのバージョンをセットアップしますか？"
+        ATTNO="0"
+        CRTNO="0"
+        TGTNO="0"
         for i in $VER
         do
             n=$(( $n + 1 ))
@@ -602,8 +608,15 @@ function select_version() {
                 if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
                     if [[ $i == "eol" ]]; then
                         echo "$m: ${GIT_BRANCH}_Build:${BUILD} ※サポート終了"
+                    elif [[ $i == "attention" ]] && [[ $(basename $0) == "shield-update.sh" ]]; then
+                        echo "$m: ${GIT_BRANCH}_Build:${BUILD} "
+                        echo "======== ※これを跨いでの、shield-update.sh によるバージョンアップ不可 ========"
+                        ATTNO="$m"
                     else
                         echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                    fi
+                    if [[ "$CRTVER" == "${GIT_BRANCH}_Build:${BUILD}" ]];then
+                        CRTNO="$m"
                     fi
                 else
                     echo "$m: Rel-$S_APP_VERSION" 
@@ -617,6 +630,7 @@ function select_version() {
             echo -n " 番号で指定してください: "
             read answer
             echo "selected versio#: $answer" >> $LOGFILE
+            TGTNO="$answer"
             if [[ -z ${vers_c[$answer]} ]] ; then
                     echo "番号が違っています。"
             else
@@ -625,6 +639,13 @@ function select_version() {
                     break
             fi
         done
+
+        if [[ "$ATTNO" -ne "0" ]] ;then
+            if [[ "$CRTNO" -gt  "$ATTNO" ]] && [[ "$TGTNO" -le  "$ATTNO" ]] ;then
+                log_message "ご指定のバージョン間でのバージョンアップはこのスクリプトではサポートされていません。"
+                fin 1
+            fi
+        fi
     fi
 
     if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev"  ]; then

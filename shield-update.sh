@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240517a-dev
+### VER=20240603a-dev
 ####################
 
 function usage() {
@@ -48,9 +48,10 @@ ERICOMPASS="Ericom123$"
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/update-teset"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/update-test"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
+update_flg=1
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
