@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240603a-dev
+### VER=20240606a-dev
 ####################
 
 function usage() {
@@ -2422,10 +2422,9 @@ fi
             add_repo
         fi
         #check_system_project
-        check_system_project
-        if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
-            create_project
-        fi
+        #if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+        #    create_project
+        #fi
         deploy_shield
         move_to_project
         check_start
