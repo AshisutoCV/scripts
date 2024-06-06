@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240603a-dev
+### VER=20240606a-dev
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -418,11 +418,11 @@ function select_version() {
     if sudo [ -f "$ES_PREPARE" ]; then
         log_message "実行済みのshield-prepare-serversバージョン: $(sudo cat $ES_PREPARE)"
     else
-        log_message "[error] shield-prepare-serversが未実行のようです。"
-        echo "=================================================================="
-        failed_to_install "select_version check_prepare"
+        #log_message "[error] shield-prepare-serversが未実行のようです。"
+        #echo "=================================================================="
+        #failed_to_install "select_version check_prepare"
         #for shield-prepare-servers.sh
-        #log_message "[info] shield-prepare-serversは未実行。"
+        log_message "[info] shield-prepare-serversは未実行。"
     fi
     echo "=================================================================="
 
