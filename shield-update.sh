@@ -711,6 +711,9 @@ else
     change_dir
     rm -f .es_update
     ./shield-stop.sh -f
+    if [ $? -ne 0 ]; then
+        fin 1
+    fi
     mv_rancher_store
     if [[ "$BRANCH" == "Rel-20.05" ]] && [[ "$OS" == "RHEL" ]]; then
         change_to_root
