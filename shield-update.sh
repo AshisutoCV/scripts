@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240603a-dev
+### VER=20240614a-dev
 ####################
 
 function usage() {
@@ -443,6 +443,8 @@ function get_scripts() {
         curl -s -o ${ES_PATH}/delete-shield.sh -L https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/Rel-20.03/Kube/scripts/shield-setup.sh
         chmod +x ${ES_PATH}/delete-shield.sh
     fi
+    curl -s -o ${CURRENT_DIR}/shield-stop.sh -L ${SCRIPTS_URL}/shield-stop.sh
+    chmod +x ${CURRENT_DIR}/shield-stop.sh
     log_message "[end] get install scripts"
 }
 
