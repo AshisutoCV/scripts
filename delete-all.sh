@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20230112a
+### VER=20240614a
 ####################
 
 ES_PATH="$HOME/ericomshield"
@@ -29,8 +29,7 @@ sudo rm /var/lib/dpkg/lock-frontend
 
 while [[ $(dpkg -l | grep -e docker -e containerd | grep  -c ^.i) -ne 0 ]];
 do
-    sudo apt-get -y --allow-change-held-packages purge docker-ce containerd.io docker-ce-cli docker-ce-rootless-extras docker-scan-plugin
-    sudo apt-get -y --allow-change-held-packages purge docker.io containerd
+    sudo apt-get purge -y --allow-change-held-packages $(dpkg -l | grep -e docker -e containerd | awk '{print $2}')
     sudo apt autoremove -y
 done
 
