@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240606a-dev
+### VER=20240617a-dev
 ####################
 
 function usage() {
@@ -1819,6 +1819,24 @@ function check_ha() {
     elif [[ $NUM_PROXY -eq 1 ]];then
              sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-proxy.yaml
     fi
+
+    #HPA無効
+    if [[ $NUM_MNG -eq 1 ]] && [[ $NUM_FARM -eq 1 ]] && [[ $NUM_PROXY -eq 1 ]] ;then
+        if [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-farm.yaml
+            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    enabled: false\n/g' custom-farm.yaml
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-management.yaml
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-proxy.yaml
+            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    enabled: false\n/g' custom-proxy.yaml
+        else
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-farm.yaml
+            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    apiGateway:\n      enabled: false\n    cdrDispatcher:\n      enabled: false\n    farmApi:\n      enabled: false\n    farmSync:\n      enabled: false\n    icap:\n      enabled: false\n    idpConnector:\n      enabled: false\n    policyManager:\n      enabled: false\n    proxyExternal:\n      enabled: false\n    proxyExternalNoadblock:\n      enabled: false\n/g' custom-farm.yaml
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-management.yaml
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-proxy.yaml
+            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    proxyEgress:\n      enabled: false\n    icapServer:\n      enabled: false\n    ldapProxy:\n      enabled: false\n    policyManager:\n      enabled: false\n/g' custom-proxy.yaml
+        fi
+    fi
+
 }
 
 function check_system_project() {
