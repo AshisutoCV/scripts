@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240404a-dev
+### VER=20240701a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -371,6 +371,8 @@ S_APP_VERSION=$(cat .es_version)
 
 log_message "[start] Waiting System Project is Actived"
 j=0
+
+rancher ps --project $(rancher projects | grep System | awk '{print $1}') | grep unavailable | awk '{print $2}' | xargs -I {} kubectl delete pod {} -n cattle-system
 
 if [[ $force_flg -eq 1 ]];then
     n=10

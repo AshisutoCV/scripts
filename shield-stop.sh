@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240404a-dev
+### VER=20240701a-dev
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -202,7 +202,8 @@ function ln_resolv() {
 
 function stop-f_preCheck() {
     if [ $force_flg -eq 1 ]; then
-    num_notready_nodes=$(kubectl get node | grep -c NotReady)
+        rancher ps --project $(rancher projects | grep System | awk '{print $1}') | grep unavailable | awk '{print $2}' | xargs -I {} kubectl delete pod {} -n cattle-system
+        num_notready_nodes=$(kubectl get node | grep -c NotReady)
         if [ $num_notready_nodes -ge 1 ]; then
             log_message "NotReadyNodesが存在します。"
             kubectl get node -o wide >> $LOGFILE
