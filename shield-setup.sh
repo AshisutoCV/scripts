@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240617a-dev
+### VER=20240701a-dev
 ####################
 
 function usage() {
@@ -1841,6 +1841,9 @@ function check_ha() {
 
 function check_system_project() {
     log_message "[start] Waiting System Project is Actived"
+    
+    rancher ps --project $(rancher projects | grep System | awk '{print $1}') | grep unavailable | awk '{print $2}' | xargs -I {} kubectl delete pod {} -n cattle-system
+
     check_count=0
     while [[ $check_count -lt 100 ]]
     do
@@ -2439,7 +2442,7 @@ fi
         if [[ $stg_flg -eq 1 ]] || [[ $dev_flg -eq 1 ]]; then
             add_repo
         fi
-        #check_system_project
+        check_system_project
         #if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
         #    create_project
         #fi
@@ -2640,7 +2643,7 @@ fi
 set_node_label
 
 #Check System Project Status
-#check_system_project
+check_system_project
 
 #6. Deploy Shield
 deploy_shield
