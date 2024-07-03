@@ -2325,8 +2325,6 @@ fi
 curl -s -OL ${SCRIPTS_URL_ES}/install-shield-from-container.sh
 sudo chmod +x install-shield-from-container.sh
 sudo sed -i -e '/.\/$ES_file_install_shield_local/d' install-shield-from-container.sh
-#nowDEV
-#sudo sed -i -e '/docker cp shield-cli\:\/usr\/bin\/rancher/d' install-shield-from-container.sh
 if [[ $spare_flg -eq 1 ]];then
     sudo sed -i -e 's/securebrowsing/securebrowsing9/' install-shield-from-container.sh
     #docker logout
@@ -2592,11 +2590,6 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     echo "================================================================================="
     log_message "[end] set Rancer URL & ports"
 
-    #4.  run-rancher.sh
-    #nowDEV
-    #check_rancher_ver
-    #run_rancher
-
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
     sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield\/ericomshield.log\"/' install-rancher-cli.sh
@@ -2609,7 +2602,6 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     step
 
     #4.  run-rancher.sh
-    #nowDEV
     run_rancher
     check_rancher_ver
 
@@ -2618,9 +2610,7 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     log_message "[start] create cluster"
     sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
     if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
-    #nowDEV
         sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
-        #:
     else
         sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
     fi
@@ -2628,7 +2618,6 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
     fi
-    #nowDEV
     pre_create_cluster
     CLUSTERID=$(rancher clusters | grep -v ID | awk '{print $2}')
     create_cluster
