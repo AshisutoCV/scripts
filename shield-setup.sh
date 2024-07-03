@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240703a-dev
+### VER=20240703b-dev
 ####################
 
 function usage() {
@@ -1369,7 +1369,6 @@ function create_cluster_cmd() {
                  fi
                  echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
-                 wait_cluster_active_check_first
                  ;;
         esac
         echo ""  | tee -a $CMDFILE
