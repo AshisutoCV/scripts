@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240701a-dev
+### VER=20240703a-dev
 ####################
 
 function usage() {
@@ -1271,12 +1271,15 @@ function create_cluster_cmd() {
 
         echo ""
         echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★" | tee $CMDFILE
+        log_message "[waiting] creating cluster first "
         case $ANSWERNO in
             "1") DOCKERRUNCMD=$DOCKERRUNCMD1
-                 echo '下記のコマンドがこのノードで実行されます。(確認用。実行の必要はありません。)' 
-                 echo ""
-                 echo "$DOCKERRUNCMD1"
-                 echo "" 
+                 $DOCKERRUNCMD >> $LOGFILE 2>&1
+                 wait_cluster_active_check_first
+                 echo '下記のコマンドがこのノードで実行されています。(確認用。実行の必要はありません。)'   | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
+                 echo ""   | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'そして、'
                  echo '(【必要に応じて】 下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。)'  | tee -a $CMDFILE
@@ -1309,7 +1312,9 @@ function create_cluster_cmd() {
                  echo ""  | tee -a $CMDFILE
                  ;;
             "2") DOCKERRUNCMD=$DOCKERRUNCMD2
-                 echo '下記のコマンドがこのノードで実行されます。(確認用。実行の必要はありません。)'  | tee -a $CMDFILE
+                 $DOCKERRUNCMD >> $LOGFILE 2>&1
+                 wait_cluster_active_check_first
+                 echo '下記のコマンドがこのノードで実行されています。(確認用。実行の必要はありません。)'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
@@ -1335,6 +1340,7 @@ function create_cluster_cmd() {
                  echo ""  | tee -a $CMDFILE
                  ;;
             "3") DOCKERRUNCMD=""
+                 $DOCKERRUNCMD >> $LOGFILE 2>&1
                  echo '下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。'  | tee -a $CMDFILE
                  if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
                     show_agent_cmd_old
@@ -1363,15 +1369,40 @@ function create_cluster_cmd() {
                  fi
                  echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
-                ;;
+                 wait_cluster_active_check_first
+                 ;;
         esac
         echo ""  | tee -a $CMDFILE
         echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"  | tee -a $CMDFILE
         echo ""
 
-        $DOCKERRUNCMD >> $LOGFILE 2>&1
     fi
 }
+
+function wait_cluster_active_check_first() {
+
+    log_message "[waiting] Cluster to active first"
+    if [ ! -f .ra_rancherurl ] || [ ! -f .ra_clusterid ] || [ ! -f .ra_apitoken ];then
+        log_message ".raファイルがありません。"
+        failed_to_install "waiting cluster to active first " "all"
+    fi
+
+    while :
+        do
+           CLUSTERSTATE=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
+           echo "Waiting for state to become active.: $CLUSTERSTATE" | tee -a $LOGFILE
+           if [ "active" = "$CLUSTERSTATE" ] ;then
+               sleep 5
+               CLUSTERSTATE2=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
+               if [ "active" = "$CLUSTERSTATE2" ] ;then
+                   break
+               fi
+           fi
+           sleep 10
+    done
+    log_message "[end] Cluster to active waiting first"
+}
+
 
 function wait_cluster_active() {
     while :
