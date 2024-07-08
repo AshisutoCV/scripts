@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240703b-dev
+### VER=20240708a-dev
 ####################
 
 function usage() {
@@ -1313,7 +1313,7 @@ function create_cluster_cmd() {
                  ;;
             "2") DOCKERRUNCMD=$DOCKERRUNCMD2
                  $DOCKERRUNCMD >> $LOGFILE 2>&1
-                 wait_cluster_active_check_first
+                 #wait_cluster_active_check_first
                  echo '下記のコマンドがこのノードで実行されています。(確認用。実行の必要はありません。)'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
