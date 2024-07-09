@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240606a-dev
+### VER=20240709a-dev
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -273,7 +273,7 @@ function get_shield-prepare-servers() {
     if [[ ${CHKBRANCH} -lt 2207 ]]; then
         curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
     else
-        curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-22.08.934/shield-prepare-servers
+        curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-23.13.6295-50/shield-prepare-servers
     fi
     chmod +x ${ES_PATH}/shield-prepare-servers
     log_message "[end] Getting shield-prepaer-servers."
