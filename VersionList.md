@@ -51,6 +51,16 @@
 * [20201224a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20201224a---20201224)
 * [20200821a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200821a---20200821)
 
+## delete-all.sh
+* [20240718a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20240718a---20240718)
+* [20230112a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20230112a---20230120)
+* [20220912a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220912a---20220912)
+* [20200520a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200520a---20200520)
+* [20200313a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200313a---20200313)
+* [20200206a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200206a---20200206)
+* [20200108a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200108a---20200108)
+* [20191216a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191216a---20191216)
+
 ## shield-json-check.sh
 * [20220405a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220405a---20220405)
 * [20220214a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220214a---20220214)
@@ -90,15 +100,6 @@
 
 ## delete-all-1.sh
 * [20220912a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220912a---20220912)
-
-## delete-all.sh
-* [20230112a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20230112a---20230120)
-* [20220912a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20220912a---20220912)
-* [20200520a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200520a---20200520)
-* [20200313a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200313a---20200313)
-* [20200206a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200206a---20200206)
-* [20200108a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200108a---20200108)
-* [20191216a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20191216a---20191216)
 
 ## shield-sup.sh
 * [20200702a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20200702a---20200702)
