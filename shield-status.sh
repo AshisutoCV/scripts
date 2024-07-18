@@ -2,14 +2,14 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240404a-dev
+### VER=20240718a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
 export KUBECONFIG=${HOME}/.kube/config
 
-#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
-SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
