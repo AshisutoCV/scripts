@@ -1,4 +1,20 @@
 # Changelog
+## [VER=20240718a] - 2024/07/18
+
+### 変更
+
+#### shield-prepare-servers.sh
+#### shield-update.sh
+#### shield-setup.sh
+#### shield-stop.sh
+#### shield-start.sh
+#### shield-status.sh
+* 23.13-50リリースに向け、新Rancherを含む各種変更に対応。
+* 特定バージョンを跨ぐアップデート不可の表示対応
+* ステータスの取得コマンド変更
+
+--------------------------------------------------------------
+
 ## [VER=20240215a] - 2024/02/15
 
 ### 変更

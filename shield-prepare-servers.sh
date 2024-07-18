@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240215a
+### VER=20240718a
 ####################
 
 # SSH_ASKPASSで設定したプログラム(本ファイル自身)が返す内容
@@ -56,6 +56,7 @@ CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/update-test"
 SCRIPTS_URL_PREPARE="https://ericom-tec.ashisuto.co.jp/shield-prepare-servers"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
@@ -86,7 +87,7 @@ function check_ericom_user(){
             sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
         fi
-        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+        if sudo [ -f ${ES_PATH_ERICOM}/.es_prepare ];then
             log_message "[info] Move .es_prepare flg file..."
             sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
@@ -272,7 +273,7 @@ function get_shield-prepare-servers() {
     if [[ ${CHKBRANCH} -lt 2207 ]]; then
         curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-21.04.758/shield-prepare-servers
     else
-        curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-22.08.934/shield-prepare-servers
+        curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-${S_APP_VERSION}/shield-prepare-servers || curl -sfo ${ES_PATH}/shield-prepare-servers ${SCRIPTS_URL_PREPARE}/Rel-23.13.6295-50/shield-prepare-servers
     fi
     chmod +x ${ES_PATH}/shield-prepare-servers
     log_message "[end] Getting shield-prepaer-servers."
@@ -379,6 +380,7 @@ function check_args(){
 
 function select_version() {
     ### attention common setup&update&shield-prepare-servers ###
+    CRTVER=""
     CHART_VERSION=""
     VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ; then
@@ -393,6 +395,7 @@ function select_version() {
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]] ; then
         log_message "現在インストールされているバージョン: N/A"
+        CRTVER=""
     else
         BUILD=()
         BUILD=(${VERSION_DEPLOYED//./ })
@@ -407,12 +410,13 @@ function select_version() {
             GIT_BRANCH="Rel-${GBUILD}"
         fi
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
+        CRTVER="${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
 
 
-    if [ -f "$ES_PREPARE" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
+    if sudo [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(sudo cat $ES_PREPARE)"
     else
         #log_message "[error] shield-prepare-serversが未実行のようです。"
         #echo "=================================================================="
@@ -479,6 +483,9 @@ function select_version() {
         fi
 
         echo "どのバージョンをセットアップしますか？"
+        ATTNO="0"
+        CRTNO="0"
+        TGTNO="0"
         for i in $VER
         do
             n=$(( $n + 1 ))
@@ -514,8 +521,15 @@ function select_version() {
                 if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
                     if [[ $i == "eol" ]]; then
                         echo "$m: ${GIT_BRANCH}_Build:${BUILD} ※サポート終了"
+                    elif [[ $i == "attention" ]] && [[ $(basename $0) == "shield-update.sh" ]]; then
+                        echo "$m: ${GIT_BRANCH}_Build:${BUILD} "
+                        echo "======== ※これを跨いでの、shield-update.sh によるバージョンアップ不可 ========"
+                        ATTNO="$m"
                     else
                         echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                    fi
+                    if [[ "$CRTVER" == "${GIT_BRANCH}_Build:${BUILD}" ]];then
+                        CRTNO="$m"
                     fi
                 else
                     echo "$m: Rel-$S_APP_VERSION" 
@@ -529,6 +543,7 @@ function select_version() {
             echo -n " 番号で指定してください: "
             read answer
             echo "selected versio#: $answer" >> $LOGFILE
+            TGTNO="$answer"
             if [[ -z ${vers_c[$answer]} ]] ; then
                     echo "番号が違っています。"
             else
@@ -537,6 +552,13 @@ function select_version() {
                     break
             fi
         done
+
+        if [[ "$ATTNO" -ne "0" ]] ;then
+            if [[ "$CRTNO" -gt  "$ATTNO" ]] && [[ "$TGTNO" -le  "$ATTNO" ]] ;then
+                log_message "ご指定のバージョン間でのバージョンアップはこのスクリプトではサポートされていません。"
+                fin 1
+            fi
+        fi
     fi
 
     if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev"  ]; then
@@ -778,7 +800,7 @@ function install_expect(){
 function install_fuse-libs(){
     log_message "[start] install fuse-libs"
     sudo yum install -y fuse-libs
-    log_message "[end] install expect"
+    log_message "[end] install fuse-libs"
 }
 
 function install_wget(){
@@ -798,6 +820,12 @@ function install_wget(){
         log_message "wget is already installed"
     fi
     log_message "[end] install wget"    
+}
+
+function install_libfuse2(){
+    log_message "[start] install libfuse2"
+    sudo apt install libfuse2
+    log_message "[end] install libfuse2"
 }
 
 ######START#####
@@ -839,6 +867,7 @@ fi
 get_shield-prepare-servers
 install_expect
 install_wget
+install_libfuse2
 if [[ $OS == "RHEL" ]];then
     install_fuse-libs
 fi

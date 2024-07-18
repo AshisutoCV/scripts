@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20211001a
+### VER=20240718a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -27,7 +27,21 @@ cd $CURRENT_DIR
 
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
+
+
+if [ -f .es_version ]; then
+    S_APP_VERSION=$(cat .es_version)
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    GBUILD=${BUILD[0]}.${BUILD[1]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
+fi
 
 BRANCH="master"
 if [ -f .es_branch ]; then
@@ -39,6 +53,23 @@ else
     offline_flg=0
 fi
 
+if [ -f .es_branch-tmp ]; then
+    BRANCH=$(cat .es_branch-tmp)
+elif [ -f ${ES_PATH}/.es_branch-tmp ]; then
+    BRANCH=$(cat ${ES_PATH}/.es_branch-tmp)
+fi
+
+if [ -f .es_version-tmp ]; then
+    S_APP_VERSION=$(cat .es_version-tmp)
+    BUILD=()
+    BUILD=(${S_APP_VERSION//./ })
+    GBUILD=${BUILD[0]}.${BUILD[1]}
+    if [[ ${BUILD[3]} ]] ;then
+        BUILD=${BUILD[2]}.${BUILD[3]}
+    else
+        BUILD=${BUILD[2]}
+    fi
+fi
 
 deploy_flg=0
 spell_flg=0
@@ -170,16 +201,23 @@ function move_to_project() {
         log_message ".raファイルがありません。"
         failed_to_install "move_to_project" "all"
     fi
-    log_message "[start] get Default project id"
-    DEFPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=Default" \
+    if [[ "$(echo "$BUILD < 5000" | bc)" -eq 1 ]]; then
+        PROJECTNAME="Default"
+    else
+        PROJECTNAME="Shield"
+    fi
+
+    log_message "[start] get ${PROJECTNAME} project id"
+    TOPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
+        -H 'Accept: application/json' \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
         | jq -r '.data[].id')
-    log_message "DEFPROJECTID: $DEFPROJECTID"
-    log_message "[end] get Default project id"
+    log_message "TOPROJECTID: $TOPROJECTID"
+    log_message "[end] get ${PROJECTNAME} project id"
 
-    # move namespases to Default project
-    log_message "[start] Move namespases to Default project"
+    # move namespases to Target project
+    log_message "[start] Move namespases to ${PROJECTNAME} project"
 
     if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
@@ -193,14 +231,14 @@ function move_to_project() {
             -H 'content-type: application/json' \
             -H "Authorization: Bearer $APITOKEN" \
             --data-binary '{
-                "projectId":"'$DEFPROJECTID'"
+                "projectId":"'$TOPROJECTID'"
               }' \
            >>"$LOGFILE" 2>&1
 
-        log_message "move namespases to Default project/ ${NAMESPACE} "
+        log_message "move namespases to ${PROJECTNAME} project/ ${NAMESPACE} "
     done
 
-    log_message "[end] Move namespases to Default project"
+    log_message "[end] Move namespases to ${PROJECTNAME} project"
 }
 
 function check_start() {
@@ -333,6 +371,8 @@ S_APP_VERSION=$(cat .es_version)
 
 log_message "[start] Waiting System Project is Actived"
 j=0
+
+rancher ps --project $(rancher projects | grep System | awk '{print $1}') | grep unavailable | awk '{print $2}' | xargs -I {} kubectl delete pod {} -n cattle-system
 
 if [[ $force_flg -eq 1 ]];then
     n=10

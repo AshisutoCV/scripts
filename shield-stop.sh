@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240117a
+### VER=20240718a
 ####################
 
 export HOME=$(eval echo ~${SUDO_USER})
@@ -27,6 +27,7 @@ cd $CURRENT_DIR
 
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
 
 if [ -f .es_branch ]; then
@@ -39,6 +40,14 @@ if [ -f ${ES_PATH}/.es_offline ] ;then
     offline_flg=1
 else
     offline_flg=0
+fi
+
+if [ -f .es_branch-tmp ]; then
+    BRANCH=$(cat .es_branch-tmp)
+fi
+
+if [ -f .es_version-tmp ]; then
+    GITVER=$(cat .es_version-tmp)
 fi
 
 export BRANCH
@@ -193,7 +202,8 @@ function ln_resolv() {
 
 function stop-f_preCheck() {
     if [ $force_flg -eq 1 ]; then
-    num_notready_nodes=$(kubectl get node | grep -c NotReady)
+        rancher ps --project $(rancher projects | grep System | awk '{print $1}') | grep unavailable | awk '{print $2}' | xargs -I {} kubectl delete pod {} -n cattle-system
+        num_notready_nodes=$(kubectl get node | grep -c NotReady)
         if [ $num_notready_nodes -ge 1 ]; then
             log_message "NotReadyNodesが存在します。"
             kubectl get node -o wide >> $LOGFILE

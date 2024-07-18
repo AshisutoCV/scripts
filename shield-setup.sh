@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20231002a
+### VER=20240718a
 ####################
 
 function usage() {
@@ -67,7 +67,11 @@ CURRENT_DIR=$(cd $(dirname $0); pwd)
 cd $CURRENT_DIR
 SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield"
 #SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/develop"
+#SCRIPTS_URL="https://ericom-tec.ashisuto.co.jp/shield/git/feature/update-test"
 SCRIPTS_URL_ES="https://raw.githubusercontent.com/EricomSoftwareLtd/Shield/master/Kube/scripts"
+
+rm -f .es_branch-tmp
+rm -f .es_version-tmp
 
 if [ -f .es_branch ]; then
     BRANCH=$(cat .es_branch)
@@ -99,7 +103,7 @@ function check_ericom_user(){
             sudo mv -f ${ES_PATH}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
         fi
-        if [[ -f ${ES_PATH_ERICOM}/.es_prepare ]];then
+        if sudo [ -f ${ES_PATH_ERICOM}/.es_prepare ];then
             log_message "[info] Move .es_prepare flg file..."
             sudo mv -f ${ES_PATH_ERICOM}/.es_prepare ${ERICOM_PATH}/.es_prepare
             sudo chown ericom:ericom ${ERICOM_PATH}/.es_prepare
@@ -217,6 +221,7 @@ function check_args(){
     old_flg=0
     multi_flg=0
     lowres_flg=0
+    wayland_flg=0
     spare_flg=0
     change_spare_flg=0
     #offline_flg=0
@@ -298,6 +303,7 @@ function check_args(){
     echo "deleteall_flg: $deleteall_flg" >> $LOGFILE
     echo "offline_flg: $offline_flg" >> $LOGFILE
     echo "lowres_flg: $lowres_flg" >> $LOGFILE
+    echo "wayland_flg: $wayland_flg" >> $LOGFILE
     echo "S_APP_VERSION: $S_APP_VERSION" >> $LOGFILE
     echo "REGISTRY_OVA: $REGISTRY_OVA" >> $LOGFILE
     echo "REGISTRY_OVA_IP: $REGISTRY_OVA_IP" >> $LOGFILE
@@ -406,6 +412,8 @@ function uninstall_shield() {
     ${ES_PATH}/delete-shield.sh -s | tee -a $LOGFILE
     rm -f .es_version
     rm -f .es_branch
+    rm -f .es_branch-tmp
+    rm -f .es_version-tmp
 
     log_message "[end] uninstall shield"
 }
@@ -459,6 +467,7 @@ function delete_all_old() {
 
 function select_version() {
     ### attention common setup&update&shield-prepare-servers ###
+    CRTVER=""
     CHART_VERSION=""
     VERSION_DEPLOYED=""
     if which helm >/dev/null 2>&1 ; then
@@ -473,6 +482,7 @@ function select_version() {
     echo "=================================================================="
     if [ -z $VERSION_DEPLOYED ] || [[ "$VERSION_DEPLOYED" == "request" ]] ; then
         log_message "現在インストールされているバージョン: N/A"
+        CRTVER=""
     else
         BUILD=()
         BUILD=(${VERSION_DEPLOYED//./ })
@@ -487,12 +497,13 @@ function select_version() {
             GIT_BRANCH="Rel-${GBUILD}"
         fi
         log_message "現在インストールされているバージョン: ${GIT_BRANCH}_Build:${BUILD}"
+        CRTVER="${GIT_BRANCH}_Build:${BUILD}"
     fi
     echo "=================================================================="
 
 
-    if [ -f "$ES_PREPARE" ]; then
-        log_message "実行済みのshield-prepare-serversバージョン: $(cat $ES_PREPARE)"
+    if sudo [ -f "$ES_PREPARE" ]; then
+        log_message "実行済みのshield-prepare-serversバージョン: $(sudo cat $ES_PREPARE)"
     else
         log_message "[error] shield-prepare-serversが未実行のようです。"
         echo "=================================================================="
@@ -559,6 +570,9 @@ function select_version() {
         fi
 
         echo "どのバージョンをセットアップしますか？"
+        ATTNO="0"
+        CRTNO="0"
+        TGTNO="0"
         for i in $VER
         do
             n=$(( $n + 1 ))
@@ -594,8 +608,15 @@ function select_version() {
                 if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev" ] ; then
                     if [[ $i == "eol" ]]; then
                         echo "$m: ${GIT_BRANCH}_Build:${BUILD} ※サポート終了"
+                    elif [[ $i == "attention" ]] && [[ $(basename $0) == "shield-update.sh" ]]; then
+                        echo "$m: ${GIT_BRANCH}_Build:${BUILD} "
+                        echo "======== ※これを跨いでの、shield-update.sh によるバージョンアップ不可 ========"
+                        ATTNO="$m"
                     else
                         echo "$m: ${GIT_BRANCH}_Build:${BUILD}"
+                    fi
+                    if [[ "$CRTVER" == "${GIT_BRANCH}_Build:${BUILD}" ]];then
+                        CRTNO="$m"
                     fi
                 else
                     echo "$m: Rel-$S_APP_VERSION" 
@@ -609,6 +630,7 @@ function select_version() {
             echo -n " 番号で指定してください: "
             read answer
             echo "selected versio#: $answer" >> $LOGFILE
+            TGTNO="$answer"
             if [[ -z ${vers_c[$answer]} ]] ; then
                     echo "番号が違っています。"
             else
@@ -617,6 +639,13 @@ function select_version() {
                     break
             fi
         done
+
+        if [[ "$ATTNO" -ne "0" ]] ;then
+            if [[ "$CRTNO" -gt  "$ATTNO" ]] && [[ "$TGTNO" -le  "$ATTNO" ]] ;then
+                log_message "ご指定のバージョン間でのバージョンアップはこのスクリプトではサポートされていません。"
+                fin 1
+            fi
+        fi
     fi
 
     if [ "$BRANCH" != "Staging" ] && [ "$BRANCH" != "Dev"  ]; then
@@ -820,6 +849,8 @@ function check_group() {
                 log_message "================================================================================="
                 rm -f .es_version
                 rm -f .es_branch
+                rm -f .es_branch-tmp
+                rm -f .es_version-tmp
                 fin 1
             fi
             docker_flg=1
@@ -839,6 +870,8 @@ function check_group() {
         log_message "[end] add group"
         rm -f .es_version
         rm -f .es_branch
+        rm -f .es_branch-tmp
+        rm -f .es_version-tmp
         fin 0
     fi
 
@@ -851,13 +884,79 @@ function run_rancher() {
     else
         log_message "[start] run rancher"
         ./run-rancher.sh | tee -a $LOGFILE
-        log_message "[end] run rancher"
+        #ideally wait until Rancher is up again
+        sleep 10
+        if [[ "pong" == $(curl -s -k "${RANCHERURL}/ping") ]]; then
+                log_message "[end] run rancher"
+        else
+            sleep 20
+            log_message "[end] run rancher"
+        fi
+    fi
+}
+
+function check_rancher_ver(){
+    rancher_version=$(bash "./run-rancher.sh" --print-app-version)
+    echo "Rancher Version: $rancher_version"
+    rancher_running=$(docker ps | grep -c rancher/rancher:)
+    echo "Rancher Running: $rancher_running"
+
+    if [ $rancher_running -ge 1 ]; then
+        rancher_running_version=$(docker ps | grep -c rancher/rancher:$rancher_version)
+        echo "Rancher $rancher_version Running: $rancher_running_version"
+        if [ $rancher_running_version -lt 1 ]; then
+            echo "Stopping Old Version of Rancher Server"
+            rancher_container_id=$(docker ps | grep rancher/rancher: | awk '{ print $1 }')
+            docker stop $rancher_container_id
+            sleep 5
+            rancher_running=$(docker ps -a | grep -c rancher/rancher:)
+            if [ $rancher_running -ge 1 ]; then
+                rancher_container_id=$(docker ps -a | grep rancher/rancher: | awk '{ print $1 }')
+                echo "Stopping(force) Old Version of Rancher Server"
+                # if $rancher_container_id is not empty
+                if [ -n $rancher_container_id ]; then
+                    docker rm -f $rancher_container_id
+                fi
+            fi
+            log_message "***************     Installing Rancher CLI"
+            sudo -E ./install-rancher-cli.sh
+            if [[ $? -ne 0  ]] ;then
+                failed_to_install "*************** install-rancher-cli.sh Failed, Exiting!"
+                exit 1
+            fi
+            #run "New" Version of Rancher Server
+            log_message "***************     Running Rancher Server"
+            ./run-rancher.sh --update
+            if [[ $? -ne 0  ]] ;then
+                failed_to_install "*************** run-rancher.sh Failed, Exiting!"
+                exit 1
+            fi
+            #ideally wait until Rancher is up again
+            sleep 30
+        fi
     fi
 }
 
 function pre_create_cluster() {
     sudo -E chown -R $(whoami):$(whoami) ${HOME}/.kube
-    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)
+    sudo -E chown -R $(whoami):$(whoami) ${HOME}/.rancher
+    sudo -E chown -R $(whoami):$(whoami) ${ES_PATH}/.esranchertoken
+    sudo -E chown -R $(whoami):$(whoami) ${ES_PATH}/.esprojectid    
+    #RancherCLI用トークンを発行(Never)
+    if [ ! -f .ra_apitoken ];then
+        result=$(curl -k -X POST `cat ${ES_PATH}/.esrancherurl`'/v3/token' \
+                  -H 'content-type: application/json' \
+                  -d '{
+                    "type":"token",
+                    "description":"KKA_Shield_Script",
+                    "name":"KKA_Shield_Script"
+                  }' --user `cat ${ES_PATH}/.esranchertoken` | jq -r '.')
+                echo "$result" | jq -r '.token' > ${ES_PATH}/.esranchertoken
+                log_message "KKA_Shield_Script TOKEN: ${ES_PATH}/.esranchertoken"
+                cp -f .esranchertoken .ra_apitoken
+                APITOKEN=$(cat .ra_apitoken)
+    fi
+    rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) </dev/null >/dev/null 2>&1
     echo -n 'getting k8s version.'
     K8S_VER=""
     wait_count=0
@@ -926,7 +1025,7 @@ function create_cluster() {
                   "enabled":true
                 },
                 "rancherKubernetesEngineConfig": {
-                  "addonJobTimeout": 30,
+                  "addonJobTimeout": 45,
                   "ignoreDockerVersion": true,
                   "sshAgentAuth": false,
                   "type": "rancherKubernetesEngineConfig",
@@ -997,6 +1096,13 @@ function create_cluster() {
         fi
         log_message "[end] Extract clusterid "
     fi
+}
+
+function create_project(){
+    rancher project create --cluster "$CLUSTERNAME" --description "The Shield project" "Shield"
+    PROJECTID=$(rancher login --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl)</dev/null 2>/dev/null | grep Shield | awk '{print $3}')
+    log_message "PROJECTID: $PROJECTID"
+    rancher login --context ${PROJECTID} --token $(cat ${ES_PATH}/.esranchertoken) --skip-verify $(cat ${ES_PATH}/.esrancherurl) 
 }
 
 function show_agent_cmd_old() {
@@ -1165,12 +1271,15 @@ function create_cluster_cmd() {
 
         echo ""
         echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★" | tee $CMDFILE
+        log_message "[waiting] creating cluster first "
         case $ANSWERNO in
             "1") DOCKERRUNCMD=$DOCKERRUNCMD1
-                 echo '下記のコマンドがこのノードで実行されます。(確認用。実行の必要はありません。)' 
-                 echo ""
-                 echo "$DOCKERRUNCMD1"
-                 echo "" 
+                 $DOCKERRUNCMD >> $LOGFILE 2>&1
+                 wait_cluster_active_check_first
+                 echo '下記のコマンドがこのノードで実行されています。(確認用。実行の必要はありません。)'   | tee -a $CMDFILE
+                 echo ""  | tee -a $CMDFILE
+                 echo "$DOCKERRUNCMD1"  | tee -a $CMDFILE
+                 echo ""   | tee -a $CMDFILE
                  echo '------------------------------------------------------------'  | tee -a $CMDFILE
                  echo 'そして、'
                  echo '(【必要に応じて】 下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。)'  | tee -a $CMDFILE
@@ -1203,7 +1312,9 @@ function create_cluster_cmd() {
                  echo ""  | tee -a $CMDFILE
                  ;;
             "2") DOCKERRUNCMD=$DOCKERRUNCMD2
-                 echo '下記のコマンドがこのノードで実行されます。(確認用。実行の必要はありません。)'  | tee -a $CMDFILE
+                 $DOCKERRUNCMD >> $LOGFILE 2>&1
+                 #wait_cluster_active_check_first
+                 echo '下記のコマンドがこのノードで実行されています。(確認用。実行の必要はありません。)'   | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
                  echo "$DOCKERRUNCMD2"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
@@ -1229,6 +1340,7 @@ function create_cluster_cmd() {
                  echo ""  | tee -a $CMDFILE
                  ;;
             "3") DOCKERRUNCMD=""
+                 $DOCKERRUNCMD >> $LOGFILE 2>&1
                  echo '下記コマンドを他の(Cluster Management + Worker)ノードで実行してください。'  | tee -a $CMDFILE
                  if [[ $old_flg -eq 1 ]] || [[ "$BRANCH" == "Rel-20.05" ]]; then
                     show_agent_cmd_old
@@ -1257,15 +1369,39 @@ function create_cluster_cmd() {
                  fi
                  echo "$DOCKERRUNCMD3"  | tee -a $CMDFILE
                  echo ""  | tee -a $CMDFILE
-                ;;
+                 ;;
         esac
         echo ""  | tee -a $CMDFILE
         echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"  | tee -a $CMDFILE
         echo ""
 
-        $DOCKERRUNCMD >> $LOGFILE 2>&1
     fi
 }
+
+function wait_cluster_active_check_first() {
+
+    log_message "[waiting] Cluster to active first"
+    if [ ! -f .ra_rancherurl ] || [ ! -f .ra_clusterid ] || [ ! -f .ra_apitoken ];then
+        log_message ".raファイルがありません。"
+        failed_to_install "waiting cluster to active first " "all"
+    fi
+
+    while :
+        do
+           CLUSTERSTATE=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
+           echo "Waiting for state to become active.: $CLUSTERSTATE" | tee -a $LOGFILE
+           if [ "active" = "$CLUSTERSTATE" ] ;then
+               sleep 5
+               CLUSTERSTATE2=$(curl -s -k "${RANCHERURL}/v3/clusters/${CLUSTERID}" -H "Authorization: Bearer $APITOKEN" | jq -r .state)
+               if [ "active" = "$CLUSTERSTATE2" ] ;then
+                   break
+               fi
+           fi
+           sleep 10
+    done
+    log_message "[end] Cluster to active waiting first"
+}
+
 
 function wait_cluster_active() {
     while :
@@ -1713,12 +1849,38 @@ function check_ha() {
     elif [[ $NUM_PROXY -eq 1 ]];then
              sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-proxy.yaml
     fi
+
+    #HPA無効
+    if [[ $NUM_MNG -eq 1 ]] && [[ $NUM_FARM -eq 1 ]] && [[ $NUM_PROXY -eq 1 ]] ;then
+        if [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-farm.yaml
+            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    enabled: false\n/g' custom-farm.yaml
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-management.yaml
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-proxy.yaml
+            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    enabled: false\n/g' custom-proxy.yaml
+        else
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-farm.yaml
+            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    apiGateway:\n      enabled: false\n    cdrDispatcher:\n      enabled: false\n    farmApi:\n      enabled: false\n    farmSync:\n      enabled: false\n    icap:\n      enabled: false\n    idpConnector:\n      enabled: false\n    policyManager:\n      enabled: false\n    proxyExternal:\n      enabled: false\n    proxyExternalNoadblock:\n      enabled: false\n/g' custom-farm.yaml
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-management.yaml
+            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-proxy.yaml
+            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    proxyEgress:\n      enabled: false\n    icapServer:\n      enabled: false\n    ldapProxy:\n      enabled: false\n    policyManager:\n      enabled: false\n/g' custom-proxy.yaml
+        fi
+    fi
+
 }
 
 function check_system_project() {
     log_message "[start] Waiting System Project is Actived"
-    while :
+    
+    rancher ps --project $(rancher projects | grep System | awk '{print $1}') | grep unavailable | awk '{print $2}' | xargs -I {} kubectl delete pod {} -n cattle-system
+
+    check_count=0
+    while [[ $check_count -lt 100 ]]
     do
+        check_count=$((check_count + 1))
+        if [[ $check_count -ge 60 ]];then
+            failed_to_install "[Timeout] System project status not All Actived"
+        fi
         for i in 1 2 3 
         do
             ./shield-status.sh --system -q
@@ -1727,6 +1889,7 @@ function check_system_project() {
         if [[ RET1 -eq 0 ]] && [[ RET2 -eq 0 ]] && [[ RET3 -eq 0 ]]; then
             break
         fi
+        sleep 1
     done
     log_message "[end] Waiting System Project is Actived"
 }
@@ -1783,16 +1946,23 @@ function move_to_project() {
         log_message ".raファイルがありません。"
         failed_to_install "move_to_project" "all"
     fi
-    log_message "[start] get Default project id"
-    DEFPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=Default" \
+    if [[ "$(echo "$BUILD < 5000" | bc)" -eq 1 ]]; then
+        PROJECTNAME="Default"
+    else
+        PROJECTNAME="Shield"
+    fi
+
+    log_message "[start] get ${PROJECTNAME} project id"
+    TOPROJECTID=$(curl -s -k "${RANCHERURL}/v3/projects/?name=${PROJECTNAME}" \
+        -H 'Accept: application/json' \
         -H 'content-type: application/json' \
         -H "Authorization: Bearer $APITOKEN" \
         | jq -r '.data[].id')
-    log_message "DEFPROJECTID: $DEFPROJECTID"
-    log_message "[end] get Default project id"
+    log_message "TOPROJECTID: $TOPROJECTID"
+    log_message "[end] get ${PROJECTNAME} project id"
 
-    # move namespases to Default project
-    log_message "[start] Move namespases to Default project"
+    # move namespases to Target project
+    log_message "[start] Move namespases to ${PROJECTNAME} project"
 
     if [ "$BRANCH" == "Rel-19.07" ] || [ "$BRANCH" == "Rel-19.07.1" ];then
         NAMESPACES="management proxy elk farm-services"
@@ -1806,14 +1976,14 @@ function move_to_project() {
             -H 'content-type: application/json' \
             -H "Authorization: Bearer $APITOKEN" \
             --data-binary '{
-                "projectId":"'$DEFPROJECTID'"
+                "projectId":"'$TOPROJECTID'"
               }' \
            >>"$LOGFILE" 2>&1
 
-        log_message "move namespases to Default project/ ${NAMESPACE} "
+        log_message "move namespases to ${PROJECTNAME} project/ ${NAMESPACE} "
     done
 
-    log_message "[end] Move namespases to Default project"
+    log_message "[end] Move namespases to ${PROJECTNAME} project"
 }
 
 function check_start() {
@@ -1920,8 +2090,8 @@ function mod_cluster_dns() {
 
 function check_prepare() {
 
-    if [ -f ${ES_PREPARE} ] ;then
-        PREPARE_VER=$(cat ${ES_PREPARE})
+    if sudo [ -f ${ES_PREPARE} ] ;then
+        PREPARE_VER=$(sudo cat ${ES_PREPARE})
         if [[ ${PREPARE_VER} == $S_APP_VERSION ]]; then
             log_message "[info] shield-prepare was executed."
         else
@@ -1967,6 +2137,52 @@ function low_res_choice() {
             esac
         done
         echo "lowres_flg: $lowres_flg" >> $LOGFILE
+        log_message "[end] resource choice."
+}
+function low_res_choice2() {
+        log_message "[start] resource choice."
+        while :
+        do
+            echo ""
+            echo "========================================================================================="
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo 'Rel-23.13以降、低メモリ消費のWaylandブラウザがデフォルトとなっています。'
+            echo '旧バージョンの高解像度_8Kディスプレイに対応したブラウザコンテナを選択する場合や'
+            echo '旧バージョンのデフォルトブラウザも引き続きご利用になれます。'
+            echo '必要に応じてリソース要件を確認の上、選択してください。'
+            echo "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★"
+            echo ""
+            echo '1) 通常インストール（Waylandブラウザ）'
+            echo '2) 旧バージョン：デフォルトブラウザ(低解像度)'
+            echo '3) 旧バージョン：高解像度_8Kディスプレイ対応版'
+            echo ""
+            echo -n "番号で選んでください："
+            read ANSWERNORES
+            echo "AMSWERNORES: $ANSWERNORES" >> $LOGFILE
+
+            case $ANSWERNORES in
+                "1")
+                    wayland_flg=1
+                    lowres_flg=0
+                    break
+                    ;;
+                "2")
+                    lowres_flg=1
+                    wayland_flg=0
+                    break
+                    ;;
+                "3")
+                    lowres_flg=0
+                    wayland_flg=0
+                    break
+                    ;;
+                *)
+                    echo "番号が正しくありません。"
+                    ;;
+            esac
+        done
+        echo "lowres_flg: $lowres_flg" >> $LOGFILE
+        echo "wayland_flg: $wayland_flg" >> $LOGFILE
         log_message "[end] resource choice."
 }
 
@@ -2052,6 +2268,8 @@ log_message "BRANCH: $BRANCH"
 log_message "BUILD: $BUILD"
 #echo $BRANCH > .es_branch
 #echo ${S_APP_VERSION} > .es_version
+echo $BRANCH > .es_branch-tmp
+echo ${S_APP_VERSION} > .es_version-tmp
 
 if [[ "$BRANCH" == "Rel-20.03" ]] || [[ "$BRANCH" == "Rel-20.01.2" ]] || [[ "$BRANCH" == "Rel-19.12.1" ]] || [[ "$BRANCH" == "Rel-19.11" ]] || [[ "$BRANCH" == "Rel-19.09.5" ]] || [[ "$BRANCH" == "Rel-19.09.1" ]]  || [[ "$BRANCH" == "Rel-19.07.1" ]] ;then
     old_flg=1
@@ -2071,7 +2289,9 @@ if [[ "$BUILD" == "667" ]]; then
 fi
 
 # 21.11.816.2 resource choice
-if [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
+if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+    low_res_choice2
+elif [[ "$(echo "$BUILD >= 816.2" | bc)" -eq 1 ]]; then
     low_res_choice
 fi
 
@@ -2083,7 +2303,7 @@ if [[ $OS == "Ubuntu" ]] && [[ $offline_flg -eq 0 ]] ; then
     sudo apt-mark unhold docker-ce | tee -a $LOGFILE
     apt-unlock
     sudo apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
+    #sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install libssl1.1 
 fi
 
 # install docker
@@ -2187,19 +2407,32 @@ else
     sed -i -z 's/farm-services:\n/farm-services:\n  rb_resources:\n    rb_limits:\n      cpu: 4\n      memory: 3Gi\n/g' custom-farm.yaml
 fi
 
-
-
 #low resource
 if [[ "$BUILD" == "934-3" ]] || [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
-    sed -i -e '/remoteBrowserLowMemMode/d' ~/ericomshield/custom-farm.yaml
-    sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ~/ericomshield/custom-farm.yaml
+    sed -i -e '/remoteBrowserLowMemMode/d' ${ES_PATH}/custom-farm.yaml
+    sed -i -e '/onPremDefaultWayland/d' ${ES_PATH}/custom-farm.yaml
+    sed -i -e 's/farm-services:.*\n/farm-services:\n/g' ${ES_PATH}/custom-farm.yaml
+
+    #LowMemMode
     if [ $lowres_flg -eq 1 ]; then
         log_message "[start] fix for low resources"
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: true\n/g' ${ES_PATH}/custom-farm.yaml
         log_message "[end] fix for low resources"
-    elif [ $lowres_flg -eq 0 ]; then
+    fi
+
+    #HighMemMode
+    if [ $lowres_flg -eq 0 ]; then
+        log_message "[start] fix for High resources"
         sed -z -i 's/farm-services:\n/farm-services:\n  remoteBrowserLowMemMode: false\n/g' ${ES_PATH}/custom-farm.yaml
-    fi    
+        log_message "[end] fix for High resources"
+    fi
+
+    #WaylandMode
+    if [ $wayland_flg -eq 1 ]; then
+        log_message "[start] fix for wayland"
+        sed -z -i 's/farm-services:\n/farm-services:\n  onPremDefaultWayland: true\n/g' ${ES_PATH}/custom-farm.yaml
+        log_message "[end] fix for wayland"
+    fi
 else
     if [ $lowres_flg -eq 1 ]; then
         log_message "[start] fix for low resources"
@@ -2213,6 +2446,8 @@ else
     fi
 fi
 
+
+
 #if [[ "$BUILD" == "816.2" ]]; then
 #    log_message "[start] fix for 21.11.816.2 votiro"
 #    sed -i -e 's/es-system-settings:211219-Rel-21.11/es-system-settings:220214-11.30/g' ${ES_PATH}/shield/values.yaml
@@ -2224,7 +2459,10 @@ fi
 #update or deploy NOT offline
     if [ $update_flg -eq 1 ] || [ $deploy_flg -eq 1 ]; then
         chmod 600 ${HOME}/.kube/config
-        run_rancher
+        check_rancher_ver
+        if [[ "$(echo "$BUILD > 5000" | bc)" -eq 0 ]]; then
+            run_rancher
+        fi
         install_helm
         if [[ "$BRANCH" == "Rel-20.05" ]]; then
             wait_for_tiller
@@ -2232,8 +2470,10 @@ fi
         if [[ $stg_flg -eq 1 ]] || [[ $dev_flg -eq 1 ]]; then
             add_repo
         fi
-        #check_system_project
         check_system_project
+        #if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+        #    create_project
+        #fi
         deploy_shield
         move_to_project
         check_start
@@ -2349,28 +2589,40 @@ if [ ! -f ~/.kube/config ] || [ $(cat ~/.kube/config | wc -l) -le 1 ]; then
     echo "================================================================================="
     log_message "[end] set Rancer URL & ports"
 
-    #4.  run-rancher.sh
-    run_rancher
-
     #5.  install-rancher-cli
     log_message "[start] install rancher cli"
-    sudo -E ./install-rancher-cli.sh
+    sed -i -e 's/LOGFILE\=\"\$ES_PATH\/ericomshield.log"/LOGFILE\=\"\$\(eval echo \~\$\{SUDO_USER\}\)\/ericomshield\/ericomshield.log\"/' install-rancher-cli.sh
+    sudo -E -H ./install-rancher-cli.sh
+
     if [ $? != 0 ]; then
        failed_to_install "install rancher cli"
     fi
     log_message "[end] install rancher cli"
     step
 
+    #4.  run-rancher.sh
+    run_rancher
+    check_rancher_ver
+
+
     #6.  create-cluster.sh
     log_message "[start] create cluster"
-    sed -i -e '/^wait_for_rancher/a sleep 5' create-cluster.sh
-    sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
+    sed -i -e '/^wait_for_rancher$/a sleep 5' create-cluster.sh
+    if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+        sed -i -e '/^configure_rancher_generate_token$/a exit' create-cluster.sh
+    else
+        sed -i -e 's/^create_rancher_cluster/ls dummy >\/dev\/null 2>\/dev\/null/' create-cluster.sh
+    fi
     sudo -E ./create-cluster.sh
     if [ $? != 0 ]; then
        failed_to_install "create cluster"
     fi
     pre_create_cluster
+    CLUSTERID=$(rancher clusters | grep -v ID | awk '{print $2}')
     create_cluster
+    if [[ "$(echo "$BUILD > 5000" | bc)" -eq 1 ]]; then
+        create_project
+    fi
     create_cluster_cmd
     log_message "[end] create cluster"
     step
@@ -2409,7 +2661,7 @@ fi
 # set node label
 set_node_label
 
-#check_system_project
+#Check System Project Status
 check_system_project
 
 #6. Deploy Shield
@@ -2420,6 +2672,8 @@ move_to_project
 
 check_start
 
+rm -f .es_branch-tmp
+rm -f .es_version-tmp
 echo $BRANCH > .es_branch
 echo ${S_APP_VERSION} > .es_version
 
