@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20240718a
+### VER=20241224a
 ####################
 
 function usage() {
@@ -734,6 +734,16 @@ function get_scripts() {
     mv -f ./start.sh ./org/start.sh
     mv -f ./stop.sh ./org/stop.sh
     mv -f ./status.sh ./org/status.sh
+
+    # 6295-51 add cron
+    BUILDa=${BUILD//-/.}
+    if [[ "$(echo "$BUILDa >= 6295.51" | bc)" -eq 1 ]]; then
+
+        curl -s -OL ${SCRIPTS_URL}/rancher_restart.sh
+        chmod +x rancher_restart.sh
+        echo -e "SHELL=/bin/sh\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n0 0 * * *   $(whoami) /bin/bash /home/$(whoami)/ericomshield/rancher_restart.sh" | sudo tee /etc/cron.d/rancher_restart
+        sudo service cron restart
+    fi
 
     log_message "[end] get operation scripts"
 }
