@@ -1,7 +1,10 @@
 # Version List
 ***
+## rancher_restart.sh
+* [20241224a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20241224a---20241224)
 
 ## shield-setup.sh
+* [20241224a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20241224a---20241224)
 * [20240718a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20240718a---20240718)
 * [20231002a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20230111a---20231002)
 * [20230706a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20230111a---20230706)
