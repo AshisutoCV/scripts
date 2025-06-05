@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20241224a
+### VER=20250604a
 ####################
 
 function usage() {
@@ -2388,10 +2388,18 @@ if [[ "$BRANCH" == "Rel-23.05" ]]; then
     #shield-cef:OnPrem23.05-230626-16.44
     sed -i -e '/esIcap:/c\    esIcap: securebrowsing\/icap-server:23.05-230927-SHIELD-19596' ${ES_PATH}/shield/values.yaml
     #icap-server:230329-07.17-2154
+    sed -i -e '/esCdrDispatcher:/c\    esCdrDispatcher: securebrowsing\/shield-cdr-dispatcher:240111-OnPrem-23.05' ${ES_PATH}/shield/values.yaml
+    #shield-cdr-dispatcher:23.13-231220-17.00-2857
+    sed -i -e '/esCdrController:/c\    esCdrController: securebrowsing\/shield-cdr-controller:240111-OnPrem-23.05' ${ES_PATH}/shield/values.yaml
+    #shield-cdr-controller:23.13-231224-15.54-161
     log_message "[end] fix for 23.05"
 elif [[ "$BRANCH" == "Rel-22.08" ]]; then
     log_message "[start] fix for 22.08"
     sed -i -e '/esLogStash:/c\    esLogStash: securebrowsing\/es-logstash:230108-OnPrem-22.08' ${ES_PATH}/shield/values.yaml
+    sed -i -e '/esCdrDispatcher:/c\    esCdrDispatcher: securebrowsing\/shield-cdr-dispatcher:250311-19.00-OnPrem-22.08' ${ES_PATH}/shield/values.yaml
+    #shield-cdr-dispatcher:220726-13.18-1118
+    sed -i -e '/esCdrController:/c\    esCdrController: securebrowsing\/shield-cdr-controller:250311-19.00-OnPrem-22.08' ${ES_PATH}/shield/values.yaml
+    #shield-cdr-controller:220720-11.58-1084
     log_message "[end] fix for 22.08"
 elif [[ "$BRANCH" == "Rel-21.11" ]]; then
     log_message "[start] fix for 21.11"
