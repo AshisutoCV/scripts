@@ -2,7 +2,7 @@
 
 ####################
 ### K.K. Ashisuto
-### VER=20250604a
+### VER=20250815a
 ####################
 
 function usage() {
@@ -1826,57 +1826,62 @@ function check_ha() {
     NUM_FARM=$(kubectl get nodes --show-labels |grep -c farm-services)
     NUM_PROXY=$(kubectl get nodes --show-labels |grep -c proxy)
 
+    #HPA有効の関連処理
     if [[ $NUM_MNG -eq 3 ]];then
         if [ -f custom-management.yaml ]; then
              if [[ $(grep -c antiAffinity custom-management.yaml) -ge 1 ]];then
                  sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-management.yaml 
              else
-                 sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-management.yaml
+                 sed -i -e '/shield-mng:/a\  antiAffinity: hard' custom-management.yaml
              fi
         fi
     elif [[ $NUM_MNG -eq 1 ]];then
              sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-management.yaml
     fi
+
     if [[ $NUM_FARM -eq 3 ]];then
         if [ -f custom-farm.yaml ]; then
              if [[ $(grep -c antiAffinity custom-farm.yaml) -ge 1 ]];then
-                 sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-farm.yaml 
+                sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-farm.yaml
+                grep -q '^  HPA:' custom-farm.yaml || sed -i '/doNotDelete: true/a \  HPA:\n    enabled: true\n    proxyless:\n      enabled: true\n      min: 3\n      max: 3' custom-farm.yaml
              else
-                 sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-farm.yaml
+                 sed -i -e '/farm-services:/a\  antiAffinity: hard' custom-farm.yaml
              fi
         fi
     elif [[ $NUM_FARM -eq 1 ]];then
              sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-farm.yaml
     fi
+
     if [[ $NUM_PROXY -eq 3 ]];then
         if [ -f custom-proxy.yaml ]; then
              if [[ $(grep -c antiAffinity custom-proxy.yaml) -ge 1 ]];then
-                 sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-proxy.yaml 
+                 sed -i -e '/#.*antiAffinity/s/^.*#.*antiAffinity/  antiAffinity/g' custom-proxy.yaml
+                 grep -q '^  HPA:' custom-proxy.yaml || sed -i '/doNotDelete: true/a \  HPA:\n    enabled: true\n    esav:\n      enabled: true\n      min: 3\n      max: 3\n    policyManager:\n      enabled: true\n      min: 3\n      max: 3\n    icapServer:\n      enabled: true\n      min: 3\n      max: 3' custom-proxy.yaml
              else
-                 sed -i -e '/^    forceNodeLabels/a \  antiAffinity: hard' custom-proxy.yaml
+                 sed -i -e '/shield-proxy:/a\  antiAffinity: hard' custom-proxy.yaml
              fi
         fi
     elif [[ $NUM_PROXY -eq 1 ]];then
              sed -i -e '/^\s[^#]*antiAffinity/s/^/#/g' custom-proxy.yaml
     fi
 
-    #HPA無効
+    # HPA無効の関連処理
     if [[ $NUM_MNG -eq 1 ]] && [[ $NUM_FARM -eq 1 ]] && [[ $NUM_PROXY -eq 1 ]] ;then
+        # hascaleのコメントアウトを解除
+        sed -i 's/#  hascale: 1/  hascale: 1/g' custom-farm.yaml
+        sed -i 's/#  hascale: 1/  hascale: 1/g' custom-management.yaml
+        sed -i 's/#  hascale: 1/  hascale: 1/g' custom-proxy.yaml
+
         if [[ "$(echo "$BUILD > 934" | bc)" -eq 1 ]]; then
-            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-farm.yaml
-            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    enabled: false\n/g' custom-farm.yaml
-            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-management.yaml
-            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-proxy.yaml
-            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    enabled: false\n/g' custom-proxy.yaml
+            # BUILD > 934 の場合
+            grep -q '^  HPA:' custom-farm.yaml || sed -i '/doNotDelete: true/a \  HPA:\n    enabled: false' custom-farm.yaml
+            grep -q '^  HPA:' custom-proxy.yaml || sed -i '/doNotDelete: true/a \  HPA:\n    enabled: false' custom-proxy.yaml
         else
-            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-farm.yaml
-            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    apiGateway:\n      enabled: false\n    cdrDispatcher:\n      enabled: false\n    farmApi:\n      enabled: false\n    farmSync:\n      enabled: false\n    icap:\n      enabled: false\n    idpConnector:\n      enabled: false\n    policyManager:\n      enabled: false\n    proxyExternal:\n      enabled: false\n    proxyExternalNoadblock:\n      enabled: false\n/g' custom-farm.yaml
-            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-management.yaml
-            sed -z -i 's/#  hascale: 1/  hascale: 1/g' custom-proxy.yaml
-            sed -z -i 's/doNotDelete: true\n/doNotDelete: true\n  HPA:\n    proxyEgress:\n      enabled: false\n    icapServer:\n      enabled: false\n    ldapProxy:\n      enabled: false\n    policyManager:\n      enabled: false\n/g' custom-proxy.yaml
+            # BUILD <= 934 の場合
+            grep -q '^  HPA:' custom-farm.yaml || sed -i '/doNotDelete: true/a \  HPA:\n    apiGateway:\n      enabled: false\n    cdrDispatcher:\n      enabled: false\n    farmApi:\n      enabled: false\n    farmSync:\n      enabled: false\n    icap:\n      enabled: false\n    idpConnector:\n      enabled: false\n    policyManager:\n      enabled: false\n    proxyExternal:\n      enabled: false\n    proxyExternalNoadblock:\n      enabled: false' custom-farm.yaml
+            grep -q '^  HPA:' custom-proxy.yaml || sed -i '/doNotDelete: true/a \  HPA:\n    proxyEgress:\n      enabled: false\n    icapServer:\n      enabled: false\n    ldapProxy:\n      enabled: false\n    policyManager:\n      enabled: false' custom-proxy.yaml
         fi
     fi
-
 }
 
 function check_system_project() {
@@ -2382,7 +2387,12 @@ if [[ "$BUILD" == "758" ]]; then
     sed -i -e 's/icap-server:210426-Rel-21.04/icap-server:210819-Rel-21.04/g' ${ES_PATH}/shield/values.yaml
     log_message "[end] fix for 21.04.758"
 fi
-if [[ "$BRANCH" == "Rel-23.05" ]]; then
+if [[ "$BRANCH" == "Rel-23.13" ]]; then
+    log_message "[start] fix for 23.13"
+    sed -i -e '/es-system-settings:/c\    esSystemSettings: securebrowsing\/es-system-settings:250623-OnPrem-23.13' ${ES_PATH}/shield/values.yaml
+    #es-system-settings:OnPrem-240611-07.05
+    log_message "[end] fix for 23.13"
+elif [[ "$BRANCH" == "Rel-23.05" ]]; then
     log_message "[start] fix for 23.05"
     sed -i -e '/esRemoteBrowser:/c\    esRemoteBrowser: securebrowsing\/shield-cef:230718-Rel-23.05' ${ES_PATH}/shield/values.yaml
     #shield-cef:OnPrem23.05-230626-16.44
