@@ -2,6 +2,7 @@
 ***
 ## kka_monitoring_log.sh
 * [20250813a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20250815a---20250815)
+* [20251118a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20251118a---20251118)
 
 ## rancher_restart.sh
 * [20241224a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20241224a---20241224)
