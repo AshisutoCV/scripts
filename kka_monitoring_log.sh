@@ -2,7 +2,7 @@
 ############################################################
 ### K.K. Ashisuto
 ### Shield Monitoring Log Collector
-### VER=20250815c
+### VER=20251118a
 #############################################################
 
 #===========================================================
@@ -295,12 +295,14 @@ function support_log() {
     log_command "${ls_log}" "sudo ls -lha /home/ericom/"
     log_command "${ls_log}" "sudo ls -lha /etc/apt/"
     log_command "${ls_log}" "sudo ls -lha /etc/apt/sources.list.d/"
+    log_command "${ls_log}" "sudo ls -lha /var/crash/"
 
     ##== Log File Copy ==##
     echo "[info] Copying OS and k3s logs..."
     mkdir -p "${sup_log_dir}/OS_Log" "${sup_log_dir}/k3s_Log"
     sudo cp -f /var/log/syslog* "${sup_log_dir}/OS_Log/" 2> /dev/null
     sudo cp -f /var/log/kern* "${sup_log_dir}/OS_Log/" 2> /dev/null
+    sudo cp -f /var/log/auth.log* "${sup_log_dir}/OS_Log/" 2> /dev/null
     sudo cp -f /var/log/dpkg* "${sup_log_dir}/OS_Log/" 2> /dev/null
     sudo cp -f /var/log/shield_syslog* "${sup_log_dir}/OS_Log/" 2> /dev/null
     if [ -f "${HOME}/ericomshield/rancher-store/k3s.log" ]; then
