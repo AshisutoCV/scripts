@@ -1,5 +1,9 @@
 # Version List
 ***
+
+## shield-recovery-namespace-project.sh
+* [20251202a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20251202a---20251202)
+
 ## kka_monitoring_log.sh
 * [20250813a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20250815a---20250815)
 * [20251118a](https://github.com/AshisutoCV/scripts/blob/master/ChangeLog.md#ver20251118a---20251118)
