@@ -2,10 +2,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_YAML_NAME="sasa-to-opswat-migration-onprem-job.yaml"
+DEFAULT_YAML_NAME="sasa-to-opswat-migration-onprem-job_1123.yaml"
+LEGACY_YAML_NAME="sasa-to-opswat-migration-onprem-job.yaml"
 JOB_NAMESPACE="management"
 JOB_NAME="es-sasa-to-opswat-cdr-migrator"
-NEW_CDR_IMAGE="securebrowsing/shield-cdr-controller:261109-13.09"
+EXPECTED_MIGRATOR_IMAGE="securebrowsing/es-sasa-to-opswat-cdr-migrator:261119-12.56"
+NEW_CDR_IMAGE="securebrowsing/shield-cdr-controller:261118-19.42"
 ES_BASE_DIR="${HOME}/ericomshield"
 ES_VERSION_FILE="${ES_BASE_DIR}/.esversion"
 VALUES_FILE="${ES_BASE_DIR}/shield/values.yaml"
@@ -90,13 +92,17 @@ exit_expected() {
 }
 
 if [ -z "${YAML_FILE:-}" ]; then
-  if [ -f "./${DEFAULT_YAML_NAME}" ]; then
-    YAML_FILE="./${DEFAULT_YAML_NAME}"
-  elif [ -f "${SCRIPT_DIR}/${DEFAULT_YAML_NAME}" ]; then
-    YAML_FILE="${SCRIPT_DIR}/${DEFAULT_YAML_NAME}"
-  else
-    YAML_FILE="./${DEFAULT_YAML_NAME}"
-  fi
+  for candidate in \
+    "./${DEFAULT_YAML_NAME}" \
+    "${SCRIPT_DIR}/${DEFAULT_YAML_NAME}" \
+    "./${LEGACY_YAML_NAME}" \
+    "${SCRIPT_DIR}/${LEGACY_YAML_NAME}"; do
+    if [ -f "${candidate}" ]; then
+      YAML_FILE="${candidate}"
+      break
+    fi
+  done
+  YAML_FILE="${YAML_FILE:-./${DEFAULT_YAML_NAME}}"
 fi
 
 usage() {
@@ -178,9 +184,19 @@ run_precheck() {
   check_supported_version "${shield_ver}"
   echo "2. Shield バージョン (${shield_ver}): OK (対象バージョン)"
 
-  # 3. 移行用 YAML チェック
+  # 3. 移行用 YAML およびイメージタグチェック
   if [ -f "${YAML_FILE}" ]; then
-    echo "3. 移行用 YAML (${YAML_FILE}): OK"
+    local yaml_img
+    yaml_img=$(awk '/^[[:space:]]*image:[[:space:]]*/ {gsub(/["'\'' \r\n]/, "", $2); print $2; exit}' "${YAML_FILE}")
+    if [ "${yaml_img}" != "${EXPECTED_MIGRATOR_IMAGE}" ] && [ "${FORCE_YAML_IMAGE:-0}" != "1" ]; then
+      echo ""
+      echo "[前提条件未達] 移行用 YAML (${YAML_FILE}) のイメージタグが更新版と一致しません。"
+      echo "  検出されたイメージ : ${yaml_img:-不明}"
+      echo "  期待されるイメージ : ${EXPECTED_MIGRATOR_IMAGE}"
+      echo "更新版の ${DEFAULT_YAML_NAME} を配置してから再実行してください。"
+      exit_expected
+    fi
+    echo "3. 移行用 YAML (${YAML_FILE} / ${yaml_img}): OK"
   else
     echo ""
     echo "[前提条件未達] 移行用 YAML (${YAML_FILE}) が見つかりません。"
@@ -432,16 +448,17 @@ named_policies = {}
 if isinstance(opswat_obj, dict):
     named_policies = {p.get("shieldName"): p.get("vendorName") for p in opswat_obj.get("namedPolicies", []) if isinstance(p, dict)}
 
-if named_policies.get("AV Only") == "multiscan,unarchive" and named_policies.get("Full CDR") == "ericsson_sanitize":
-    print("・ポリシー定義 : OK (AV Only: multiscan,unarchive / Full CDR: ericsson_sanitize)")
+if named_policies.get("AV Only") == "ericsson_multiscan_v1" and named_policies.get("Full CDR") == "ericsson_sanitize":
+    print("・ポリシー定義 : OK (AV Only: ericsson_multiscan_v1 / Full CDR: ericsson_sanitize)")
 else:
     errors.append(f"Opswat namedPolicies の定義が想定と異なります: {named_policies}")
 
-# 2. アクティブベンダー確認
+# 2. アクティブベンダー & Sanitize File Size 上限確認
 vendor = options_obj.get("vendor", "") if isinstance(options_obj, dict) else ""
 max_san_mb = options_obj.get("maxSanitizeFileSizeMB", "") if isinstance(options_obj, dict) else ""
 if vendor == "Opswat":
-    print(f"・有効ベンダー : OK (vendor: Opswat / maxSanitizeFileSizeMB: {max_san_mb}MB)")
+    size_label = f"{max_san_mb}MB" if max_san_mb != "" else "未設定"
+    print(f"・有効ベンダー : OK (vendor: Opswat / maxSanitizeFileSizeMB: {size_label})")
 else:
     errors.append(f"file-management/options の vendor が 'Opswat' になっていません (現在: '{vendor}')。")
 

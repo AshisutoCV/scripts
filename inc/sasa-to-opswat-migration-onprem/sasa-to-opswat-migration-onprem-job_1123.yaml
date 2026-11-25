@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: es-sasa-to-opswat-cdr-migrator
+  namespace: management
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      imagePullSecrets:
+         - name: dockerhubcred
+      containers:
+        - name: es-sasa-to-opswat-cdr-migrator
+          image: securebrowsing/es-sasa-to-opswat-cdr-migrator:261119-12.56
+          env:
+            - name: CONSUL_HOST
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: CONSUL_PORT
+              value: "8501"
+            - name: DRY_RUN
+              value: "true"
